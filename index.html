@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAPAS - Profil Nama</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-viewport">
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Left Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo" title="NAPAS Health & Focus">
+        <img src="assets/logo_brain.png" alt="NAPAS Logo" class="sidebar-logo-img">
+        <span class="sidebar-logo-text">NAPAS</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#home" class="nav-link active" data-tab="home">Home</a>
+        <a href="#tren" class="nav-link" data-tab="tren">Tren</a>
+        <a href="#deadline" class="nav-link" data-tab="deadline">Deadline</a>
+        <a href="#fokus" class="nav-link" data-tab="fokus">Fokus</a>
+        <a href="#laporan" class="nav-link" data-tab="laporan">Laporan</a>
+        <a href="#settings" class="nav-link" data-tab="settings">Settings</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+      <!-- Top Header Bar -->
+      <header class="top-header">
+        <div class="header-left">
+          <!-- Mobile Hamburger Menu Button -->
+          <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Buka Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          <h1 class="header-title">Profil Nama</h1>
+        </div>
+
+        <div class="header-right">
+          <div class="header-badge">
+            <span class="badge-dot"></span>
+            <span>Online</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Fluid Dashboard Container -->
+      <div class="dashboard-container">
+        <main class="dashboard-grid">
+          <!-- Column 1: Left (Gauge + Kenapa Card) -->
+          <section class="col col-left">
+            <div class="gauge-wrapper">
+              <div class="gauge-circle" id="gaugeCircle" title="Klik untuk segarkan skor">
+                <span class="gauge-percent" id="gaugeValue">18%</span>
+                <span class="gauge-trend">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <polyline points="19 12 12 19 5 12"></polyline>
+                  </svg>
+                  17 dari kemarin
+                </span>
+              </div>
+              <div class="gauge-status">
+                <span class="status-label">Zona Waspada: </span><span class="status-val">Hijau</span>
+              </div>
+            </div>
+
+            <!-- Kenapa Skor Ini Card -->
+            <div class="card-kenapa">
+              <h2 class="card-title">Kenapa skor ini?</h2>
+              <ul class="info-list">
+                <li class="info-item">
+                  <!-- Calendar Icon -->
+                  <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <span class="info-text">1 deadline dalam 7 hari</span>
+                </li>
+                <li class="info-item">
+                  <!-- Moon Icon -->
+                  <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                  </svg>
+                  <span class="info-text">Tidur cukup 3 hari terakhir</span>
+                </li>
+                <li class="info-item">
+                  <!-- Monitor Icon -->
+                  <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                  </svg>
+                  <span class="info-text">Distraksi 8 menit</span>
+                </li>
+                <li class="info-item">
+                  <!-- Eye Icon -->
+                  <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3.2"></circle>
+                  </svg>
+                  <span class="info-text">Kedipan normal</span>
+                </li>
+              </ul>
+
+              <!-- Accordion Extra Details -->
+              <div class="extra-details" id="extraDetails">
+                <li class="info-item">
+                  <!-- Activity / Heartbeat Icon -->
+                  <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                  </svg>
+                  <span class="info-text">Aktivitas fisik 45 menit</span>
+                </li>
+                <li class="info-item">
+                  <!-- Water Drop Icon -->
+                  <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                  </svg>
+                  <span class="info-text">Hidrasi tubuh 2.1 Liter</span>
+                </li>
+              </div>
+
+              <button class="btn-selengkapnya" id="btnSelengkapnya" aria-expanded="false">
+                <span id="btnSelengkapnyaText">Selengkapnya</span>
+                <svg class="icon-double-chevron" viewBox="0 0 16 16" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 4.5l5 4 5-4"></path>
+                  <path d="M3 8.5l5 4 5-4"></path>
+                </svg>
+              </button>
+            </div>
+          </section>
+
+          <!-- Column 2: Middle (Check In + Mood Pills) -->
+          <section class="col col-mid">
+            <div class="checkin-header">
+              <div class="checkin-title-wrapper">
+                <!-- Play circle badge -->
+                <svg class="checkin-badge" viewBox="0 0 24 24" fill="none" stroke="#0a5445" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                </svg>
+                <h2 class="checkin-title">Check In</h2>
+              </div>
+              <p class="checkin-sub">Bagaimana<br>perasaanmu hari ini?</p>
+            </div>
+
+            <div class="mood-list">
+              <!-- Happy Button -->
+              <button class="mood-btn mood-happy" data-mood="Bahagia / Senang" data-icon="😊">
+                <svg class="mood-icon" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="9" cy="9.5" r="1" fill="#111111"></circle>
+                  <circle cx="15" cy="9.5" r="1" fill="#111111"></circle>
+                  <path d="M8 14.5c1.5 2 4.5 2 8 0"></path>
+                </svg>
+                <span>Bahagia / Senang</span>
+                <span class="mood-check-badge">✓</span>
+              </button>
+
+              <!-- Neutral Button -->
+              <button class="mood-btn mood-neutral" data-mood="Netral" data-icon="😐">
+                <svg class="mood-icon" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="9" cy="9.5" r="1" fill="#111111"></circle>
+                  <circle cx="15" cy="9.5" r="1" fill="#111111"></circle>
+                  <line x1="8.5" y1="15" x2="15.5" y2="15"></line>
+                </svg>
+                <span>Netral</span>
+                <span class="mood-check-badge">✓</span>
+              </button>
+
+              <!-- Sad Button -->
+              <button class="mood-btn mood-sad" data-mood="Sedih" data-icon="😔">
+                <svg class="mood-icon" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="9" cy="9.5" r="1" fill="#111111"></circle>
+                  <circle cx="15" cy="9.5" r="1" fill="#111111"></circle>
+                  <path d="M15.5 16.5c-1.5-2-4.5-2-7 0"></path>
+                </svg>
+                <span>Sedih</span>
+                <span class="mood-check-badge">✓</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Column 3: Right (Breathing + Deadline Card) -->
+          <section class="col col-right">
+            <!-- Breathing Exercise Section -->
+            <div class="breathing-section" id="breathingSection">
+              <h2 class="breathing-title">Breathing</h2>
+              <div class="breathing-circle-wrapper">
+                <div class="breathing-pulse-aura"></div>
+                <div class="breathing-circle">
+                  <img src="assets/lungs.png" alt="Anatomical Lungs Outline" class="lungs-img" id="lungsImg">
+                </div>
+              </div>
+              <p class="breathing-prompt" id="breathingPrompt">Tekan Untuk Mulai</p>
+              <button class="breathing-play-btn" id="breathingBtn" aria-label="Mulai atau Hentikan Latihan Napas">
+                <!-- Dynamic SVG: Play Triangle or Pause bars -->
+                <svg id="breathingIcon" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round">
+                  <polygon class="play-triangle-icon" points="7 4 19 12 7 20 7 4"></polygon>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Deadline Terdekat Card -->
+            <div class="card-deadline">
+              <div class="deadline-header">
+                <div class="deadline-header-title">
+                  <!-- Calendar Icon -->
+                  <svg class="deadline-cal-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <span class="deadline-title">Deadline Terdekat</span>
+                </div>
+                <span class="task-count-badge" id="taskCountBadge">2 tugas</span>
+              </div>
+
+              <div class="deadline-list" id="deadlineList">
+                <!-- Item 1 -->
+                <div class="task-card">
+                  <span class="task-dot dot-red"></span>
+                  <div class="task-info">
+                    <span class="task-title">Laporan Praktikum</span>
+                    <span class="task-meta meta-red">Besok &middot; 23.59</span>
+                  </div>
+                  <button class="task-delete-btn" title="Hapus tugas" aria-label="Hapus">&times;</button>
+                </div>
+
+                <!-- Item 2 -->
+                <div class="task-card">
+                  <span class="task-dot dot-green"></span>
+                  <div class="task-info">
+                    <span class="task-title">Tugas Kalkulus 1 : Hal 39</span>
+                    <span class="task-meta meta-green">2 minggu lagi</span>
+                  </div>
+                  <button class="task-delete-btn" title="Hapus tugas" aria-label="Hapus">&times;</button>
+                </div>
+              </div>
+
+              <button class="btn-tambah" id="btnTambahTugas">
+                <!-- Plus in circle -->
+                <svg class="icon-plus-circle" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="16"></line>
+                  <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                <span>Tambah Tugas</span>
+              </button>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Dialog: Tambah Tugas -->
+  <div class="modal-overlay" id="taskModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Tambah Tugas Baru</h3>
+        <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+      </div>
+      <form id="taskForm">
+        <div class="form-group">
+          <label for="taskTitleInput">Nama Tugas</label>
+          <input type="text" id="taskTitleInput" class="form-input" placeholder="Contoh: Makalah Biologi" required>
+        </div>
+        <div class="form-group">
+          <label for="taskDueInput">Waktu Tenggat</label>
+          <input type="text" id="taskDueInput" class="form-input" placeholder="Contoh: 3 hari lagi · 17.00" required>
+        </div>
+        <div class="form-group">
+          <label>Prioritas / Status</label>
+          <div class="color-options">
+            <label class="color-radio-label">
+              <input type="radio" name="taskPriority" value="red" checked>
+              <span class="color-pill-sample dot-red"></span>
+              <span>Mendesak</span>
+            </label>
+            <label class="color-radio-label">
+              <input type="radio" name="taskPriority" value="yellow">
+              <span class="color-pill-sample dot-yellow"></span>
+              <span>Sedang</span>
+            </label>
+            <label class="color-radio-label">
+              <input type="radio" name="taskPriority" value="green">
+              <span class="color-pill-sample dot-green"></span>
+              <span>Santai</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="modalCancelBtn">Batal</button>
+          <button type="submit" class="btn-submit">Simpan Tugas</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toastNotification">
+    <span class="toast-icon" id="toastIcon">✨</span>
+    <span class="toast-message" id="toastMessage">Check-in berhasil disimpan!</span>
+  </div>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav">
+    <a href="#home" class="bnav-link active">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      </svg>
+      <span>Home</span>
+    </a>
+    <a href="#tren" class="bnav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+        <polyline points="17 6 23 6 23 12"></polyline>
+      </svg>
+      <span>Tren</span>
+    </a>
+    <a href="#deadline" class="bnav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+      <span>Deadline</span>
+    </a>
+    <a href="#fokus" class="bnav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+      <span>Fokus</span>
+    </a>
+    <a href="#settings" class="bnav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span>Settings</span>
+    </a>
+  </nav>
+
+  <!-- Interactive Logic & Micro-Animations Script -->
+  <script>
+    // 1. Toast Notification Helper
+    const toast = document.getElementById('toastNotification');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.getElementById('toastIcon');
+    let toastTimeout;
+
+    function showToast(msg, icon = '✨') {
+      toastMessage.textContent = msg;
+      toastIcon.textContent = icon;
+      toast.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3200);
+    }
+
+    // 2. Mobile Drawer Navigation Toggle
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    function toggleMobileMenu() {
+      const isOpen = sidebar.classList.toggle('open');
+      sidebarOverlay.classList.toggle('open', isOpen);
+    }
+
+    mobileMenuBtn?.addEventListener('click', toggleMobileMenu);
+    sidebarOverlay?.addEventListener('click', toggleMobileMenu);
+
+    // Sidebar navigation active state
+    document.querySelectorAll('.nav-link, .bnav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tab = link.getAttribute('data-tab') || link.getAttribute('href').replace('#', '');
+        document.querySelectorAll('.nav-link, .bnav-link').forEach(l => l.classList.remove('active'));
+        document.querySelectorAll(`[href="#${tab}"], [data-tab="${tab}"]`).forEach(l => l.classList.add('active'));
+        if (sidebar.classList.contains('open')) toggleMobileMenu();
+        showToast(`Membuka menu ${tab.charAt(0).toUpperCase() + tab.slice(1)}`, '📂');
+      });
+    });
+
+    // 3. Gauge Counter Entrance Animation
+    const gaugeValue = document.getElementById('gaugeValue');
+    const gaugeCircle = document.getElementById('gaugeCircle');
+
+    function animateGaugeCounter(target = 18) {
+      let current = 0;
+      gaugeValue.textContent = '0%';
+      const stepTime = 1200 / target;
+      const timer = setInterval(() => {
+        current++;
+        gaugeValue.textContent = current + '%';
+        if (current >= target) clearInterval(timer);
+      }, stepTime);
+    }
+
+    // Run on load
+    animateGaugeCounter(18);
+
+    // Refresh on gauge click
+    gaugeCircle?.addEventListener('click', () => {
+      gaugeCircle.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        gaugeCircle.style.transform = '';
+        animateGaugeCounter(18);
+        showToast('Skor kesehatan & fokus diperbarui!', '⚡');
+      }, 200);
+    });
+
+    // 4. "Kenapa skor ini?" Accordion Toggle ("Selengkapnya")
+    const btnSelengkapnya = document.getElementById('btnSelengkapnya');
+    const extraDetails = document.getElementById('extraDetails');
+    const btnSelengkapnyaText = document.getElementById('btnSelengkapnyaText');
+
+    btnSelengkapnya?.addEventListener('click', () => {
+      const isOpen = extraDetails.classList.toggle('open');
+      btnSelengkapnya.classList.toggle('expanded', isOpen);
+      btnSelengkapnya.setAttribute('aria-expanded', isOpen);
+      btnSelengkapnyaText.textContent = isOpen ? 'Tutup Detail' : 'Selengkapnya';
+    });
+
+    // 5. Mood Selection Animation & Feedback
+    const moodBtns = document.querySelectorAll('.mood-btn');
+    moodBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        moodBtns.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+
+        const moodName = btn.getAttribute('data-mood');
+        const moodIcon = btn.getAttribute('data-icon');
+        showToast(`Mood dicatat: ${moodName}! Jaga ritme harimu.`, moodIcon);
+      });
+    });
+
+    // 6. Interactive Breathing Cycle Animation (Inhale -> Hold -> Exhale)
+    const breathingBtn = document.getElementById('breathingBtn');
+    const breathingSection = document.getElementById('breathingSection');
+    const breathingPrompt = document.getElementById('breathingPrompt');
+    const breathingIcon = document.getElementById('breathingIcon');
+
+    let isBreathing = false;
+    let breathInterval = null;
+
+    const breathPhases = [
+      { text: 'Tarik Napas perlahan...', duration: 3200 },
+      { text: 'Tahan napas sejenak...', duration: 2000 },
+      { text: 'Hembuskan perlahan...', duration: 2800 }
+    ];
+
+    function runBreathingCycle() {
+      let phaseIdx = 0;
+      breathingPrompt.textContent = breathPhases[0].text;
+      
+      const cycleStep = () => {
+        if (!isBreathing) return;
+        phaseIdx = (phaseIdx + 1) % breathPhases.length;
+        breathingPrompt.style.opacity = '0';
+        setTimeout(() => {
+          breathingPrompt.textContent = breathPhases[phaseIdx].text;
+          breathingPrompt.style.opacity = '1';
+        }, 200);
+
+        breathInterval = setTimeout(cycleStep, breathPhases[phaseIdx].duration);
+      };
+
+      breathInterval = setTimeout(cycleStep, breathPhases[0].duration);
+    }
+
+    breathingBtn?.addEventListener('click', () => {
+      isBreathing = !isBreathing;
+
+      if (isBreathing) {
+        breathingSection.classList.add('active');
+        // Change icon to pause (two vertical bars)
+        breathingIcon.innerHTML = `
+          <rect x="6" y="4" width="4" height="16" rx="1.5" fill="#ffffff"></rect>
+          <rect x="14" y="4" width="4" height="16" rx="1.5" fill="#ffffff"></rect>
+        `;
+        showToast('Latihan pernapasan dimulai. Rilekskan pikiranmu.', '🌿');
+        runBreathingCycle();
+      } else {
+        breathingSection.classList.remove('active');
+        clearTimeout(breathInterval);
+        breathingPrompt.textContent = 'Tekan Untuk Mulai';
+        // Restore play triangle
+        breathingIcon.innerHTML = `
+          <polygon class="play-triangle-icon" points="7 4 19 12 7 20 7 4"></polygon>
+        `;
+        showToast('Latihan pernapasan selesai.', '✨');
+      }
+    });
+
+    // 7. Interactive Deadline Management (+ Tambah Tugas Modal & Delete)
+    const taskModal = document.getElementById('taskModal');
+    const btnTambahTugas = document.getElementById('btnTambahTugas');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
+    const taskForm = document.getElementById('taskForm');
+    const deadlineList = document.getElementById('deadlineList');
+    const taskCountBadge = document.getElementById('taskCountBadge');
+
+    function updateTaskCount() {
+      const count = deadlineList.querySelectorAll('.task-card').length;
+      taskCountBadge.textContent = `${count} tugas`;
+    }
+
+    function openModal() {
+      taskModal.classList.add('open');
+      document.getElementById('taskTitleInput').focus();
+    }
+
+    function closeModal() {
+      taskModal.classList.remove('open');
+      taskForm.reset();
+    }
+
+    btnTambahTugas?.addEventListener('click', openModal);
+    modalCloseBtn?.addEventListener('click', closeModal);
+    modalCancelBtn?.addEventListener('click', closeModal);
+    taskModal?.addEventListener('click', (e) => {
+      if (e.target === taskModal) closeModal();
+    });
+
+    // Submit New Task
+    taskForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = document.getElementById('taskTitleInput').value.trim();
+      const due = document.getElementById('taskDueInput').value.trim();
+      const priority = document.querySelector('input[name="taskPriority"]:checked').value;
+
+      if (!title || !due) return;
+
+      const dotClass = priority === 'red' ? 'dot-red' : (priority === 'yellow' ? 'dot-yellow' : 'dot-green');
+      const metaClass = priority === 'red' ? 'meta-red' : (priority === 'yellow' ? 'meta-yellow' : 'meta-green');
+
+      const newTask = document.createElement('div');
+      newTask.className = 'task-card';
+      newTask.innerHTML = `
+        <span class="task-dot ${dotClass}"></span>
+        <div class="task-info">
+          <span class="task-title">${escapeHtml(title)}</span>
+          <span class="task-meta ${metaClass}">${escapeHtml(due)}</span>
+        </div>
+        <button class="task-delete-btn" title="Hapus tugas" aria-label="Hapus">&times;</button>
+      `;
+
+      // Attach delete handler
+      newTask.querySelector('.task-delete-btn').addEventListener('click', () => {
+        newTask.style.transform = 'scale(0.8)';
+        newTask.style.opacity = '0';
+        setTimeout(() => {
+          newTask.remove();
+          updateTaskCount();
+          showToast('Tugas selesai / dihapus!', '🗑️');
+        }, 200);
+      });
+
+      deadlineList.appendChild(newTask);
+      updateTaskCount();
+      closeModal();
+      showToast(`Tugas "${title}" berhasil ditambahkan!`, '📝');
+    });
+
+    // Existing delete buttons
+    document.querySelectorAll('.task-delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.task-card');
+        card.style.transform = 'scale(0.8)';
+        card.style.opacity = '0';
+        setTimeout(() => {
+          card.remove();
+          updateTaskCount();
+          showToast('Tugas dihapus!', '🗑️');
+        }, 200);
+      });
+    });
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
