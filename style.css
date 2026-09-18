@@ -268,6 +268,17 @@ html, body {
   padding: 28px clamp(16px, 3.5vw, 40px) 36px;
 }
 
+/* Exact Mockup Adaptations per Tab */
+body[data-tab="tren"] .dashboard-container {
+  max-width: 1140px;
+  padding: 24px clamp(16px, 3vw, 40px) 28px;
+}
+
+body[data-tab="deadline"] .dashboard-container {
+  max-width: 1160px;
+  padding: 24px clamp(16px, 3vw, 36px) 32px;
+}
+
 /* ==========================================================================
    PAGE VIEWS & TRANSITIONS (SPA)
    ========================================================================== */
@@ -1815,14 +1826,14 @@ html, body {
    ========================================================================== */
 .deadline-container {
   width: 100%;
-  max-width: 1160px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
 .deadline-grid {
   display: grid;
-  grid-template-columns: 1fr 310px;
-  gap: 24px;
+  grid-template-columns: 1fr 320px;
+  gap: 28px;
   align-items: start;
 }
 
@@ -1840,8 +1851,8 @@ html, body {
 
 .deadline-card {
   background-color: #dfded9;
-  border-radius: 18px;
-  padding: 24px 26px;
+  border-radius: 20px;
+  padding: 24px 28px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
   position: relative;
   transition: transform 0.25s var(--transition-smooth), box-shadow 0.25s ease;
@@ -1852,8 +1863,8 @@ html, body {
 }
 
 .deadline-card-subtitle {
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 14.5px;
+  font-weight: 700;
   color: #585752;
 }
 
@@ -1864,25 +1875,25 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .calendar-legend {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
 }
 
 .clegend-text {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   color: #5c5b57;
 }
 
 .clegend-box {
-  width: 13px;
-  height: 13px;
-  border-radius: 3.5px;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
 }
 
 .cbox-green  { background-color: #a3d9b1; }
@@ -1892,16 +1903,18 @@ html, body {
 .calendar-tiles-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
+  gap: 13px;
 }
 
 .day-tile {
   background: #ffffff;
-  border-radius: 13px;
-  padding: 12px 6px 10px;
+  border-radius: 18px;
+  padding: 16px 10px 14px;
+  min-height: 112px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-between;
   cursor: pointer;
   border: 1.5px solid transparent;
   transition: transform 0.2s var(--transition-bounce), box-shadow 0.2s ease, border-color 0.2s ease;
@@ -1914,25 +1927,25 @@ html, body {
 }
 
 .tile-day {
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 600;
   color: #666666;
   margin-bottom: 2px;
 }
 
 .tile-date {
-  font-size: 21px;
+  font-size: 28px;
   font-weight: 800;
   color: #111111;
-  line-height: 1.15;
-  margin-bottom: 8px;
+  line-height: 1;
+  margin: 2px 0 8px;
 }
 
 .tile-pill {
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 700;
   border-radius: 9999px;
-  padding: 2px 7px;
+  padding: 4px 11px;
   line-height: 1.2;
   text-align: center;
   white-space: nowrap;
@@ -1940,17 +1953,18 @@ html, body {
 
 /* Tile color variants */
 .tile-green {
-  background: #f4fbf5;
-  border-color: #b3e2c2;
+  background: #edf7ee;
+  border-color: #a3d9b1;
 }
 .tile-green .tile-pill {
   background: transparent;
-  color: #1e824c;
+  color: #278e55;
+  padding: 3px 0;
 }
 
 .tile-yellow {
-  background: #fffdf5;
-  border-color: #fbe096;
+  background: #fdfbf2;
+  border-color: #f7ca65;
 }
 .tile-yellow .tile-pill {
   background: #f5b73d;
@@ -1958,8 +1972,8 @@ html, body {
 }
 
 .tile-red {
-  background: #fdf5f5;
-  border-color: #f8b4b4;
+  background: #fdf2f1;
+  border-color: #f28b82;
 }
 .tile-red .tile-pill {
   background: #e05353;
@@ -1968,31 +1982,46 @@ html, body {
 
 /* Selected Tile */
 .day-tile.selected {
-  transform: scale(1.04);
-  box-shadow: 0 0 0 2.5px var(--color-header), 0 8px 18px rgba(1, 51, 42, 0.2);
+  border: 2.5px solid #1a332a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(26, 51, 42, 0.2);
   z-index: 2;
 }
 
 /* --------------------------------------------------------------------------
    2. Ringkasan Beban Card
    -------------------------------------------------------------------------- */
+.card-ringkasan-beban {
+  padding: 24px 28px;
+}
+
 .ringkasan-beban-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 0;
   margin-top: 14px;
 }
 
 .beban-stat-col {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  padding: 0 20px;
+}
+
+.beban-stat-col:first-child {
+  padding-left: 0;
+}
+
+.beban-stat-col:not(:last-child) {
+  border-right: 1px solid #c8c7c2;
 }
 
 .beban-val {
-  font-size: clamp(22px, 2.2vw, 26px);
+  font-size: 30px;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.1;
+  margin-bottom: 2px;
 }
 
 .beban-total  { color: #111111; }
@@ -2001,7 +2030,7 @@ html, body {
 .beban-green  { color: #16a34a; }
 
 .beban-lbl {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: #5c5b57;
   font-weight: 500;
 }
@@ -2012,26 +2041,27 @@ html, body {
 .card-agenda-detail {
   display: flex;
   flex-direction: column;
+  padding: 26px 28px;
 }
 
 .agenda-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .agenda-date-title {
-  font-size: 15px;
+  font-size: 16.5px;
   font-weight: 700;
   color: #111111;
   margin: 0;
 }
 
 .agenda-badge-status {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
-  padding: 3px 12px;
+  padding: 4px 14px;
   border-radius: 9999px;
   color: #ffffff;
 }
@@ -2043,14 +2073,14 @@ html, body {
 .agenda-tasks-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 13px;
+  margin-bottom: 18px;
 }
 
 .agenda-task-item {
   background: #ffffff;
-  border-radius: 10px;
-  padding: 12px 14px;
+  border-radius: 14px;
+  padding: 15px 18px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -2061,15 +2091,15 @@ html, body {
 }
 
 .agenda-task-name {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #111111;
   display: block;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
 .agenda-task-time {
-  font-size: 10.5px;
+  font-size: 12px;
   color: #666666;
   font-weight: 500;
   display: block;
@@ -2077,33 +2107,33 @@ html, body {
 
 .agenda-empty-state {
   background: rgba(255, 255, 255, 0.65);
-  border-radius: 10px;
-  padding: 20px 14px;
+  border-radius: 14px;
+  padding: 28px 16px;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .agenda-empty-state .empty-icon {
-  font-size: 24px;
+  font-size: 26px;
 }
 
 .agenda-empty-state .empty-text {
-  font-size: 11px;
+  font-size: 12px;
   color: #555450;
   line-height: 1.45;
 }
 
 .agenda-advice-box {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .agenda-load-score {
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.4;
-  margin-bottom: 3px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  margin-bottom: 4px;
 }
 
 .load-heavy  { color: #dc2626; }
@@ -2111,18 +2141,19 @@ html, body {
 .load-light  { color: #16a34a; }
 
 .agenda-sub-hint {
-  font-size: 10px;
+  font-size: 11px;
   color: #6c6a65;
 }
 
 .btn-reschedule {
   width: 100%;
+  height: 48px;
   background-color: var(--color-header);
   color: #ffffff;
   border: none;
-  border-radius: 9px;
-  padding: 10px 14px;
-  font-size: 12px;
+  border-radius: 11px;
+  padding: 0 16px;
+  font-size: 13px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -2145,21 +2176,21 @@ html, body {
 .card-terpadat-alert {
   background-color: #fee9d7;
   border: 1px solid #fed7aa;
-  border-radius: 12px;
-  padding: 13px 15px;
+  border-radius: 14px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   color: #b45309;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
   line-height: 1.4;
   box-shadow: 0 2px 8px rgba(180, 83, 9, 0.06);
 }
 
 .terpadat-icon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   stroke: #b45309;
 }
