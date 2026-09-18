@@ -59,7 +59,7 @@ html, body {
    SIDEBAR (DESKTOP)
    ========================================================================== */
 .sidebar {
-  width: 135px;
+  width: 145px;
   background-color: var(--color-sidebar);
   display: flex;
   flex-direction: column;
@@ -76,7 +76,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 20px;
+  margin-top: 22px;
   cursor: pointer;
   transition: transform 0.2s ease;
 }
@@ -86,7 +86,7 @@ html, body {
 }
 
 .sidebar-logo-img {
-  width: 62px;
+  width: 66px;
   height: auto;
   object-fit: contain;
   display: block;
@@ -99,10 +99,10 @@ html, body {
 }
 
 .sidebar-logo-text {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   color: var(--color-logo-green);
-  letter-spacing: 0.8px;
+  letter-spacing: 0.9px;
   margin-top: 8px;
   text-align: center;
 }
@@ -111,19 +111,19 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 42px;
+  margin-top: 44px;
   width: 100%;
-  gap: 4px;
+  gap: 16px;
 }
 
 .nav-link {
   text-decoration: none;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: #71706b;
   text-align: center;
   width: 100%;
-  padding: 10px 0;
+  padding: 6px 0;
   position: relative;
   display: block;
   transition: color 0.2s ease, transform 0.2s ease;
@@ -168,12 +168,12 @@ html, body {
 
 /* Top Header */
 .top-header {
-  height: 77px;
+  height: 80px;
   background-color: var(--color-header);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 clamp(18px, 3vw, 36px);
+  padding: 0 clamp(20px, 3.5vw, 48px);
   flex-shrink: 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
   z-index: 30;
@@ -187,9 +187,9 @@ html, body {
 
 .header-title {
   color: #ffffff;
-  font-size: clamp(20px, 2.2vw, 24px);
+  font-size: clamp(22px, 2.4vw, 26px);
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: -0.2px;
   margin: 0;
 }
 
@@ -270,8 +270,8 @@ body[data-tab="tren"] .header-right {
 }
 
 body[data-tab="tren"] .dashboard-container {
-  padding-top: 18px;
-  padding-bottom: 22px;
+  padding: 24px clamp(16px, 3vw, 40px) 28px;
+  max-width: 1140px;
 }
 
 /* ==========================================================================
@@ -1347,24 +1347,24 @@ body[data-tab="tren"] .dashboard-container {
    ========================================================================== */
 .tren-container {
   width: 100%;
-  max-width: 1060px;
+  max-width: 1080px;
   margin: 0 auto;
 }
 
 .tren-grid {
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: 1fr 300px;
   grid-template-rows: auto auto;
-  gap: 22px;
+  gap: 28px;
   align-items: stretch;
 }
 
 /* Generic Tren Card */
 .tren-card {
   background-color: #eeece9;
-  border-radius: 16px;
-  padding: 22px 24px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  border-radius: 18px;
+  padding: 26px 28px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -1377,10 +1377,10 @@ body[data-tab="tren"] .dashboard-container {
 }
 
 .tren-card-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--color-header);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   letter-spacing: -0.2px;
 }
 
@@ -1396,20 +1396,20 @@ body[data-tab="tren"] .dashboard-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .chart-subtitle {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: #6e6d68;
+  color: #6a6862;
 }
 
 .chart-canvas-area {
   position: relative;
   width: 100%;
-  height: 195px;
-  margin: 4px 0 10px;
+  height: 205px;
+  margin: 6px 0 14px;
 }
 
 .trend-svg {
@@ -1420,30 +1420,30 @@ body[data-tab="tren"] .dashboard-container {
 }
 
 .chart-y-axis text {
-  font-size: 10px;
-  fill: #888680;
+  font-size: 10.5px;
+  fill: #807e78;
   font-family: inherit;
   font-weight: 500;
 }
 
 .trend-polyline {
   stroke: var(--color-header);
-  stroke-width: 2.6px;
+  stroke-width: 2.8px;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .marker-group .marker-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  fill: #222222;
+  fill: #111111;
   letter-spacing: 0.1px;
 }
 
 .marker-group .marker-dot {
   fill: var(--color-header);
   stroke: #ffffff;
-  stroke-width: 1.2px;
+  stroke-width: 1.4px;
 }
 
 .chart-point {
@@ -1455,7 +1455,7 @@ body[data-tab="tren"] .dashboard-container {
 
 .chart-point:hover {
   opacity: 1;
-  r: 6px;
+  r: 6.5px;
   fill: var(--color-header);
   stroke: #ffffff;
   stroke-width: 2px;
@@ -1466,9 +1466,9 @@ body[data-tab="tren"] .dashboard-container {
   position: absolute;
   background-color: var(--color-header);
   color: #ffffff;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  font-size: 11.5px;
   font-weight: 600;
   pointer-events: none;
   transform: translate(-50%, -100%);
@@ -1488,21 +1488,21 @@ body[data-tab="tren"] .dashboard-container {
 .chart-alert-pill {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   background-color: #fdede2;
   color: #a8501e;
   border-radius: 9999px;
-  padding: 5px 14px;
-  font-size: 11px;
+  padding: 6px 16px;
+  font-size: 12px;
   font-weight: 600;
   width: fit-content;
 }
 
 .alert-pill-icon {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
-  fill: #a8501e;
+  fill: #111111;
 }
 
 /* --------------------------------------------------------------------------
@@ -1518,20 +1518,24 @@ body[data-tab="tren"] .dashboard-container {
   flex-direction: column;
   justify-content: space-between;
   flex: 1;
-  margin-top: 4px;
-  gap: 12px;
+  margin-top: 6px;
+  gap: 16px;
 }
 
 .ringkasan-stat {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 25px;
   font-weight: 800;
   line-height: 1.15;
+}
+
+#statAvgScore {
+  font-size: 32px;
 }
 
 .color-amber { color: #d97706; }
@@ -1540,8 +1544,8 @@ body[data-tab="tren"] .dashboard-container {
 .color-dark { color: #111111; }
 
 .stat-label {
-  font-size: 11px;
-  color: #6e6d68;
+  font-size: 12px;
+  color: #666560;
   font-weight: 500;
 }
 
@@ -1551,7 +1555,7 @@ body[data-tab="tren"] .dashboard-container {
 .card-heatmap-wrap {
   display: flex;
   flex-direction: row;
-  gap: 28px;
+  gap: 32px;
   align-items: stretch;
 }
 
@@ -1572,23 +1576,23 @@ body[data-tab="tren"] .dashboard-container {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  margin-top: 4px;
+  margin-top: 5px;
 }
 
 .heatmap-header-row {
   display: grid;
-  grid-template-columns: 28px repeat(8, 23px);
+  grid-template-columns: 30px repeat(8, 24px);
   gap: 5px;
   align-items: center;
   margin-bottom: 2px;
 }
 
 .hm-corner {
-  width: 28px;
+  width: 30px;
 }
 
 .hm-th {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   color: #444444;
   text-align: center;
@@ -1602,13 +1606,13 @@ body[data-tab="tren"] .dashboard-container {
 
 .hm-row {
   display: grid;
-  grid-template-columns: 28px repeat(8, 23px);
+  grid-template-columns: 30px repeat(8, 24px);
   gap: 5px;
   align-items: center;
 }
 
 .hm-day {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 500;
   color: #444444;
 }
@@ -1618,8 +1622,8 @@ body[data-tab="tren"] .dashboard-container {
 }
 
 .hm-cell {
-  width: 23px;
-  height: 20px;
+  width: 24px;
+  height: 21px;
   border-radius: 5px;
   cursor: pointer;
   transition: transform 0.18s var(--transition-bounce), filter 0.18s ease;
@@ -1641,17 +1645,17 @@ body[data-tab="tren"] .dashboard-container {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .ket-point {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: flex-start;
 }
 
 .ket-bullet {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.2;
   color: #111111;
   flex-shrink: 0;
@@ -1661,20 +1665,20 @@ body[data-tab="tren"] .dashboard-container {
 .ket-text-block {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .ket-title {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #111111;
   letter-spacing: -0.1px;
 }
 
 .ket-desc {
-  font-size: 10px;
+  font-size: 11px;
   color: #3b3a36;
-  line-height: 1.42;
+  line-height: 1.45;
 }
 
 /* Legend */
@@ -1682,21 +1686,21 @@ body[data-tab="tren"] .dashboard-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
   margin-top: 14px;
   padding-top: 2px;
 }
 
 .legend-text {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   color: #555450;
 }
 
 .legend-box {
-  width: 16px;
-  height: 12px;
-  border-radius: 3px;
+  width: 18px;
+  height: 14px;
+  border-radius: 4px;
   cursor: help;
 }
 
@@ -1713,9 +1717,9 @@ body[data-tab="tren"] .dashboard-container {
 }
 
 .kesimpulan-paragraph {
-  font-size: 12px;
+  font-size: 13.5px;
   color: #242424;
-  line-height: 1.65;
+  line-height: 1.7;
   font-weight: 500;
 }
 
