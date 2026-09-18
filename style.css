@@ -270,8 +270,8 @@ html, body {
 
 /* Exact Mockup Adaptations per Tab */
 body[data-tab="tren"] .dashboard-container {
-  max-width: 1140px;
-  padding: 24px clamp(16px, 3vw, 40px) 28px;
+  max-width: 1160px;
+  padding: 20px clamp(16px, 3vw, 36px) 24px;
 }
 
 body[data-tab="deadline"] .dashboard-container {
@@ -1346,24 +1346,24 @@ body[data-tab="deadline"] .dashboard-container {
    ========================================================================== */
 .tren-container {
   width: 100%;
-  max-width: 1080px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
 .tren-grid {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr 310px;
   grid-template-rows: auto auto;
-  gap: 28px;
+  gap: 20px;
   align-items: stretch;
 }
 
 /* Generic Tren Card */
 .tren-card {
   background-color: #eeece9;
-  border-radius: 18px;
-  padding: 26px 28px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+  border-radius: 20px;
+  padding: 22px 26px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -1376,10 +1376,10 @@ body[data-tab="deadline"] .dashboard-container {
 }
 
 .tren-card-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--color-header);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   letter-spacing: -0.2px;
 }
 
@@ -1387,7 +1387,7 @@ body[data-tab="deadline"] .dashboard-container {
    1. Card: 14 Hari Terakhir Line Chart
    -------------------------------------------------------------------------- */
 .card-chart-14d {
-  min-height: 360px;
+  min-height: auto;
   justify-content: space-between;
 }
 
@@ -1395,7 +1395,7 @@ body[data-tab="deadline"] .dashboard-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .chart-subtitle {
@@ -1407,8 +1407,8 @@ body[data-tab="deadline"] .dashboard-container {
 .chart-canvas-area {
   position: relative;
   width: 100%;
-  height: 260px;
-  margin: 6px 0 14px;
+  height: 185px;
+  margin: 4px 0 10px;
 }
 
 .trend-svg {
@@ -1419,7 +1419,7 @@ body[data-tab="deadline"] .dashboard-container {
 }
 
 .chart-y-axis text {
-  font-size: 10.5px;
+  font-size: 10px;
   fill: #807e78;
   font-family: inherit;
   font-weight: 500;
@@ -1491,8 +1491,8 @@ body[data-tab="deadline"] .dashboard-container {
   background-color: #fdede2;
   color: #a8501e;
   border-radius: 9999px;
-  padding: 6px 16px;
-  font-size: 12px;
+  padding: 5px 14px;
+  font-size: 11.5px;
   font-weight: 600;
   width: fit-content;
 }
@@ -1508,7 +1508,7 @@ body[data-tab="deadline"] .dashboard-container {
    2. Card: Ringkasan
    -------------------------------------------------------------------------- */
 .card-ringkasan {
-  min-height: 360px;
+  min-height: auto;
   display: flex;
   flex-direction: column;
 }
@@ -1518,9 +1518,9 @@ body[data-tab="deadline"] .dashboard-container {
   flex-direction: column;
   justify-content: space-between;
   flex: 1;
-  margin-top: 10px;
-  margin-bottom: 6px;
-  gap: 16px;
+  margin-top: 6px;
+  margin-bottom: 4px;
+  gap: 12px;
 }
 
 .ringkasan-stat {
@@ -1530,13 +1530,13 @@ body[data-tab="deadline"] .dashboard-container {
 }
 
 .stat-value {
-  font-size: 25px;
+  font-size: 24px;
   font-weight: 800;
   line-height: 1.15;
 }
 
 #statAvgScore {
-  font-size: 32px;
+  font-size: 30px;
 }
 
 .color-amber { color: #d97706; }
@@ -1545,7 +1545,7 @@ body[data-tab="deadline"] .dashboard-container {
 .color-dark { color: #111111; }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 11.5px;
   color: #666560;
   font-weight: 500;
 }
@@ -1556,7 +1556,7 @@ body[data-tab="deadline"] .dashboard-container {
 .card-heatmap-wrap {
   display: flex;
   flex-direction: row;
-  gap: 32px;
+  gap: 26px;
   align-items: stretch;
 }
 
@@ -1576,13 +1576,13 @@ body[data-tab="deadline"] .dashboard-container {
 .heatmap-matrix-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-top: 5px;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 .heatmap-header-row {
   display: grid;
-  grid-template-columns: 30px repeat(8, 24px);
+  grid-template-columns: 30px repeat(8, 25px);
   gap: 5px;
   align-items: center;
   margin-bottom: 2px;
@@ -1602,18 +1602,18 @@ body[data-tab="deadline"] .dashboard-container {
 .heatmap-rows {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 .hm-row {
   display: grid;
-  grid-template-columns: 30px repeat(8, 24px);
+  grid-template-columns: 30px repeat(8, 25px);
   gap: 5px;
   align-items: center;
 }
 
 .hm-day {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 500;
   color: #444444;
 }
@@ -1623,8 +1623,8 @@ body[data-tab="deadline"] .dashboard-container {
 }
 
 .hm-cell {
-  width: 24px;
-  height: 21px;
+  width: 25px;
+  height: 20px;
   border-radius: 5px;
   cursor: pointer;
   transition: transform 0.18s var(--transition-bounce), filter 0.18s ease;
@@ -1645,18 +1645,18 @@ body[data-tab="deadline"] .dashboard-container {
 .keterangan-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 3px;
+  gap: 8px;
+  margin-top: 2px;
 }
 
 .ket-point {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: flex-start;
 }
 
 .ket-bullet {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.2;
   color: #111111;
   flex-shrink: 0;
@@ -1666,20 +1666,20 @@ body[data-tab="deadline"] .dashboard-container {
 .ket-text-block {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .ket-title {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: #111111;
   letter-spacing: -0.1px;
 }
 
 .ket-desc {
-  font-size: 11px;
+  font-size: 10.5px;
   color: #3b3a36;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 /* Legend */
@@ -1687,20 +1687,20 @@ body[data-tab="deadline"] .dashboard-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 7px;
+  margin-top: 10px;
   padding-top: 2px;
 }
 
 .legend-text {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 500;
   color: #555450;
 }
 
 .legend-box {
-  width: 18px;
-  height: 14px;
+  width: 17px;
+  height: 13px;
   border-radius: 4px;
   cursor: help;
 }
@@ -1718,9 +1718,9 @@ body[data-tab="deadline"] .dashboard-container {
 }
 
 .kesimpulan-paragraph {
-  font-size: 13.5px;
+  font-size: 12.5px;
   color: #242424;
-  line-height: 1.7;
+  line-height: 1.6;
   font-weight: 500;
 }
 
