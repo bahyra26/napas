@@ -1387,7 +1387,7 @@ body[data-tab="deadline"] .dashboard-container {
    1. Card: 14 Hari Terakhir Line Chart
    -------------------------------------------------------------------------- */
 .card-chart-14d {
-  min-height: auto;
+  min-height: 380px;
   justify-content: space-between;
 }
 
@@ -1395,7 +1395,7 @@ body[data-tab="deadline"] .dashboard-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .chart-subtitle {
@@ -1407,8 +1407,8 @@ body[data-tab="deadline"] .dashboard-container {
 .chart-canvas-area {
   position: relative;
   width: 100%;
-  height: 185px;
-  margin: 4px 0 10px;
+  height: 275px;
+  margin: 6px 0 14px;
 }
 
 .trend-svg {
@@ -1508,9 +1508,10 @@ body[data-tab="deadline"] .dashboard-container {
    2. Card: Ringkasan
    -------------------------------------------------------------------------- */
 .card-ringkasan {
-  min-height: auto;
+  min-height: 380px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
 }
 
 .ringkasan-items {
@@ -1518,9 +1519,9 @@ body[data-tab="deadline"] .dashboard-container {
   flex-direction: column;
   justify-content: space-between;
   flex: 1;
-  margin-top: 6px;
-  margin-bottom: 4px;
-  gap: 12px;
+  margin-top: 10px;
+  margin-bottom: 6px;
+  gap: 18px;
 }
 
 .ringkasan-stat {
