@@ -253,25 +253,19 @@ html, body {
   50% { transform: scale(1.3); opacity: 0.7; }
 }
 
+.header-right {
+  display: none;
+}
+
 /* ==========================================================================
    DASHBOARD GRID
    ========================================================================== */
 .dashboard-container {
   flex: 1;
   width: 100%;
-  max-width: 1240px;
+  max-width: 1060px;
   margin: 0 auto;
-  padding: clamp(20px, 3vh, 36px) clamp(16px, 3vw, 40px);
-}
-
-/* Exact Mockup Adaptation for Tren Tab */
-body[data-tab="tren"] .header-right {
-  display: none;
-}
-
-body[data-tab="tren"] .dashboard-container {
-  padding: 24px clamp(16px, 3vw, 40px) 28px;
-  max-width: 1140px;
+  padding: 28px clamp(16px, 3.5vw, 40px) 36px;
 }
 
 /* ==========================================================================
@@ -304,10 +298,9 @@ body[data-tab="tren"] .dashboard-container {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(210px, 240px) minmax(200px, 230px) minmax(250px, 290px);
-  justify-content: center;
-  column-gap: clamp(28px, 4vw, 65px);
-  row-gap: 32px;
+  grid-template-columns: 245px 240px 295px;
+  justify-content: space-between;
+  gap: 32px;
   align-items: start;
 }
 
@@ -339,8 +332,8 @@ body[data-tab="tren"] .dashboard-container {
 .col-left {
   align-items: center;
   width: 100%;
-  max-width: 240px;
-  margin: 0 auto;
+  max-width: 245px;
+  margin: 0;
 }
 
 /* Circular Gauge Card */
@@ -352,11 +345,11 @@ body[data-tab="tren"] .dashboard-container {
 }
 
 .gauge-circle {
-  width: clamp(180px, 18vw, 204px);
-  height: clamp(180px, 18vw, 204px);
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
   background-color: var(--color-gauge-bg);
-  box-shadow: 0 0 0 8px var(--color-gauge-ring), 0 8px 24px rgba(94, 187, 99, 0.25);
+  box-shadow: 0 0 0 9px var(--color-gauge-ring), 0 8px 24px rgba(94, 187, 99, 0.25);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -388,8 +381,8 @@ body[data-tab="tren"] .dashboard-container {
 
 .gauge-percent {
   color: #ffffff;
-  font-size: clamp(38px, 4vw, 44px);
-  font-weight: 700;
+  font-size: 46px;
+  font-weight: 800;
   line-height: 1;
   letter-spacing: -0.5px;
   transition: transform 0.2s ease;
@@ -397,7 +390,7 @@ body[data-tab="tren"] .dashboard-container {
 
 .gauge-trend {
   color: var(--color-gauge-subtext);
-  font-size: clamp(10px, 1.1vw, 11px);
+  font-size: 11.5px;
   font-weight: 700;
   margin-top: 6px;
   letter-spacing: -0.1px;
@@ -408,7 +401,7 @@ body[data-tab="tren"] .dashboard-container {
 
 .gauge-status {
   margin-top: 14px;
-  font-size: 14px;
+  font-size: 15px;
   text-align: center;
   transition: transform 0.2s ease;
 }
@@ -428,8 +421,8 @@ body[data-tab="tren"] .dashboard-container {
   background-color: var(--color-card-bg);
   border-radius: 20px;
   width: 100%;
-  margin-top: 14px;
-  padding: 18px 18px 14px 18px;
+  margin-top: 16px;
+  padding: 20px 20px 16px 20px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
@@ -443,7 +436,7 @@ body[data-tab="tren"] .dashboard-container {
 
 .card-title {
   color: var(--color-card-title);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1px;
   margin-bottom: 4px;
@@ -453,14 +446,14 @@ body[data-tab="tren"] .dashboard-container {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 10px 0;
+  gap: 12px;
+  margin: 12px 0;
 }
 
 .info-item {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   transition: transform 0.15s ease;
 }
 
@@ -469,8 +462,8 @@ body[data-tab="tren"] .dashboard-container {
 }
 
 .info-icon {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   stroke: var(--color-text-dark);
   transition: transform 0.2s ease;
@@ -481,11 +474,11 @@ body[data-tab="tren"] .dashboard-container {
 }
 
 .info-text {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--color-text-body);
   letter-spacing: -0.1px;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 /* Extra Details Accordion inside Kenapa Card */
@@ -507,13 +500,13 @@ body[data-tab="tren"] .dashboard-container {
 
 .btn-selengkapnya {
   width: 100%;
-  max-width: 172px;
-  height: 27px;
+  max-width: 180px;
+  height: 29px;
   background-color: var(--color-btn-dark);
   color: #ffffff;
   border: none;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -552,13 +545,13 @@ body[data-tab="tren"] .dashboard-container {
 .col-mid {
   align-items: flex-start;
   width: 100%;
-  max-width: 220px;
-  margin: 0 auto;
-  padding-top: 12px;
+  max-width: 240px;
+  margin: 0;
+  padding-top: 10px;
 }
 
 .checkin-header {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .checkin-title-wrapper {
@@ -580,14 +573,14 @@ body[data-tab="tren"] .dashboard-container {
 
 .checkin-title {
   color: var(--color-primary-green);
-  font-size: clamp(17px, 1.8vw, 19px);
-  font-weight: 700;
+  font-size: 21px;
+  font-weight: 800;
   letter-spacing: 0.1px;
 }
 
 .checkin-sub {
-  color: #6a6b66;
-  font-size: clamp(13px, 1.3vw, 14px);
+  color: #444444;
+  font-size: 14.5px;
   font-weight: 600;
   line-height: 1.35;
   margin-top: 14px;
@@ -597,21 +590,21 @@ body[data-tab="tren"] .dashboard-container {
 .mood-list {
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: 12px;
   width: 100%;
 }
 
 .mood-btn {
   width: 100%;
-  height: 42px;
-  border-radius: 22px;
+  height: 50px;
+  border-radius: 9999px;
   border: 2px solid transparent;
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  gap: 12px;
+  padding: 0 18px;
+  gap: 14px;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #111111;
   cursor: pointer;
@@ -682,8 +675,8 @@ body[data-tab="tren"] .dashboard-container {
 .col-right {
   align-items: center;
   width: 100%;
-  max-width: 280px;
-  margin: 0 auto;
+  max-width: 295px;
+  margin: 0;
 }
 
 .breathing-section {
@@ -695,8 +688,8 @@ body[data-tab="tren"] .dashboard-container {
 
 .breathing-title {
   color: var(--color-primary-green);
-  font-size: clamp(19px, 2vw, 22px);
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   text-align: center;
   margin-bottom: 14px;
   letter-spacing: 0.1px;
@@ -712,8 +705,8 @@ body[data-tab="tren"] .dashboard-container {
 
 .breathing-pulse-aura {
   position: absolute;
-  width: 191px;
-  height: 191px;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(14, 107, 86, 0.18) 0%, rgba(93, 187, 99, 0) 70%);
   opacity: 0;
@@ -734,8 +727,8 @@ body[data-tab="tren"] .dashboard-container {
 }
 
 .breathing-circle {
-  width: clamp(170px, 17vw, 191px);
-  height: clamp(170px, 17vw, 191px);
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
   background-color: var(--color-breathing-circle);
   display: flex;
@@ -747,7 +740,7 @@ body[data-tab="tren"] .dashboard-container {
 }
 
 .lungs-img {
-  width: clamp(82px, 8.5vw, 95px);
+  width: 90px;
   height: auto;
   object-fit: contain;
   display: block;
@@ -825,7 +818,7 @@ body[data-tab="tren"] .dashboard-container {
   background-color: var(--color-card-bg);
   border-radius: 20px;
   margin-top: 24px;
-  padding: 16px 14px 14px 14px;
+  padding: 20px 20px 18px 20px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
@@ -841,36 +834,31 @@ body[data-tab="tren"] .dashboard-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .deadline-header-title {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
 }
 
 .deadline-cal-icon {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   stroke: var(--color-card-title);
   flex-shrink: 0;
 }
 
 .deadline-title {
   color: var(--color-card-title);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1px;
 }
 
 .task-count-badge {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--color-card-title);
-  background: rgba(0, 0, 0, 0.06);
-  padding: 2px 8px;
-  border-radius: 10px;
+  display: none;
 }
 
 .deadline-list {
