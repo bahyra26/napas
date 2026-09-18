@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>NAPAS v2 — Backend Testing Console (Revised)</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; padding: 24px; max-width: 960px; margin: 0 auto; }
+    .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); border: 1px solid #334155; }
+    h1, h2, h3 { color: #38bdf8; margin-top: 0; }
+    input, button { padding: 10px 14px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 14px; }
+    button { background: #2563eb; cursor: pointer; border: none; font-weight: bold; transition: background 0.2s; margin-right: 6px; margin-bottom: 6px; }
+    button:hover { background: #1d4ed8; }
+    .btn-orange { background: #ea580c; }
+    .btn-orange:hover { background: #c2410c; }
+    .btn-red { background: #dc2626; }
+    .btn-red:hover { background: #b91c1c; }
+    .btn-teal { background: #0d9488; }
+    .btn-teal:hover { background: #0f766e; }
+    .btn-gray { background: #475569; }
+    .btn-gray:hover { background: #334155; }
+    .gauge { font-size: 52px; font-weight: bold; margin: 10px 0; }
+    .chip { display: inline-block; padding: 6px 14px; border-radius: 16px; background: #334155; margin: 4px; font-size: 13px; color: #e2e8f0; border: 1px solid #475569; }
+    .chip-missing { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+    .badge { padding: 6px 14px; border-radius: 20px; font-weight: bold; text-transform: uppercase; font-size: 14px; display: inline-block; }
+    .hijau { color: #4ade80; background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74, 222, 128, 0.3); }
+    .kuning { color: #facc15; background: rgba(250, 204, 21, 0.15); border: 1px solid rgba(250, 204, 21, 0.3); }
+    .oranye { color: #fb923c; background: rgba(251, 146, 60, 0.15); border: 1px solid rgba(251, 146, 60, 0.3); }
+    .merah { color: #f87171; background: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248, 113, 113, 0.3); }
+    .subscores { display: flex; gap: 12px; flex-wrap: wrap; margin: 15px 0; }
+    .subscore-box { background: #090d16; padding: 10px 16px; border-radius: 8px; border: 1px solid #1e293b; flex: 1; min-width: 130px; }
+    .subscore-box .label { font-size: 12px; color: #94a3b8; }
+    .subscore-box .val { font-size: 20px; font-weight: bold; color: #38bdf8; }
+    .status-bar { display: flex; justify-content: space-between; align-items: center; background: #090d16; padding: 10px 16px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 20px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>📡 NAPAS v2 — Testing Console Backend (Revised)</h1>
+  <div class="status-bar">
+    <span>Backend Health: <b id="healthStatus" style="color: #94a3b8;">Memeriksa...</b></span>
+    <span>Database Supabase: <b id="dbStatus" style="color: #94a3b8;">Memeriksa...</b></span>
+    <button onclick="checkHealth()" style="padding:4px 10px; font-size:12px;" class="btn-gray">Refresh Health</button>
+  </div>
+
+  <div class="card">
+    <label><b>User ID (dari Supabase / Seed):</b></label><br/><br/>
+    <input type="text" id="userId" style="width: 360px;" placeholder="Masukkan UUID User...">
+    <button onclick="fetchTodayIndex()">Hitung Index Hari Ini</button>
+    <button onclick="fetchHistory()" class="btn-teal">Lihat History 7 Hari</button>
+    <button onclick="fetchInterventions()" class="btn-teal">Statistik Intervensi</button>
+    <br/><br/>
+    <label><b>Mode Panggung (Simulasi Cepat &lt; 2 Detik):</b></label><br/><br/>
+    <button onclick="triggerSimulate('oranye')" class="btn-orange">⚡ Simulasi ORANYE</button>
+    <button onclick="triggerSimulate('merah')" class="btn-red">🚨 Simulasi MERAH</button>
+    <button onclick="triggerSimulate('reset')" class="btn-gray">🔄 Reset Simulasi</button>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none;">
+    <h2>Hasil Evaluasi Burnout Index</h2>
+    <div>Status Zona: <span id="zonaBadge" class="badge"></span></div>
+    <div class="gauge" id="indexValue">0.0</div>
+
+    <div class="subscores">
+      <div class="subscore-box">
+        <div class="label">Load Score (35%)</div>
+        <div class="val" id="valLoad">-</div>
+      </div>
+      <div class="subscore-box">
+        <div class="label">Stress Score (35%)</div>
+        <div class="val" id="valStress">-</div>
+      </div>
+      <div class="subscore-box">
+        <div class="label">Distraksi (20%)</div>
+        <div class="val" id="valDist">-</div>
+      </div>
+      <div class="subscore-box">
+        <div class="label">Check-In Subjektif (10%)</div>
+        <div class="val" id="valCheck">-</div>
+      </div>
+      <div class="subscore-box">
+        <div class="label">Trend Mod (+10)</div>
+        <div class="val" id="valTrend" style="color: #fb923c;">-</div>
+      </div>
+    </div>
+
+    <h3>Explainable Chips (Mengapa skor ini muncul?):</h3>
+    <div id="chipsContainer"></div>
+  </div>
+
+  <div class="card" id="historyCard" style="display:none;">
+    <h2 id="historyTitle">Riwayat Data</h2>
+    <pre id="historyJson" style="background:#090d16; padding:12px; border-radius:8px; overflow-x:auto; color: #a5f3fc;"></pre>
+  </div>
+
+  <script>
+    const API = "http://localhost:8000";
+
+    async function checkHealth() {
+      try {
+        const res = await fetch(`${API}/health`);
+        const d = await res.json();
+        const hs = document.getElementById("healthStatus");
+        const ds = document.getElementById("dbStatus");
+        hs.innerText = d.status.toUpperCase();
+        hs.style.color = d.status === "healthy" ? "#4ade80" : "#f87171";
+        ds.innerText = d.db.toUpperCase();
+        ds.style.color = d.db === "connected" ? "#4ade80" : "#f87171";
+      } catch (err) {
+        document.getElementById("healthStatus").innerText = "OFFLINE";
+        document.getElementById("healthStatus").style.color = "#f87171";
+        document.getElementById("dbStatus").innerText = "OFFLINE";
+      }
+    }
+    checkHealth();
+
+    async function fetchTodayIndex() {
+      const uid = document.getElementById("userId").value.trim();
+      if (!uid) return alert("Masukkan User ID terlebih dahulu!");
+      try {
+        const res = await fetch(`${API}/index/today?user_id=${uid}`);
+        if (!res.ok) throw new Error(await res.text());
+        const d = await res.json();
+        
+        document.getElementById("resultCard").style.display = "block";
+        document.getElementById("indexValue").innerText = d.index;
+        
+        const badge = document.getElementById("zonaBadge");
+        badge.innerText = d.zona.toUpperCase();
+        badge.className = "badge " + d.zona;
+
+        document.getElementById("valLoad").innerText = d.load_score !== null ? d.load_score : "OFF";
+        document.getElementById("valStress").innerText = d.stress_score !== null ? d.stress_score : "OFF";
+        document.getElementById("valDist").innerText = d.dist_score !== null ? d.dist_score : "OFF";
+        document.getElementById("valCheck").innerText = d.checkin_score !== null ? d.checkin_score : "OFF";
+        document.getElementById("valTrend").innerText = d.trend_flag ? "AKTIF (+10)" : "TIDAK";
+
+        const chips = document.getElementById("chipsContainer");
+        chips.innerHTML = "";
+        if (d.alasan && d.alasan.length > 0) {
+          d.alasan.forEach(a => {
+            const c = document.createElement("span");
+            c.className = "chip";
+            c.innerText = "💡 " + a;
+            chips.appendChild(c);
+          });
+        }
+      } catch (err) {
+        alert("Gagal memuat index: " + err.message);
+      }
+    }
+
+    async function triggerSimulate(mode) {
+      const uid = document.getElementById("userId").value.trim();
+      if (!uid) return alert("Masukkan User ID terlebih dahulu!");
+      try {
+        const res = await fetch(`${API}/demo/simulate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: uid, mode: mode })
+        });
+        const d = await res.json();
+        alert(d.message);
+        fetchTodayIndex();
+      } catch (err) {
+        alert("Gagal simulasi: " + err.message);
+      }
+    }
+
+    async function fetchHistory() {
+      const uid = document.getElementById("userId").value.trim();
+      if (!uid) return alert("Masukkan User ID!");
+      try {
+        const res = await fetch(`${API}/index/history?user_id=${uid}&days=7`);
+        const d = await res.json();
+        document.getElementById("historyCard").style.display = "block";
+        document.getElementById("historyTitle").innerText = "Riwayat 7 Hari";
+        document.getElementById("historyJson").innerText = JSON.stringify(d, null, 2);
+      } catch (err) {
+        alert("Gagal memuat history: " + err.message);
+      }
+    }
+
+    async function fetchInterventions() {
+      const uid = document.getElementById("userId").value.trim();
+      if (!uid) return alert("Masukkan User ID!");
+      try {
+        const res = await fetch(`${API}/interventions?user_id=${uid}&days=7`);
+        const d = await res.json();
+        document.getElementById("historyCard").style.display = "block";
+        document.getElementById("historyTitle").innerText = "Statistik Intervensi (Halaman Laporan)";
+        document.getElementById("historyJson").innerText = JSON.stringify(d, null, 2);
+      } catch (err) {
+        alert("Gagal memuat intervensi: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>
