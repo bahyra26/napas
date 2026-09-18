@@ -1216,14 +1216,14 @@ html, body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  min-height: 60px;
   background: #ffffff;
   border-top: 1px solid #e5e5e0;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
   z-index: 35;
   justify-content: space-around;
   align-items: center;
-  padding: 0 8px;
+  padding: 4px 8px max(6px, env(safe-area-inset-bottom, 0px));
 }
 
 .bnav-link {
@@ -1315,7 +1315,7 @@ html, body {
   }
 
   .dashboard-container {
-    padding-bottom: 84px; /* Space for bottom navigation */
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); /* Space for bottom navigation */
   }
 
   .dashboard-grid {
@@ -1339,7 +1339,7 @@ html, body {
   }
 
   .toast {
-    bottom: 74px; /* Above bottom nav */
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px)); /* Above bottom nav */
     right: 16px;
     left: 16px;
     justify-content: center;
@@ -1392,7 +1392,7 @@ html, body {
    1. Card: 14 Hari Terakhir Line Chart
    -------------------------------------------------------------------------- */
 .card-chart-14d {
-  min-height: 310px;
+  min-height: 380px;
   justify-content: space-between;
 }
 
@@ -1404,7 +1404,7 @@ html, body {
 }
 
 .chart-subtitle {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   color: #585752;
 }
@@ -1412,8 +1412,8 @@ html, body {
 .chart-canvas-area {
   position: relative;
   width: 100%;
-  height: 200px;
-  margin: 4px 0 10px;
+  height: 270px;
+  margin: 8px 0 16px;
 }
 
 .trend-svg {
@@ -1424,7 +1424,7 @@ html, body {
 }
 
 .chart-y-axis text {
-  font-size: 9.5px;
+  font-size: 11px;
   fill: #82807b;
   font-family: inherit;
   font-weight: 600;
@@ -1554,12 +1554,12 @@ html, body {
    -------------------------------------------------------------------------- */
 .card-heatmap-wrap {
   display: flex;
-  gap: 32px;
+  gap: 36px;
   align-items: stretch;
 }
 
 .heatmap-col {
-  flex: 1.15;
+  flex: 1.1;
   display: flex;
   flex-direction: column;
 }
@@ -1574,45 +1574,46 @@ html, body {
 .heatmap-matrix-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-top: 6px;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .heatmap-header-row {
   display: grid;
-  grid-template-columns: 28px repeat(8, 22px);
-  gap: 5px;
+  grid-template-columns: 32px repeat(8, 26px);
+  gap: 6px;
   align-items: center;
+  margin-bottom: 2px;
 }
 
 .hm-corner {
-  width: 28px;
+  width: 32px;
 }
 
 .hm-th {
-  font-size: 10px;
-  font-weight: 600;
-  color: #6c6a66;
+  font-size: 11px;
+  font-weight: 500;
+  color: #222222;
   text-align: center;
 }
 
 .heatmap-rows {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .hm-row {
   display: grid;
-  grid-template-columns: 28px repeat(8, 22px);
-  gap: 5px;
+  grid-template-columns: 32px repeat(8, 26px);
+  gap: 6px;
   align-items: center;
 }
 
 .hm-day {
-  font-size: 11px;
-  font-weight: 600;
-  color: #585752;
+  font-size: 12px;
+  font-weight: 500;
+  color: #222222;
 }
 
 .hm-cells {
@@ -1620,47 +1621,62 @@ html, body {
 }
 
 .hm-cell {
-  width: 22px;
-  height: 22px;
-  border-radius: 5px;
+  width: 26px;
+  height: 24px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: transform 0.2s var(--transition-bounce), filter 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.18s var(--transition-bounce), filter 0.18s ease;
 }
 
 .hm-cell:hover {
-  transform: scale(1.24);
-  filter: brightness(0.92);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);
+  transform: scale(1.18);
+  filter: brightness(0.95);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
   z-index: 5;
 }
 
-.cell-green { background-color: #a3d9b1; }
-.cell-peach { background-color: #fca074; }
-.cell-red   { background-color: #e55353; }
+.cell-green { background-color: #b3d8ba; }
+.cell-peach { background-color: #febf8a; }
+.cell-red   { background-color: #e56362; }
 
 /* Keterangan List */
 .keterangan-list {
   display: flex;
   flex-direction: column;
-  gap: 13px;
-  margin-top: 2px;
+  gap: 16px;
+  margin-top: 6px;
 }
 
 .ket-point {
   display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.ket-bullet {
+  font-size: 13px;
+  line-height: 1.2;
+  color: #111111;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ket-text-block {
+  display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .ket-title {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #111111;
+  letter-spacing: -0.1px;
 }
 
 .ket-desc {
-  font-size: 10.5px;
-  color: #504f4a;
+  font-size: 11px;
+  color: #333333;
   line-height: 1.45;
 }
 
@@ -1668,27 +1684,28 @@ html, body {
 .heatmap-legend {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin-top: 18px;
-  align-self: flex-start;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 4px;
 }
 
 .legend-text {
-  font-size: 11px;
-  font-weight: 600;
-  color: #5c5b57;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #555450;
 }
 
 .legend-box {
-  width: 14px;
+  width: 18px;
   height: 14px;
   border-radius: 4px;
   cursor: help;
 }
 
-.box-green { background-color: #a3d9b1; }
-.box-peach { background-color: #fca074; }
-.box-red   { background-color: #e55353; }
+.box-green { background-color: #b3d8ba; }
+.box-peach { background-color: #febf8a; }
+.box-red   { background-color: #e56362; }
 
 /* --------------------------------------------------------------------------
    4. Card: Kesimpulan
@@ -1758,6 +1775,19 @@ html, body {
     flex-direction: column;
     gap: 24px;
   }
+
+  .ringkasan-items {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .ringkasan-items {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 14px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1770,8 +1800,12 @@ html, body {
     border-radius: 16px;
   }
 
+  .card-chart-14d {
+    min-height: auto;
+  }
+
   .chart-canvas-area {
-    height: 170px;
+    height: 210px;
   }
 
   .heatmap-matrix-wrapper {
@@ -2313,6 +2347,19 @@ html, body {
   }
 }
 
+/* Touch device support for interactive points */
+@media (hover: none) {
+  .chart-point {
+    opacity: 0.55;
+    r: 6px;
+  }
+  .chart-point:active {
+    opacity: 1;
+    r: 8px;
+    fill: var(--color-primary-green);
+  }
+}
+
 /* --------------------------------------------------------------------------
    Extra Small Screens (<= 360px - e.g. Galaxy Fold / iPhone SE)
    -------------------------------------------------------------------------- */
@@ -2352,6 +2399,21 @@ html, body {
   .tile-pill {
     font-size: 7.5px;
     padding: 1px 4px;
+  }
+
+  .heatmap-header-row, .hm-row {
+    grid-template-columns: 28px repeat(8, 23px);
+    gap: 4px;
+  }
+
+  .hm-cell {
+    width: 23px;
+    height: 21px;
+    border-radius: 4px;
+  }
+
+  .hm-th, .hm-day {
+    font-size: 9.5px;
   }
 }
 
