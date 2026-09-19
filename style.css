@@ -1245,7 +1245,7 @@ body[data-tab="deadline"] .dashboard-container {
 .toast-icon { font-size: 16px; }
 
 /* ==========================================================================
-   BOTTOM NAVIGATION BAR (MOBILE ONLY)
+   BOTTOM NAVIGATION BAR (MOBILE ONLY - NATIVE APP STYLE)
    ========================================================================== */
 .mobile-bottom-nav {
   display: none;
@@ -1253,39 +1253,178 @@ body[data-tab="deadline"] .dashboard-container {
   bottom: 0;
   left: 0;
   right: 0;
-  min-height: 60px;
-  background: #ffffff;
-  border-top: 1px solid #e5e5e0;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-  z-index: 35;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  z-index: 100;
   justify-content: space-around;
   align-items: center;
-  padding: 4px 8px max(6px, env(safe-area-inset-bottom, 0px));
+  padding: 0 8px max(6px, env(safe-area-inset-bottom, 0px));
 }
 
+/* Complete reset for button elements in bottom nav */
+.mobile-bottom-nav button,
+.bnav-item,
 .bnav-link {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  cursor: pointer;
+  font-family: inherit;
+  margin: 0;
+  padding: 0;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bnav-item,
+.bnav-link {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  text-decoration: none;
+  justify-content: center;
+  gap: 2px;
+  height: 100%;
+  min-width: 0;
+  position: relative;
   color: var(--color-nav-muted);
   font-size: 10px;
   font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 4px 0;
   transition: all 0.2s ease;
 }
 
-.bnav-link svg {
-  width: 18px;
-  height: 18px;
-  stroke: currentColor;
+.bnav-item:active,
+.bnav-link:active {
+  transform: scale(0.92);
 }
 
+.bnav-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 28px;
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+
+.bnav-item svg,
+.bnav-link svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  transition: transform 0.2s ease;
+}
+
+.bnav-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  transition: color 0.2s ease, font-weight 0.2s ease;
+}
+
+.bnav-indicator {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-primary-green);
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Active State for Regular Tabs */
+.bnav-item.active,
 .bnav-link.active {
   color: var(--color-primary-green);
+}
+
+.bnav-item.active .bnav-icon-wrapper,
+.bnav-link.active .bnav-icon-wrapper {
+  background: rgba(10, 84, 69, 0.09);
+}
+
+.bnav-item.active .bnav-label,
+.bnav-link.active .bnav-label {
+  color: var(--color-primary-green);
   font-weight: 800;
+}
+
+.bnav-item.active .bnav-indicator,
+.bnav-link.active .bnav-indicator {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* --------------------------------------------------------------------------
+   CENTER HOME BUTTON (ELEVATED HERO APP STYLE)
+   -------------------------------------------------------------------------- */
+.bnav-item-center {
+  flex: 1.15;
+  position: relative;
+  padding-bottom: 2px;
+}
+
+.bnav-center-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -18px;
+  margin-bottom: 2px;
+  background: #eef4f1;
+  color: var(--color-primary-green);
+  border: 3.5px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(10, 84, 69, 0.15), 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bnav-center-circle svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  transition: transform 0.2s ease;
+}
+
+.bnav-item-center .bnav-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-nav-muted);
+}
+
+/* Active State for Center Home Button */
+.bnav-item-center.active .bnav-center-circle {
+  background: linear-gradient(135deg, #0a5445 0%, #0e7862 100%);
+  color: #ffffff;
+  border-color: #ffffff;
+  box-shadow: 0 8px 22px rgba(10, 84, 69, 0.42), 0 2px 6px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.bnav-item-center.active .bnav-center-circle svg {
+  stroke: #ffffff;
+}
+
+.bnav-item-center.active .bnav-label {
+  color: var(--color-primary-green);
+  font-weight: 800;
+}
+
+.bnav-item-center:active .bnav-center-circle {
+  transform: translateY(0) scale(0.94);
 }
 
 /* ==========================================================================
@@ -2401,19 +2540,41 @@ body[data-tab="deadline"] .dashboard-container {
   }
 
   .mobile-bottom-nav {
-    padding: 0 4px;
+    height: 60px;
+    padding: 0 4px max(4px, env(safe-area-inset-bottom, 0px));
   }
 
+  .bnav-item,
   .bnav-link {
-    padding: 4px 4px;
-    font-size: 9px;
-    flex: 1;
-    min-width: 0;
+    font-size: 9.5px;
+    gap: 1px;
+    padding: 2px 0;
   }
 
+  .bnav-icon-wrapper {
+    width: 32px;
+    height: 24px;
+  }
+
+  .bnav-item svg,
   .bnav-link svg {
-    width: 17px;
-    height: 17px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .bnav-center-circle {
+    width: 44px;
+    height: 44px;
+    margin-top: -16px;
+  }
+
+  .bnav-center-circle svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .bnav-item-center .bnav-label {
+    font-size: 9.5px;
   }
 
   .dashboard-container {
