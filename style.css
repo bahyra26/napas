@@ -37,11 +37,21 @@
 
 html, body {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   background-color: var(--color-main-bg);
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--color-text-dark);
-  overflow-x: hidden;
+  overflow: hidden;
+}
+
+body {
+  zoom: 1.25;
+}
+
+@media (max-width: 720px) {
+  body {
+    zoom: 1;
+  }
 }
 
 /* ==========================================================================
@@ -49,10 +59,11 @@ html, body {
    ========================================================================== */
 .app-viewport {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   display: flex;
   background-color: var(--color-main-bg);
   position: relative;
+  overflow: hidden;
 }
 
 /* ==========================================================================
@@ -67,7 +78,7 @@ html, body {
   flex-shrink: 0;
   position: relative;
   z-index: 50;
-  min-height: 100vh;
+  height: 100%;
   padding-bottom: 24px;
   transition: transform 0.35s var(--transition-smooth);
 }
@@ -123,9 +134,13 @@ html, body {
   color: #71706b;
   text-align: center;
   width: 100%;
-  padding: 6px 0;
+  padding: 8px 12px;
   position: relative;
   display: block;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
@@ -163,12 +178,14 @@ html, body {
   flex-direction: column;
   background-color: var(--color-main-bg);
   min-width: 0;
+  height: 100%;
   position: relative;
+  overflow: hidden;
 }
 
 /* Top Header */
 .top-header {
-  height: 80px;
+  height: 72px;
   background-color: var(--color-header);
   display: flex;
   align-items: center;
@@ -265,18 +282,28 @@ html, body {
   width: 100%;
   max-width: 1060px;
   margin: 0 auto;
-  padding: 28px clamp(16px, 3.5vw, 40px) 36px;
+  padding: 16px clamp(16px, 3.5vw, 40px) 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.dashboard-container::-webkit-scrollbar {
+  display: none;
 }
 
 /* Exact Mockup Adaptations per Tab */
 body[data-tab="tren"] .dashboard-container {
   max-width: 1160px;
-  padding: 20px clamp(16px, 3vw, 36px) 24px;
+  padding: 12px clamp(16px, 3vw, 36px) 12px;
 }
 
 body[data-tab="deadline"] .dashboard-container {
   max-width: 1160px;
-  padding: 24px clamp(16px, 3vw, 36px) 32px;
+  padding: 16px clamp(16px, 3vw, 36px) 16px;
 }
 
 /* ==========================================================================
@@ -930,6 +957,7 @@ body[data-tab="deadline"] .dashboard-container {
   flex-direction: column;
   gap: 1px;
   flex: 1;
+  min-width: 0;
 }
 
 .task-title {
@@ -1030,7 +1058,9 @@ body[data-tab="deadline"] .dashboard-container {
   background: #ffffff;
   border-radius: 20px;
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   padding: 24px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
   transform: scale(0.9) translateY(20px);
@@ -1250,28 +1280,30 @@ body[data-tab="deadline"] .dashboard-container {
    RESPONSIVE BREAKPOINTS
    ========================================================================== */
 
-/* Tablets & Small Laptops (900px to 1100px) */
-@media (max-width: 1100px) {
+/* Adaptations under 125% Zoom for Laptops & Medium Displays */
+@media (max-width: 1350px) {
   .dashboard-grid {
-    grid-template-columns: 210px 190px 240px;
-    column-gap: 28px;
+    grid-template-columns: 220px 210px 260px;
+    column-gap: 24px;
   }
 }
 
-/* Tablet Portrait & Smaller Screens (under 900px) */
-@media (max-width: 900px) {
+/* Tablet & Compact Desktop (under 1150px under 125% zoom) */
+@media (max-width: 1150px) {
   .dashboard-grid {
-    grid-template-columns: repeat(2, minmax(220px, 300px));
+    grid-template-columns: repeat(2, minmax(220px, 320px));
     justify-content: center;
-    column-gap: 36px;
-    row-gap: 36px;
+    column-gap: 32px;
+    row-gap: 32px;
   }
 
   .col-right {
     grid-column: 1 / -1;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    max-width: 640px;
+    max-width: 660px;
+    margin: 0 auto;
+    width: 100%;
     gap: 28px;
     align-items: center;
   }
@@ -1283,6 +1315,23 @@ body[data-tab="deadline"] .dashboard-container {
 
 /* Mobile Screens (under 720px) */
 @media (max-width: 720px) {
+  html, body {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .app-viewport {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .main-wrapper {
+    height: auto;
+    overflow: visible;
+  }
+
   .sidebar {
     position: fixed;
     top: 0;
@@ -1310,6 +1359,9 @@ body[data-tab="deadline"] .dashboard-container {
   }
 
   .dashboard-container {
+    height: auto;
+    overflow: visible;
+    justify-content: flex-start;
     padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); /* Space for bottom navigation */
   }
 
@@ -1354,7 +1406,7 @@ body[data-tab="deadline"] .dashboard-container {
   display: grid;
   grid-template-columns: 1fr 310px;
   grid-template-rows: auto auto;
-  gap: 20px;
+  gap: 16px;
   align-items: stretch;
 }
 
@@ -1362,7 +1414,7 @@ body[data-tab="deadline"] .dashboard-container {
 .tren-card {
   background-color: #eeece9;
   border-radius: 20px;
-  padding: 22px 26px;
+  padding: 18px 22px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
@@ -1387,7 +1439,7 @@ body[data-tab="deadline"] .dashboard-container {
    1. Card: 14 Hari Terakhir Line Chart
    -------------------------------------------------------------------------- */
 .card-chart-14d {
-  min-height: 380px;
+  min-height: 295px;
   justify-content: space-between;
 }
 
@@ -1395,20 +1447,21 @@ body[data-tab="deadline"] .dashboard-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .chart-subtitle {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: #6a6862;
+  color: #585650;
+  letter-spacing: -0.2px;
 }
 
 .chart-canvas-area {
   position: relative;
   width: 100%;
-  height: 275px;
-  margin: 6px 0 14px;
+  height: 215px;
+  margin: 4px 0 8px;
 }
 
 .trend-svg {
@@ -1419,30 +1472,32 @@ body[data-tab="deadline"] .dashboard-container {
 }
 
 .chart-y-axis text {
-  font-size: 10px;
-  fill: #807e78;
+  font-size: 14px;
+  fill: #686660;
   font-family: inherit;
-  font-weight: 500;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: -0.2px;
 }
 
 .trend-polyline {
   stroke: var(--color-header);
-  stroke-width: 2.8px;
+  stroke-width: 3.6px;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .marker-group .marker-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   fill: #111111;
   letter-spacing: 0.1px;
 }
 
 .marker-group .marker-dot {
-  fill: var(--color-header);
+  fill: #01332a;
   stroke: #ffffff;
-  stroke-width: 1.4px;
+  stroke-width: 2.2px;
 }
 
 .chart-point {
@@ -1454,7 +1509,7 @@ body[data-tab="deadline"] .dashboard-container {
 
 .chart-point:hover {
   opacity: 1;
-  r: 6.5px;
+  r: 6px;
   fill: var(--color-header);
   stroke: #ffffff;
   stroke-width: 2px;
@@ -1465,22 +1520,30 @@ body[data-tab="deadline"] .dashboard-container {
   position: absolute;
   background-color: var(--color-header);
   color: #ffffff;
-  padding: 5px 12px;
-  border-radius: 7px;
-  font-size: 11.5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
   font-weight: 600;
   pointer-events: none;
   transform: translate(-50%, -100%);
   opacity: 0;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 20;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 30;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   white-space: nowrap;
 }
 
 .chart-tooltip.show {
   opacity: 1;
-  transform: translate(-50%, -115%);
+  transform: translate(-50%, -130%);
+}
+
+.chart-tooltip.show.align-right {
+  transform: translate(-100%, -130%);
+}
+
+.chart-tooltip.show.align-left {
+  transform: translate(0%, -130%);
 }
 
 /* Warning alert pill */
@@ -1488,18 +1551,19 @@ body[data-tab="deadline"] .dashboard-container {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background-color: #fdede2;
-  color: #a8501e;
+  background-color: #fdead9;
+  color: #b45309;
   border-radius: 9999px;
-  padding: 5px 14px;
-  font-size: 11.5px;
-  font-weight: 600;
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: 700;
   width: fit-content;
+  margin-top: 10px;
 }
 
 .alert-pill-icon {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
   fill: #111111;
 }
@@ -1508,7 +1572,7 @@ body[data-tab="deadline"] .dashboard-container {
    2. Card: Ringkasan
    -------------------------------------------------------------------------- */
 .card-ringkasan {
-  min-height: 380px;
+  min-height: 295px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1519,9 +1583,9 @@ body[data-tab="deadline"] .dashboard-container {
   flex-direction: column;
   justify-content: space-between;
   flex: 1;
-  margin-top: 10px;
-  margin-bottom: 6px;
-  gap: 18px;
+  margin-top: 6px;
+  margin-bottom: 2px;
+  gap: 10px;
 }
 
 .ringkasan-stat {
@@ -1557,6 +1621,7 @@ body[data-tab="deadline"] .dashboard-container {
 .card-heatmap-wrap {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   gap: 26px;
   align-items: stretch;
 }
@@ -1765,10 +1830,8 @@ body[data-tab="deadline"] .dashboard-container {
   margin: 0 auto;
 }
 
-/* --------------------------------------------------------------------------
-   Responsive Adaptations for Tren Page
-   -------------------------------------------------------------------------- */
-@media (max-width: 960px) {
+/* Responsive Adaptations for Tren Page under 125% Zoom */
+@media (max-width: 1240px) {
   .tren-grid {
     grid-template-columns: 1fr;
     gap: 20px;
@@ -2254,21 +2317,31 @@ body[data-tab="deadline"] .dashboard-container {
 }
 
 /* --------------------------------------------------------------------------
-   Responsive Breakpoints for Deadline Radar
+   Responsive Breakpoints for Deadline Radar under 125% Zoom
    -------------------------------------------------------------------------- */
-@media (max-width: 960px) {
+@media (max-width: 1240px) {
   .deadline-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 24px;
   }
 
+  .calendar-tiles-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .ringkasan-beban-grid {
+    grid-template-columns: repeat(4, 1fr);
+    row-gap: 14px;
+  }
+}
+
+@media (max-width: 960px) {
   .calendar-tiles-grid {
     grid-template-columns: repeat(4, 1fr);
   }
 
   .ringkasan-beban-grid {
     grid-template-columns: repeat(2, 1fr);
-    row-gap: 14px;
   }
 }
 
@@ -2370,18 +2443,6 @@ body[data-tab="deadline"] .dashboard-container {
   }
 }
 
-/* Touch device support for interactive points */
-@media (hover: none) {
-  .chart-point {
-    opacity: 0.55;
-    r: 6px;
-  }
-  .chart-point:active {
-    opacity: 1;
-    r: 8px;
-    fill: var(--color-primary-green);
-  }
-}
 
 /* --------------------------------------------------------------------------
    Extra Small Screens (<= 360px - e.g. Galaxy Fold / iPhone SE)
