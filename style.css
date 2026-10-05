@@ -41,7 +41,7 @@ html, body, #root {
   height: 100%;
   background-color: var(--color-main-bg);
   font-family: 'Inclusive Sans', 'Poppins', sans-serif;
-  font-weight: 400px;
+  font-weight: 600px;
   color: var(--color-text-dark);
   overflow: hidden;
 }
