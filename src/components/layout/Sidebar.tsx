@@ -33,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar">
         <div className="sidebar-logo" title="NAPAS Health & Focus">
           <img
-            src="/assets/logo_brain.png"
+            src="./assets/logo_brain.png"
             alt="NAPAS Logo"
             className="sidebar-logo-img"
           />

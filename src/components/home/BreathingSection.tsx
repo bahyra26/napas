@@ -63,7 +63,7 @@ export const BreathingSection: React.FC<BreathingSectionProps> = ({ onNotify }) 
         <div className="breathing-pulse-aura"></div>
         <div className="breathing-circle">
           <img
-            src="/assets/lungs.png"
+            src="./assets/lungs.png"
             alt="Anatomical Lungs Outline"
             className="lungs-img"
             id="lungsImg"
