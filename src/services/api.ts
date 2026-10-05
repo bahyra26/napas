@@ -45,6 +45,60 @@ export interface DailyIndexHistoryItem {
   trend_flag: boolean;
 }
 
+export interface StudentProfile {
+  user_id: string;
+  nama?: string;
+  email?: string;
+  panggilan: string;
+  kampus: string;
+  jurusan: string;
+  semester: number;
+  jam_tidur: string;
+  jam_bangun: string;
+  kronotipe: 'pagi' | 'siang' | 'malam';
+  target_fokus_jam: number;
+  focus_whitelist: string[];
+  focus_blacklist: string[];
+  agent_action: 'warn_only' | 'minimize' | 'warn_then_close' | 'close';
+  avatar_url?: string;
+  onboarded?: boolean;
+}
+
+export interface ClassScheduleItem {
+  id?: string;
+  user_id: string;
+  mata_kuliah: string;
+  hari: number;
+  jam_mulai: string;
+  jam_selesai: string;
+  ruang?: string;
+  source?: string;
+}
+
+export interface RadarDayItem {
+  date: string;
+  raw_date: string;
+  dayName: string;
+  dayNum: number;
+  monthShort: string;
+  monthFull: string;
+  status: 'Ringan' | 'Sedang' | 'Berat';
+  load: number;
+  pillText: string;
+  tasks: Array<{ title: string; time: string }>;
+}
+
+export interface RadarResponse {
+  days: RadarDayItem[];
+  busiest_day: RadarDayItem;
+  summary: {
+    total_tasks: number;
+    heavy_days: number;
+    free_days: number;
+    busiest_label: string;
+  };
+}
+
 export interface WorkloadItem {
   id: string;
   user_id: string;
@@ -54,6 +108,9 @@ export interface WorkloadItem {
   est_jam: number;
   effort: number;
   status: 'belum' | 'selesai';
+  mata_kuliah?: string;
+  source?: string;
+  google_event_id?: string;
 }
 
 export interface CheckInItem {
@@ -62,7 +119,10 @@ export interface CheckInItem {
   ts: string;
   skor: number;
   catatan?: string;
+  jam_tidur?: number;
+  energi?: number;
 }
+
 
 export interface InterventionItem {
   id: string;
@@ -332,12 +392,24 @@ export const api = {
     }
   },
 
-  async postCheckIn(userId: string, skor: number, catatan?: string): Promise<CheckInItem | null> {
+  async postCheckIn(
+    userId: string,
+    skor: number,
+    catatan?: string,
+    jamTidur?: number,
+    energi?: number
+  ): Promise<CheckInItem | null> {
     try {
       const res = await fetch(`${API_BASE_URL}/check-ins`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, skor, catatan }),
+        body: JSON.stringify({
+          user_id: userId,
+          skor,
+          catatan,
+          jam_tidur: jamTidur,
+          energi,
+        }),
       });
       if (!res.ok) return null;
       return await res.json();
@@ -346,6 +418,7 @@ export const api = {
       return null;
     }
   },
+
 
   async getTodayCheckIn(userId: string): Promise<CheckInItem | null> {
     try {
@@ -439,4 +512,212 @@ export const api = {
       return null;
     }
   },
+
+  async syncAuth(payload: {
+    access_token?: string;
+    auth_id?: string;
+    email?: string;
+    nama?: string;
+    avatar_url?: string;
+  }): Promise<UserProfile | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/sync-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) return null;
+      const user = await res.json();
+      setStoredUserId(user.id, user.nama);
+      return user;
+    } catch (err) {
+      console.warn('syncAuth failed:', err);
+      return null;
+    }
+  },
+
+  async getProfile(userId: string): Promise<StudentProfile | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/profile/${encodeURIComponent(userId)}`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
+
+  async updateProfile(userId: string, partial: Partial<StudentProfile>): Promise<StudentProfile | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/profile/${encodeURIComponent(userId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(partial),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('updateProfile failed:', err);
+      return null;
+    }
+  },
+
+  async getClassSchedule(userId: string): Promise<ClassScheduleItem[]> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/schedule/${encodeURIComponent(userId)}`);
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
+    }
+  },
+
+  async addClassSchedule(payload: Omit<ClassScheduleItem, 'id'>): Promise<ClassScheduleItem | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('addClassSchedule failed:', err);
+      return null;
+    }
+  },
+
+  async bulkSetClassSchedule(userId: string, items: Omit<ClassScheduleItem, 'id'>[]): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/schedule/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, items, replace: true }),
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('bulkSetClassSchedule failed:', err);
+      return false;
+    }
+  },
+
+  async deleteClassSchedule(scheduleId: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/schedule/${encodeURIComponent(scheduleId)}`, {
+        method: 'DELETE',
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
+  async getRadar(userId: string, days: number = 14): Promise<RadarResponse | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/planner/radar?user_id=${encodeURIComponent(userId)}&days=${days}`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
+
+  async autoPlan(userId: string, sessionMinutes: number = 50, days: number = 14): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/planner/auto`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, session_minutes: sessionMinutes, days }),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('autoPlan failed:', err);
+      return null;
+    }
+  },
+
+  async updateWorkload(itemId: string, partial: Partial<WorkloadItem>): Promise<WorkloadItem | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/workload/${encodeURIComponent(itemId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(partial),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('updateWorkload failed:', err);
+      return null;
+    }
+  },
+
+  async syncGoogleCalendar(userId: string, events: any[]): Promise<{ status: string; synced: number } | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/calendar/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, events }),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('syncGoogleCalendar failed:', err);
+      return null;
+    }
+  },
+
+  async startFocusSession(payload: {
+    user_id: string;
+    workload_id?: string;
+    judul?: string;
+    target_menit: number;
+    agent_connected: boolean;
+  }): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/focus-sessions/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('startFocusSession failed:', err);
+      return null;
+    }
+  },
+
+  async finishFocusSession(
+    sessionId: string,
+    payload: {
+      focus_seconds: number;
+      distraction_seconds: number;
+      blocked_apps?: Record<string, number>;
+      completed: boolean;
+    }
+  ): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/focus-sessions/${encodeURIComponent(sessionId)}/finish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('finishFocusSession failed:', err);
+      return null;
+    }
+  },
+
+  async getActiveFocusSession(userId: string): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/focus-sessions/${encodeURIComponent(userId)}/active`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
 };
+

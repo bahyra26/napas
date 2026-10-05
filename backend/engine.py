@@ -155,16 +155,49 @@ def calculate_distraction_score(metrics_list: List[Dict[str, Any]]) -> Tuple[Opt
 
 def calculate_checkin_score(latest_checkin: Optional[Dict[str, Any]]) -> Tuple[Optional[float], List[str]]:
     """
-    Sub-skor Check-in subjektif (1..5 -> 0..100):
-    checkin_comp = (5 - skor) * 25
-    skor 1 (sangat capek) -> 100 ; skor 5 (segar) -> 0
+    Sub-skor Check-in subjektif (1..5 -> 0..100) diperluas dengan jam tidur & energi:
+    - Mood (skor 1-5): (5 - skor) * 25
+    - Jam Tidur (jam): defisit terhadap target 7-8 jam
+    - Energi (1-5): (5 - energi) * 25
     """
     alasan = []
     if not latest_checkin:
         return None, ["belum ada check-in hari ini"]
 
     skor = int(latest_checkin.get("skor") or 3)
-    checkin_score = round((5 - skor) * 25.0, 1)
+    mood_comp = (5 - skor) * 25.0
+
+    jam_tidur = latest_checkin.get("jam_tidur")
+    energi = latest_checkin.get("energi")
+
+    components = [mood_comp]
+    weights = [1.0]
+
+    if jam_tidur is not None:
+        jt = float(jam_tidur)
+        if jt < 7.0:
+            sleep_stress = min(100.0, max(0.0, ((7.0 - jt) / 3.0) * 100.0))
+        else:
+            sleep_stress = 0.0
+        components.append(sleep_stress)
+        weights.append(0.8)
+
+        if jt < 6.0:
+            alasan.append(f"Tidur {jt:g} jam semalam (kurang istirahat)")
+        elif jt >= 7.0:
+            alasan.append(f"Tidur cukup ({jt:g} jam semalam)")
+
+    if energi is not None:
+        eng = int(energi)
+        energy_stress = (5 - eng) * 25.0
+        components.append(energy_stress)
+        weights.append(0.6)
+        if eng <= 2:
+            alasan.append(f"Level energi rendah ({eng}/5)")
+        elif eng >= 4:
+            alasan.append(f"Level energi bugar ({eng}/5)")
+
+    checkin_score = round(sum(c * w for c, w in zip(components, weights)) / sum(weights), 1)
 
     labels = {
         1: "Check-in: Sangat lelah / tertekan",
@@ -181,6 +214,7 @@ def calculate_checkin_score(latest_checkin: Optional[Dict[str, Any]]) -> Tuple[O
         alasan.append(f'Catatan: "{catatan.strip()}"')
 
     return min(100.0, max(0.0, checkin_score)), alasan
+
 
 
 def trend_up_3days(histori: List[Dict[str, Any]]) -> bool:

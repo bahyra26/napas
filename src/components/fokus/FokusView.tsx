@@ -11,9 +11,11 @@ import { FokusOverviewCard } from './FokusOverviewCard';
 import { TopPencuriWaktuCard } from './TopPencuriWaktuCard';
 import { FocusStreakCard } from './FocusStreakCard';
 import { FokusVsDistraksiChart } from './FokusVsDistraksiChart';
+import { FocusSessionCard } from './FocusSessionCard';
 import { api, getStoredUserId } from '../../services/api';
 
 interface FokusViewProps {
+
   onNotify: (message: string, icon?: string) => void;
 }
 
@@ -23,6 +25,7 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
   const [distractors, setDistractors] = useState<FocusTopDistractor[]>(FOCUS_TOP_DISTRACTORS);
   const [streakInfo, setStreakInfo] = useState(FOCUS_STREAK_INFO);
   const [weeklyBars, setWeeklyBars] = useState<FocusDailyBar[]>(FOCUS_WEEKLY_BARS);
+
 
   const fetchFocusData = async (days = 7) => {
     const userId = getStoredUserId();
@@ -86,8 +89,15 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
         onRangeChange={handleRangeChange}
       />
 
+      {/* Interactive Focus Session & Agent Controller */}
+      <FocusSessionCard
+        onSessionCompleted={() => fetchFocusData(7)}
+        onNotify={onNotify}
+      />
+
       {/* Top 3 Cards Grid */}
       <div className="fokus-top-grid">
+
         <FokusOverviewCard
           data={overview}
           onRefresh={handleRefreshOverview}

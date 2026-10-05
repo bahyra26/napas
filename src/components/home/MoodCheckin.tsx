@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MoodType } from '../../types';
 
 interface MoodCheckinProps {
-  onMoodSelect: (mood: MoodType, icon: string, score: number) => void;
+  onMoodSelect: (mood: MoodType, icon: string, score: number, jamTidur?: number, energi?: number) => void;
   currentScore?: number;
 }
 
@@ -14,9 +14,26 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect, currentS
     return null;
   });
 
+  const [jamTidur, setJamTidur] = useState<number>(7);
+  const [energi, setEnergi] = useState<number>(3);
+  const [showDetails, setShowDetails] = useState<boolean>(false);
+
   const handleSelect = (mood: MoodType, icon: string, score: number) => {
     setSelectedMood(mood);
-    onMoodSelect(mood, icon, score);
+    onMoodSelect(mood, icon, score, jamTidur, energi);
+  };
+
+  const handleUpdateSleepOrEnergy = (newSleep?: number, newEnergy?: number) => {
+    const s = newSleep !== undefined ? newSleep : jamTidur;
+    const e = newEnergy !== undefined ? newEnergy : energi;
+    if (newSleep !== undefined) setJamTidur(newSleep);
+    if (newEnergy !== undefined) setEnergi(newEnergy);
+
+    if (selectedMood) {
+      const score = selectedMood === 'Bahagia / Senang' ? 5 : selectedMood === 'Netral' ? 3 : 1;
+      const icon = selectedMood === 'Bahagia / Senang' ? '😊' : selectedMood === 'Netral' ? '😐' : '😔';
+      onMoodSelect(selectedMood, icon, score, s, e);
+    }
   };
 
   return (
@@ -38,7 +55,7 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect, currentS
           <h2 className="checkin-title">Check In</h2>
         </div>
         <p className="checkin-sub">
-          Bagaimana<br />perasaanmu hari ini?
+          Bagaimana<br />kondisimu hari ini?
         </p>
       </div>
 
@@ -87,9 +104,57 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect, currentS
             <circle cx="15" cy="9.5" r="1" fill="#111111"></circle>
             <path d="M15.5 16.5c-1.5-2-4.5-2-7 0"></path>
           </svg>
-          <span>Sedih</span>
+          <span>Sedih / Lelah</span>
           <span className="mood-check-badge">✓</span>
         </button>
+      </div>
+
+      {/* Mini Sleep & Energy Evaluator */}
+      <div className="checkin-extra-box">
+        <button
+          type="button"
+          className="btn-toggle-sleep-details"
+          onClick={() => setShowDetails(!showDetails)}
+        >
+          <span>😴 Tidur semalam: <strong>{jamTidur} jam</strong> · ⚡ Energi: <strong>{energi}/5</strong></span>
+          <span className="toggle-chevron">{showDetails ? '▲' : '▼'}</span>
+        </button>
+
+        {showDetails && (
+          <div className="sleep-energy-controls">
+            <div className="mini-control-group">
+              <label>Durasi Tidur Semalam:</label>
+              <div className="sleep-quick-chips">
+                {[4, 5, 6, 7, 8, 9].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    className={`btn-sleep-chip ${jamTidur === val ? 'active' : ''}`}
+                    onClick={() => handleUpdateSleepOrEnergy(val, undefined)}
+                  >
+                    {val}j
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mini-control-group">
+              <label>Tingkat Energi:</label>
+              <div className="energy-quick-chips">
+                {[1, 2, 3, 4, 5].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    className={`btn-energy-chip ${energi === val ? 'active' : ''}`}
+                    onClick={() => handleUpdateSleepOrEnergy(undefined, val)}
+                  >
+                    {val === 1 ? '1 🪫' : val === 5 ? '5 ⚡' : val}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

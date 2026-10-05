@@ -10,11 +10,18 @@ def submit_check_in(payload: CheckInCreate):
     if not supabase:
         raise HTTPException(status_code=500, detail="Database belum terhubung. Pastikan file .env sudah diisi.")
 
-    res = supabase.table("check_ins").insert({
+    row = {
         "user_id": payload.user_id,
         "skor": payload.skor,
         "catatan": payload.catatan
-    }).execute()
+    }
+    if payload.jam_tidur is not None:
+        row["jam_tidur"] = payload.jam_tidur
+    if payload.energi is not None:
+        row["energi"] = payload.energi
+
+    res = supabase.table("check_ins").insert(row).execute()
+
 
     if not res.data:
         raise HTTPException(status_code=400, detail="Gagal menyimpan check-in")

@@ -25,6 +25,12 @@ class UserResponse(BaseModel):
     consent_window: bool
     baseline_blink_rate: float
     created_at: Optional[str] = None
+    auth_id: Optional[str] = None
+    avatar_url: Optional[str] = None
+    onboarded: Optional[bool] = False
+
+class AuthSyncRequest(BaseModel):
+    access_token: str
 
 
 # --- WORKLOAD ITEMS ---
@@ -35,9 +41,17 @@ class WorkloadCreate(BaseModel):
     deadline: datetime
     est_jam: float = 2.0
     effort: int = Field(default=3, ge=1, le=5)
+    mata_kuliah: Optional[str] = None
 
 class WorkloadUpdateStatus(BaseModel):
     status: str = Field(pattern="^(belum|selesai)$")
+
+class WorkloadUpdate(BaseModel):
+    judul: Optional[str] = None
+    deadline: Optional[datetime] = None
+    est_jam: Optional[float] = None
+    effort: Optional[int] = Field(default=None, ge=1, le=5)
+    mata_kuliah: Optional[str] = None
 
 class WorkloadResponse(BaseModel):
     id: str
@@ -48,6 +62,9 @@ class WorkloadResponse(BaseModel):
     est_jam: float
     effort: int
     status: str
+    mata_kuliah: Optional[str] = None
+    source: Optional[str] = None
+    google_event_id: Optional[str] = None
 
 
 # --- SENSOR METRICS ---
@@ -76,6 +93,8 @@ class CheckInCreate(BaseModel):
     user_id: str
     skor: int = Field(ge=1, le=5)
     catatan: Optional[str] = None
+    jam_tidur: Optional[float] = Field(default=None, ge=0, le=24)
+    energi: Optional[int] = Field(default=None, ge=1, le=5)
 
 class CheckInResponse(BaseModel):
     id: str
@@ -83,6 +102,8 @@ class CheckInResponse(BaseModel):
     ts: str
     skor: int
     catatan: Optional[str] = None
+    jam_tidur: Optional[float] = None
+    energi: Optional[int] = None
 
 
 # --- INTERVENTIONS ---
@@ -209,3 +230,76 @@ class WeeklyInsightResponse(BaseModel):
 class SimulateRequest(BaseModel):
     user_id: str
     mode: str = Field(default="oranye", pattern="^(oranye|merah|reset)$")
+
+
+# --- PROFIL MAHASISWA ---
+class ProfileUpsert(BaseModel):
+    panggilan: Optional[str] = None
+    kampus: Optional[str] = None
+    jurusan: Optional[str] = None
+    semester: Optional[int] = Field(default=None, ge=1, le=14)
+    jam_tidur: Optional[str] = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    jam_bangun: Optional[str] = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    kronotipe: Optional[str] = Field(default=None, pattern="^(pagi|siang|malam)$")
+    target_fokus_jam: Optional[float] = Field(default=None, ge=0.5, le=16)
+    focus_whitelist: Optional[List[str]] = None
+    focus_blacklist: Optional[List[str]] = None
+    agent_action: Optional[str] = Field(default=None, pattern="^(warn_only|minimize|warn_then_close|close)$")
+    onboarded: Optional[bool] = None
+
+
+# --- JADWAL KULIAH ---
+class ClassScheduleCreate(BaseModel):
+    user_id: str
+    mata_kuliah: str
+    hari: int = Field(ge=0, le=6)
+    jam_mulai: str = Field(pattern=r"^\d{2}:\d{2}$")
+    jam_selesai: str = Field(pattern=r"^\d{2}:\d{2}$")
+    ruang: Optional[str] = None
+    source: str = "manual"
+
+class ClassScheduleBulk(BaseModel):
+    user_id: str
+    items: List[ClassScheduleCreate]
+    replace: bool = True
+
+
+# --- GOOGLE CALENDAR SYNC ---
+class CalendarEvent(BaseModel):
+    id: str
+    summary: str
+    start: datetime
+    end: Optional[datetime] = None
+    all_day: bool = False
+    description: Optional[str] = None
+
+class CalendarSyncRequest(BaseModel):
+    user_id: str
+    events: List[CalendarEvent]
+
+
+# --- PLANNER ---
+class AutoPlanRequest(BaseModel):
+    user_id: str
+    session_minutes: int = Field(default=50, ge=15, le=180)
+    days: int = Field(default=14, ge=1, le=30)
+    replace_existing: bool = True
+
+class StudySessionUpdate(BaseModel):
+    status: Optional[str] = Field(default=None, pattern="^(rencana|selesai|dilewati)$")
+    google_event_id: Optional[str] = None
+
+
+# --- FOCUS SESSION ---
+class FocusSessionStart(BaseModel):
+    user_id: str
+    workload_id: Optional[str] = None
+    judul: Optional[str] = None
+    target_menit: int = Field(default=25, ge=1, le=240)
+    agent_connected: bool = False
+
+class FocusSessionFinish(BaseModel):
+    focus_seconds: int = 0
+    distraction_seconds: int = 0
+    blocked_apps: Dict[str, int] = {}
+    completed: bool = True

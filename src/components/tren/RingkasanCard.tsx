@@ -1,20 +1,39 @@
 import React, { useEffect, useState } from 'react';
+import { api, getStoredUserId } from '../../services/api';
 
 export const RingkasanCard: React.FC = () => {
-  const [avgScore, setAvgScore] = useState(0);
+  const [avgScore, setAvgScore] = useState<number>(33);
+  const [greenDays, setGreenDays] = useState<number>(6);
+  const [orangeRedDays, setOrangeRedDays] = useState<number>(3);
+  const [interventionCount, setInterventionCount] = useState<number>(5);
 
   useEffect(() => {
-    let count = 0;
-    const timer = setInterval(() => {
-      count += 3;
-      if (count >= 33) {
-        count = 33;
-        clearInterval(timer);
-      }
-      setAvgScore(count);
-    }, 45);
+    async function loadStats() {
+      const userId = getStoredUserId();
+      if (!userId) return;
 
-    return () => clearInterval(timer);
+      const [history, interStats] = await Promise.all([
+        api.getIndexHistory(userId, 14),
+        api.getInterventions(userId, 14),
+      ]);
+
+      if (history && history.length > 0) {
+        const scores = history.map((h) => Number(h.index));
+        const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+        setAvgScore(avg);
+
+        const green = history.filter((h) => h.zona === 'hijau').length;
+        const orangeRed = history.filter((h) => h.zona === 'oranye' || h.zona === 'merah').length;
+        setGreenDays(green);
+        setOrangeRedDays(orangeRed);
+      }
+
+      if (interStats) {
+        setInterventionCount(interStats.total);
+      }
+    }
+
+    loadStats();
   }, []);
 
   return (
@@ -23,20 +42,20 @@ export const RingkasanCard: React.FC = () => {
       <div className="ringkasan-items">
         <div className="ringkasan-stat">
           <span className="stat-value color-amber" id="statAvgScore">
-            {avgScore}
+            {avgScore}%
           </span>
           <span className="stat-label">Rata-rata skor 14 hari</span>
         </div>
         <div className="ringkasan-stat">
-          <span className="stat-value color-green">6 hari</span>
+          <span className="stat-value color-green">{greenDays} hari</span>
           <span className="stat-label">Hari zona hijau</span>
         </div>
         <div className="ringkasan-stat">
-          <span className="stat-value color-orange">3 hari</span>
+          <span className="stat-value color-orange">{orangeRedDays} hari</span>
           <span className="stat-label">Hari zona oranye/merah</span>
         </div>
         <div className="ringkasan-stat">
-          <span className="stat-value color-dark">5 kali</span>
+          <span className="stat-value color-dark">{interventionCount} kali</span>
           <span className="stat-label">Intervensi terpicu</span>
         </div>
       </div>

@@ -5,12 +5,16 @@ interface AgendaDetailProps {
   selectedDay: CalendarDay;
   busiestDay?: CalendarDay;
   onOpenReschedule: () => void;
+  onAutoPlan?: () => void;
+  isAutoPlanning?: boolean;
 }
 
 export const AgendaDetail: React.FC<AgendaDetailProps> = ({
   selectedDay,
   busiestDay,
   onOpenReschedule,
+  onAutoPlan,
+  isAutoPlanning = false,
 }) => {
   const getBadgeClass = (status: string) => {
     if (status === 'Berat') return 'badge-berat';
@@ -59,7 +63,7 @@ export const AgendaDetail: React.FC<AgendaDetailProps> = ({
             <div className="agenda-empty-state">
               <span className="empty-icon">🌿</span>
               <span className="empty-text">
-                Tidak ada deadline terjadwal hari ini.
+                Tidak ada agenda terjadwal hari ini.
                 <br />
                 Waktu ideal untuk relaksasi atau mencicil tugas ke depan.
               </span>
@@ -83,27 +87,42 @@ export const AgendaDetail: React.FC<AgendaDetailProps> = ({
           <p className="agenda-sub-hint">Klik hari lain di grid untuk lihat detailnya</p>
         </div>
 
-        <button
-          type="button"
-          className="btn-reschedule"
-          id="btnRescheduleAgenda"
-          onClick={onOpenReschedule}
-        >
-          <span>Reschedule salah satu agenda</span>
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="agenda-actions-stack">
+          {/* Tombol Auto-Planner */}
+          {onAutoPlan && (
+            <button
+              type="button"
+              className="btn-autoplan"
+              onClick={onAutoPlan}
+              disabled={isAutoPlanning}
+              title="Menganalisis tugas tertunda dan menyusun slot belajar cerdas"
+            >
+              <span>{isAutoPlanning ? 'Menyusun Rencana...' : '⚡ Buat Rencana Belajar Otomatis'}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="btn-reschedule"
+            id="btnRescheduleAgenda"
+            onClick={onOpenReschedule}
           >
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
+            <span>Reschedule salah satu agenda</span>
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="card-terpadat-alert">

@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db import supabase
-from routers import users, workload, metrics, checkins, interventions, index, demo, insights
+from routers import users, workload, metrics, checkins, interventions, index, demo, insights, profile, planner, focus
 
 app = FastAPI(
     title="NAPAS v2 — Burnout Radar Backend API",
     description="Backend API untuk mendeteksi tanda burnout mahasiswa secara real-time, explainable scoring (chips alasan), dan intervensi mandiri.",
-    version="2.1.0"
+    version="2.2.0"
 )
 
 # CORS Diizinkan untuk Web Dashboard Next.js & Local Development
@@ -20,6 +20,9 @@ app.add_middleware(
 
 # Registrasi Router
 app.include_router(users.router)
+app.include_router(profile.router)
+app.include_router(planner.router)
+app.include_router(focus.router)
 app.include_router(workload.router)
 app.include_router(metrics.router)
 app.include_router(checkins.router)
@@ -27,6 +30,7 @@ app.include_router(interventions.router)
 app.include_router(index.router)
 app.include_router(demo.router)
 app.include_router(insights.router)
+
 
 @app.get("/health", tags=["System"])
 def health_check():

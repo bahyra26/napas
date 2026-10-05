@@ -10,7 +10,7 @@ import { KenapaCard } from './components/home/KenapaCard';
 import { MoodCheckin } from './components/home/MoodCheckin';
 import { BreathingSection } from './components/home/BreathingSection';
 import { QuickTasks } from './components/home/QuickTasks';
-import { AddTaskModal } from './components/modals/AddTaskModal';
+import { AddTaskModal, NewTaskPayload } from './components/modals/AddTaskModal';
 import { RescheduleModal } from './components/modals/RescheduleModal';
 import { TrendChart } from './components/tren/TrendChart';
 import { RingkasanCard } from './components/tren/RingkasanCard';
@@ -22,22 +22,33 @@ import { AgendaDetail } from './components/deadline/AgendaDetail';
 import { FokusView } from './components/fokus/FokusView';
 import { LaporanView } from './components/laporan/LaporanView';
 import { SettingsView } from './components/settings/SettingsView';
-import { api, getStoredUserId, setStoredUserId } from './services/api';
+import { LoginView } from './components/auth/LoginView';
+import { OnboardingModal } from './components/onboarding/OnboardingModal';
+import { api, getStoredUserId, setStoredUserId, StudentProfile } from './services/api';
+import { authService } from './services/supabase';
+import { googleCalendarService } from './services/googleCalendar';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Backend state
+  // Auth & Student Profile state
   const [userId, setUserId] = useState<string | null>(getStoredUserId());
-  const [burnoutScore, setBurnoutScore] = useState<number>(18);
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isSyncingCalendar, setIsSyncingCalendar] = useState(false);
+  const [isAutoPlanning, setIsAutoPlanning] = useState(false);
+
+  // Burnout Engine state
+  const [burnoutScore, setBurnoutScore] = useState<number>(20);
   const [zonaLabel, setZonaLabel] = useState<string>('Hijau (Prima)');
   const [trendText, setTrendText] = useState<string>('Kondisi stabil');
   const [alasanChips, setAlasanChips] = useState<string[]>([]);
   const [todayCheckinScore, setTodayCheckinScore] = useState<number | undefined>(undefined);
 
-  // Data states
+  // Task & Schedule data states
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
+  const [matkulList, setMatkulList] = useState<string[]>([]);
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>(INITIAL_CALENDAR_DAYS);
   const [selectedDate, setSelectedDate] = useState<string>(
     () => INITIAL_CALENDAR_DAYS[3]?.date || INITIAL_CALENDAR_DAYS[0]?.date
@@ -62,21 +73,23 @@ export const App: React.FC = () => {
     setToast({ visible: true, message, icon });
     toastTimeoutRef.current = window.setTimeout(() => {
       setToast((prev) => ({ ...prev, visible: false }));
-    }, 2800);
+    }, 3000);
   };
+
+  const studentName = studentProfile?.panggilan || studentProfile?.nama || 'Raka';
 
   useEffect(() => {
     document.body.setAttribute('data-tab', activeTab);
     const titles: Record<TabType, string> = {
-      home: 'Profil Raka',
+      home: `Profil ${studentName}`,
       tren: 'Tren Kesejahteraan',
       deadline: 'Deadline Radar',
       fokus: 'Fokus & Distraksi',
       laporan: 'Laporan & Rekomendasi',
       settings: 'Settings',
     };
-    document.title = `NAPAS · ${titles[activeTab]}`;
-  }, [activeTab]);
+    document.title = `NAPAS · ${titles[activeTab] || 'Dashboard'}`;
+  }, [activeTab, studentName]);
 
   // Load index today from backend
   const loadIndexToday = useCallback(async (uid: string) => {
@@ -127,54 +140,183 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Initialize User on Mount
-  useEffect(() => {
-    async function initUserAndData() {
-      let uid = getStoredUserId();
-      if (!uid) {
-        // Coba inisialisasi default demo user Raka Pratama
-        const demoUser = await api.initDemoUser();
-        if (demoUser) {
-          uid = demoUser.id;
-          setStoredUserId(demoUser.id, demoUser.nama);
-          setUserId(demoUser.id);
-        }
-      }
+  // Load Deadline Radar from backend
+  const loadRadar = useCallback(async (uid: string) => {
+    const radar = await api.getRadar(uid, 14);
+    if (radar && radar.days && radar.days.length > 0) {
+      const mappedDays: CalendarDay[] = radar.days.map((d) => ({
+        date: d.date,
+        dayName: d.dayName,
+        dayNum: d.dayNum,
+        monthShort: d.monthShort,
+        monthFull: d.monthFull,
+        status: d.status,
+        load: d.load,
+        pillText: d.pillText,
+        tasks: d.tasks,
+      }));
+      setCalendarDays(mappedDays);
+      setSelectedDate((prev) => {
+        const exists = mappedDays.some((md) => md.date === prev);
+        return exists ? prev : mappedDays[0].date;
+      });
+    }
+  }, []);
 
-      if (uid) {
-        setUserId(uid);
-        await Promise.all([
-          loadIndexToday(uid),
-          loadWorkloads(uid),
-          api.getTodayCheckIn(uid).then((ci) => {
-            if (ci) setTodayCheckinScore(ci.skor);
-          }),
-        ]);
+  // Load Profile and class schedules
+  const loadProfileAndSchedule = useCallback(async (uid: string) => {
+    const [prof, sched] = await Promise.all([
+      api.getProfile(uid),
+      api.getClassSchedule(uid),
+    ]);
+
+    if (prof) {
+      setStudentProfile(prof);
+      if (prof.onboarded === false) {
+        setIsOnboardingOpen(true);
       }
     }
 
-    initUserAndData();
-  }, [loadIndexToday, loadWorkloads]);
+    if (sched && sched.length > 0) {
+      const uniqueMatkul = Array.from(new Set(sched.map((s) => s.mata_kuliah)));
+      setMatkulList(uniqueMatkul);
+    }
+  }, []);
+
+  // Initialize data for user
+  const initUserSession = useCallback(async (uid: string) => {
+    setUserId(uid);
+    await Promise.all([
+      loadIndexToday(uid),
+      loadWorkloads(uid),
+      loadRadar(uid),
+      loadProfileAndSchedule(uid),
+      api.getTodayCheckIn(uid).then((ci) => {
+        if (ci) setTodayCheckinScore(ci.skor);
+      }),
+    ]);
+  }, [loadIndexToday, loadWorkloads, loadRadar, loadProfileAndSchedule]);
+
+  // Auth State Listener & Mount
+  useEffect(() => {
+    async function checkAuthAndInit() {
+      // 1. Cek sesi Supabase jika user baru kembali dari Google OAuth redirect
+      const session = await authService.getSession();
+      if (session?.user) {
+        const synced = await api.syncAuth({
+          access_token: session.access_token,
+          auth_id: session.user.id,
+          email: session.user.email,
+          nama: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+        });
+        if (synced) {
+          await initUserSession(synced.id);
+          return;
+        }
+      }
+
+      // 2. Cek userId lokal yang tersimpan
+      const storedUid = getStoredUserId();
+      if (storedUid) {
+        await initUserSession(storedUid);
+      }
+    }
+
+    checkAuthAndInit();
+
+    // Listener jika session berubah
+    const unsub = authService.onAuthStateChange(async (session) => {
+      if (session?.user) {
+        const synced = await api.syncAuth({
+          access_token: session.access_token,
+          auth_id: session.user.id,
+          email: session.user.email,
+        });
+        if (synced) {
+          await initUserSession(synced.id);
+        }
+      }
+    });
+
+    return () => unsub();
+  }, [initUserSession]);
+
+  const handleDemoLogin = async () => {
+    const demoUser = await api.initDemoUser();
+    if (demoUser) {
+      setStoredUserId(demoUser.id, demoUser.nama);
+      localStorage.setItem('napas_demo_mode', 'true');
+      await initUserSession(demoUser.id);
+      showToast('Masuk sebagai Raka Pratama (Mode Demo).', '⚡');
+    } else {
+      // Offline fallback
+      const fallbackId = '951459f9-e92f-4193-b470-ea87a899e18d';
+      setStoredUserId(fallbackId, 'Raka Pratama');
+      localStorage.setItem('napas_demo_mode', 'true');
+      setUserId(fallbackId);
+      showToast('Masuk Mode Demo Raka.', '⚡');
+    }
+  };
+
+  const handleLogout = async () => {
+    await authService.signOut();
+    setUserId(null);
+    setStudentProfile(null);
+    showToast('Berhasil keluar.', '👋');
+  };
+
+  const handleSyncGoogleCalendar = async () => {
+    if (!userId) return;
+    setIsSyncingCalendar(true);
+    const result = await googleCalendarService.fetchAndSyncEvents(userId);
+    setIsSyncingCalendar(false);
+
+    if (result.success) {
+      showToast(result.message, '📅');
+      await Promise.all([loadWorkloads(userId), loadRadar(userId), loadIndexToday(userId)]);
+    } else {
+      showToast(result.message, '⚠️');
+    }
+  };
+
+  const handleAutoPlan = async () => {
+    if (!userId) return;
+    setIsAutoPlanning(true);
+    const planRes = await api.autoPlan(userId, 50, 14);
+    setIsAutoPlanning(false);
+
+    if (planRes && planRes.created > 0) {
+      showToast(planRes.message, '⚡');
+      await Promise.all([loadRadar(userId), loadWorkloads(userId)]);
+    } else {
+      showToast(planRes?.message || 'Tidak ada tugas yang perlu dijadwalkan.', 'ℹ️');
+    }
+  };
 
   const handleRefreshScore = async () => {
     if (userId) {
       await loadIndexToday(userId);
       showToast(`Skor diperbarui: ${burnoutScore}% (${zonaLabel})`, '✨');
-    } else {
-      showToast('Skor diperbarui: 18% (Kondisi Prima)', '✨');
     }
   };
 
-  const handleMoodSelect = async (mood: MoodType, icon: string, score: number) => {
+  const handleMoodSelect = async (
+    mood: MoodType,
+    icon: string,
+    score: number,
+    jamTidur?: number,
+    energi?: number
+  ) => {
     showToast(`Mood dicatat: ${mood}`, icon);
     setTodayCheckinScore(score);
 
     if (userId) {
-      await api.postCheckIn(userId, score, `Mood: ${mood}`);
-      // Re-fetch index today supaya engine menghitung check-in baru
+      await api.postCheckIn(userId, score, `Mood: ${mood}`, jamTidur, energi);
       await loadIndexToday(userId);
     }
   };
+
 
   const handleBreathingComplete = async (tipe: 'breathing', durasi: number) => {
     if (userId) {
@@ -188,46 +330,41 @@ export const App: React.FC = () => {
 
     if (userId) {
       await api.deleteWorkload(id);
-      await loadIndexToday(userId);
+      await Promise.all([loadIndexToday(userId), loadRadar(userId)]);
     }
   };
 
-  const handleAddTask = async (newTask: Omit<TaskItem, 'id'>) => {
+  const handleAddTask = async (newTask: NewTaskPayload) => {
     const tempId = `task-${Date.now()}`;
-    const item: TaskItem = {
-      ...newTask,
-      id: tempId,
-    };
-    setTasks((prev) => [item, ...prev]);
+    setTasks((prev) => [{ id: tempId, title: newTask.title, meta: newTask.meta, priority: newTask.priority }, ...prev]);
     showToast('Tugas baru berhasil ditambahkan!', '✅');
 
     if (userId) {
-      const effortNum = newTask.priority === 'red' ? 5 : newTask.priority === 'yellow' ? 3 : 1;
-      const tomorrowIso = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
       const saved = await api.createWorkload({
         user_id: userId,
         judul: newTask.title,
         jenis: 'tugas',
-        deadline: tomorrowIso,
-        est_jam: 2.0,
-        effort: effortNum,
+        deadline: newTask.deadlineIso,
+        est_jam: newTask.estJam,
+        effort: newTask.effort,
       });
       if (saved) {
         setTasks((prev) => prev.map((t) => (t.id === tempId ? { ...t, id: saved.id } : t)));
-        await loadIndexToday(userId);
+        await Promise.all([loadIndexToday(userId), loadRadar(userId)]);
       }
     }
   };
 
   const handleSelectDay = (day: CalendarDay) => {
     setSelectedDate(day.date);
-    showToast(`Melihat jadwal ${day.date}`, '📅');
+    showToast(`Melihat agenda ${day.date}`, '📅');
   };
 
-  const handleConfirmReschedule = (targetDay: string) => {
+  const handleConfirmReschedule = async (targetDay: string) => {
     setIsRescheduleOpen(false);
-    showToast(`Tugas berhasil dipindahkan ke ${targetDay}! Beban menurun.`, '✅');
+    showToast(`Tugas berhasil dipindahkan ke ${targetDay}! Beban diperbarui.`, '✅');
 
+    // Update state kalender lokal
     setCalendarDays((prev) =>
       prev.map((day) => {
         if (day.date === selectedDate) {
@@ -235,7 +372,7 @@ export const App: React.FC = () => {
             ...day,
             status: 'Sedang',
             load: Math.max(30, day.load - 33),
-            pillText: `${Math.max(1, day.tasks.length - 1)} tugas`,
+            pillText: `${Math.max(1, day.tasks.length - 1)} agenda`,
             tasks: day.tasks.slice(1),
           };
         }
@@ -244,16 +381,18 @@ export const App: React.FC = () => {
             ...day,
             status: 'Sedang',
             load: Math.min(60, day.load + 30),
-            pillText: `${day.tasks.length + 1} tugas`,
-            tasks: [
-              ...day.tasks,
-              { title: 'Technical Meeting JOINTS', time: '13.00 - 14.00' },
-            ],
+            pillText: `${day.tasks.length + 1} agenda`,
+            tasks: [...day.tasks, { title: 'Jadwal Pindahan', time: '14.00' }],
           };
         }
         return day;
       })
     );
+
+    if (userId) {
+      await loadRadar(userId);
+      await loadIndexToday(userId);
+    }
   };
 
   const selectedDay =
@@ -271,11 +410,21 @@ export const App: React.FC = () => {
       day: d.date,
       badge:
         idx === 0
-          ? 'Bebas Tugas · Optimal'
+          ? 'Bebas Agenda · Optimal'
           : idx === 1
-          ? 'Bebas Tugas · Akhir Pekan'
-          : 'Bebas Tugas',
+          ? 'Bebas Agenda · Akhir Pekan'
+          : 'Bebas Agenda',
     }));
+
+  // Jika belum login, tampilkan LoginView
+  if (!userId) {
+    return (
+      <div className="app-viewport">
+        <LoginView onDemoLogin={handleDemoLogin} onNotify={showToast} />
+        <Toast visible={toast.visible} message={toast.message} icon={toast.icon} />
+      </div>
+    );
+  }
 
   return (
     <div className="app-viewport">
@@ -289,8 +438,13 @@ export const App: React.FC = () => {
       <div className="main-wrapper">
         <Header
           activeTab={activeTab}
+          studentName={studentName}
+          avatarUrl={studentProfile?.avatar_url}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           onSelectTab={setActiveTab}
+          onSyncCalendar={handleSyncGoogleCalendar}
+          isSyncingCalendar={isSyncingCalendar}
+          onLogout={handleLogout}
         />
 
         <div className="dashboard-container">
@@ -342,7 +496,7 @@ export const App: React.FC = () => {
             </section>
           )}
 
-          {/* Tab 3: Deadline */}
+          {/* Tab 3: Deadline Radar */}
           {activeTab === 'deadline' && (
             <section id="view-deadline" className="page-view active">
               <div className="deadline-container">
@@ -359,6 +513,8 @@ export const App: React.FC = () => {
                     selectedDay={selectedDay}
                     busiestDay={busiestDay}
                     onOpenReschedule={() => setIsRescheduleOpen(true)}
+                    onAutoPlan={handleAutoPlan}
+                    isAutoPlanning={isAutoPlanning}
                   />
                 </div>
               </div>
@@ -392,6 +548,7 @@ export const App: React.FC = () => {
         isOpen={isAddTaskOpen}
         onClose={() => setIsAddTaskOpen(false)}
         onAddTask={handleAddTask}
+        matkulList={matkulList}
       />
 
       <RescheduleModal
@@ -400,6 +557,20 @@ export const App: React.FC = () => {
         onConfirmReschedule={handleConfirmReschedule}
         availableDays={availableRescheduleDays}
       />
+
+      {isOnboardingOpen && (
+        <OnboardingModal
+          isOpen={isOnboardingOpen}
+          userId={userId}
+          initialName={studentName}
+          onComplete={(prof) => {
+            setStudentProfile(prof);
+            setIsOnboardingOpen(false);
+            initUserSession(userId);
+          }}
+          onNotify={showToast}
+        />
+      )}
 
       <Toast
         visible={toast.visible}
