@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --color-header: #01332a;
+  --color-header: #00332a;
   --color-sidebar: #e5e4e0;
-  --color-main-bg: #fafbf6;
+  --color-main-bg: #fafaf7;
   --color-primary-green: #0a5445;
   --color-logo-green: #0b7656;
   --color-nav-muted: #6b6a65;
@@ -39,7 +39,7 @@ html, body, #root {
   width: 100%;
   height: 100%;
   background-color: var(--color-main-bg);
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inclusive Sans', sans-serif;
   color: var(--color-text-dark);
   overflow: hidden;
 }
