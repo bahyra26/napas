@@ -4,20 +4,24 @@ interface RescheduleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirmReschedule: (targetDay: string) => void;
+  availableDays?: Array<{ day: string; badge: string }>;
 }
 
 export const RescheduleModal: React.FC<RescheduleModalProps> = ({
   isOpen,
   onClose,
   onConfirmReschedule,
+  availableDays,
 }) => {
   if (!isOpen) return null;
 
-  const recommendations = [
-    { day: 'Rabu, 18 September', badge: 'Bebas Tugas · Optimal' },
-    { day: 'Sabtu, 21 September', badge: 'Bebas Tugas · Akhir Pekan' },
-    { day: 'Kamis, 26 September', badge: 'Bebas Tugas' },
-  ];
+  const recommendations = availableDays && availableDays.length > 0
+    ? availableDays
+    : [
+        { day: 'Rabu, 18 September', badge: 'Bebas Tugas · Optimal' },
+        { day: 'Sabtu, 21 September', badge: 'Bebas Tugas · Akhir Pekan' },
+        { day: 'Kamis, 26 September', badge: 'Bebas Tugas' },
+      ];
 
   return (
     <div

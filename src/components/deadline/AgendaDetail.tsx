@@ -3,11 +3,13 @@ import { CalendarDay } from '../../types';
 
 interface AgendaDetailProps {
   selectedDay: CalendarDay;
+  busiestDay?: CalendarDay;
   onOpenReschedule: () => void;
 }
 
 export const AgendaDetail: React.FC<AgendaDetailProps> = ({
   selectedDay,
+  busiestDay,
   onOpenReschedule,
 }) => {
   const getBadgeClass = (status: string) => {
@@ -118,7 +120,12 @@ export const AgendaDetail: React.FC<AgendaDetailProps> = ({
           <line x1="12" y1="9" x2="12" y2="13"></line>
           <line x1="12" y1="17" x2="12.01" y2="17"></line>
         </svg>
-        <span>24 September adalah hari terpadat — mulai cicil dari sekarang</span>
+        <span>
+          {busiestDay
+            ? `${busiestDay.dayNum} ${busiestDay.monthFull || ''}`
+            : '24 September'}{' '}
+          adalah hari terpadat — mulai cicil dari sekarang
+        </span>
       </div>
     </div>
   );

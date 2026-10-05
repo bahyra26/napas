@@ -5,7 +5,6 @@ import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { Toast } from './components/common/Toast';
-import { PlaceholderView } from './components/common/PlaceholderView';
 import { GaugeCircle } from './components/home/GaugeCircle';
 import { KenapaCard } from './components/home/KenapaCard';
 import { MoodCheckin } from './components/home/MoodCheckin';
@@ -20,6 +19,9 @@ import { KesimpulanCard } from './components/tren/KesimpulanCard';
 import { CalendarGrid } from './components/deadline/CalendarGrid';
 import { RingkasanBeban } from './components/deadline/RingkasanBeban';
 import { AgendaDetail } from './components/deadline/AgendaDetail';
+import { FokusView } from './components/fokus/FokusView';
+import { LaporanView } from './components/laporan/LaporanView';
+import { SettingsView } from './components/settings/SettingsView';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -27,12 +29,23 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     document.body.setAttribute('data-tab', activeTab);
+    const titles: Record<TabType, string> = {
+      home: 'Profil Raka',
+      tren: 'Tren Kesejahteraan',
+      deadline: 'Deadline Radar',
+      fokus: 'Fokus & Distraksi',
+      laporan: 'Laporan & Rekomendasi',
+      settings: 'Settings',
+    };
+    document.title = `NAPAS · ${titles[activeTab]}`;
   }, [activeTab]);
 
   // Data states
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>(INITIAL_CALENDAR_DAYS);
-  const [selectedDate, setSelectedDate] = useState<string>('Kamis, 19 September');
+  const [selectedDate, setSelectedDate] = useState<string>(
+    () => INITIAL_CALENDAR_DAYS[3]?.date || INITIAL_CALENDAR_DAYS[0]?.date
+  );
 
   // Modal states
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
@@ -87,16 +100,27 @@ export const App: React.FC = () => {
     setIsRescheduleOpen(false);
     showToast(`Tugas berhasil dipindahkan ke ${targetDay}! Beban menurun.`, '✅');
 
-    // Update Kamis to Sedang & lighter load
     setCalendarDays((prev) =>
       prev.map((day) => {
-        if (day.date === 'Kamis, 19 September') {
+        if (day.date === selectedDate) {
           return {
             ...day,
             status: 'Sedang',
-            load: 45,
-            pillText: '1 tugas',
-            tasks: [{ title: 'UAS Kalkulus Fisika', time: 'Deadline 23.59' }],
+            load: Math.max(30, day.load - 33),
+            pillText: `${Math.max(1, day.tasks.length - 1)} tugas`,
+            tasks: day.tasks.slice(1),
+          };
+        }
+        if (day.date === targetDay) {
+          return {
+            ...day,
+            status: 'Sedang',
+            load: Math.min(60, day.load + 30),
+            pillText: `${day.tasks.length + 1} tugas`,
+            tasks: [
+              ...day.tasks,
+              { title: 'Technical Meeting JOINTS', time: '13.00 - 14.00' },
+            ],
           };
         }
         return day;
@@ -106,6 +130,24 @@ export const App: React.FC = () => {
 
   const selectedDay =
     calendarDays.find((d) => d.date === selectedDate) || calendarDays[0];
+
+  const busiestDay = calendarDays.reduce(
+    (max, d) => (d.load > max.load ? d : max),
+    calendarDays[0]
+  );
+
+  const availableRescheduleDays = calendarDays
+    .filter((d) => d.status === 'Ringan' && d.date !== selectedDate)
+    .slice(0, 3)
+    .map((d, idx) => ({
+      day: d.date,
+      badge:
+        idx === 0
+          ? 'Bebas Tugas · Optimal'
+          : idx === 1
+          ? 'Bebas Tugas · Akhir Pekan'
+          : 'Bebas Tugas',
+    }));
 
   return (
     <div className="app-viewport">
@@ -120,6 +162,7 @@ export const App: React.FC = () => {
         <Header
           activeTab={activeTab}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          onSelectTab={setActiveTab}
         />
 
         <div className="dashboard-container">
@@ -171,10 +214,11 @@ export const App: React.FC = () => {
                       selectedDate={selectedDate}
                       onSelectDay={handleSelectDay}
                     />
-                    <RingkasanBeban />
+                    <RingkasanBeban days={calendarDays} />
                   </div>
                   <AgendaDetail
                     selectedDay={selectedDay}
+                    busiestDay={busiestDay}
                     onOpenReschedule={() => setIsRescheduleOpen(true)}
                   />
                 </div>
@@ -185,33 +229,21 @@ export const App: React.FC = () => {
           {/* Tab 4: Fokus */}
           {activeTab === 'fokus' && (
             <section id="view-fokus" className="page-view active">
-              <PlaceholderView
-                icon="🧘‍♂️"
-                title="Ruang Fokus & Relaksasi"
-                description="Atur ritme kerja menggunakan timer Pomodoro 25 menit dan panduan relaksasi pernapasan terintegrasi."
-              />
+              <FokusView onNotify={showToast} />
             </section>
           )}
 
           {/* Tab 5: Laporan */}
           {activeTab === 'laporan' && (
             <section id="view-laporan" className="page-view active">
-              <PlaceholderView
-                icon="📊"
-                title="Laporan Kesejahteraan Mingguan"
-                description="Unduh rekap data kesehatan mental, riwayat intervensi, dan skor kepatuhan istirahat dalam format PDF."
-              />
+              <LaporanView onNotify={showToast} />
             </section>
           )}
 
           {/* Tab 6: Settings */}
           {activeTab === 'settings' && (
             <section id="view-settings" className="page-view active">
-              <PlaceholderView
-                icon="⚙️"
-                title="Pengaturan Sistem"
-                description="Sesuaikan profil pengguna, jadwal notifikasi, pengingat jeda istirahat, dan preferensi privasi data sensor."
-              />
+              <SettingsView onNotify={showToast} />
             </section>
           )}
         </div>
@@ -227,6 +259,7 @@ export const App: React.FC = () => {
         isOpen={isRescheduleOpen}
         onClose={() => setIsRescheduleOpen(false)}
         onConfirmReschedule={handleConfirmReschedule}
+        availableDays={availableRescheduleDays}
       />
 
       <Toast

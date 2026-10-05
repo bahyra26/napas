@@ -1,4 +1,26 @@
-import { CalendarDay, HeatmapRow, TaskItem, TrendPoint } from '../types';
+import {
+  CalendarDay,
+  FocusDailyBar,
+  FocusOverviewData,
+  FocusStreakDay,
+  FocusTopDistractor,
+  HeatmapRow,
+  InterventionHistoryItem,
+  InterventionSettingItem,
+  SensorPermissionItem,
+  TaskItem,
+  TrendPoint,
+  UserProfileInfo,
+  WeeklyInsightData,
+  WeeklySummaryStat,
+  WellnessPlaybookItem,
+} from '../types';
+import {
+  generateRealtimeCalendarDays,
+  generateRealtimeStreakDays,
+  generateRealtimeWeeklyBars,
+  getTodayDateString,
+} from '../utils/dateUtils';
 
 export const INITIAL_TASKS: TaskItem[] = [
   {
@@ -15,147 +37,7 @@ export const INITIAL_TASKS: TaskItem[] = [
   },
 ];
 
-export const INITIAL_CALENDAR_DAYS: CalendarDay[] = [
-  {
-    date: 'Senin, 16 September',
-    dayName: 'Sen',
-    dayNum: 16,
-    status: 'Ringan',
-    load: 0,
-    pillText: 'Bebas',
-    tasks: [],
-  },
-  {
-    date: 'Selasa, 17 September',
-    dayName: 'Sel',
-    dayNum: 17,
-    status: 'Sedang',
-    load: 35,
-    pillText: '1 tugas',
-    tasks: [{ title: 'Kuis Probabilitas & Statistika', time: '10.00 - 11.30' }],
-  },
-  {
-    date: 'Rabu, 18 September',
-    dayName: 'Rab',
-    dayNum: 18,
-    status: 'Ringan',
-    load: 0,
-    pillText: 'Bebas',
-    tasks: [],
-  },
-  {
-    date: 'Kamis, 19 September',
-    dayName: 'Kam',
-    dayNum: 19,
-    status: 'Berat',
-    load: 78,
-    pillText: '2 tugas',
-    tasks: [
-      { title: 'Technical Meeting JOINTS', time: '13.00 - 14.00' },
-      { title: 'UAS Kalkulus Fisika', time: 'Deadline 23.59' },
-    ],
-  },
-  {
-    date: 'Jumat, 20 September',
-    dayName: 'Jum',
-    dayNum: 20,
-    status: 'Sedang',
-    load: 55,
-    pillText: '2 tugas',
-    tasks: [
-      { title: 'Laporan Praktikum Jaringan', time: 'Deadline 17.00' },
-      { title: 'Submit Review Paper', time: '21.00' },
-    ],
-  },
-  {
-    date: 'Sabtu, 21 September',
-    dayName: 'Sab',
-    dayNum: 21,
-    status: 'Ringan',
-    load: 0,
-    pillText: 'Bebas',
-    tasks: [],
-  },
-  {
-    date: 'Minggu, 22 September',
-    dayName: 'Min',
-    dayNum: 22,
-    status: 'Sedang',
-    load: 30,
-    pillText: '1 tugas',
-    tasks: [{ title: 'Cicil Bab 3 Skripsi', time: '20.00' }],
-  },
-  {
-    date: 'Senin, 23 September',
-    dayName: 'Sen',
-    dayNum: 23,
-    status: 'Sedang',
-    load: 40,
-    pillText: '1 tugas',
-    tasks: [{ title: 'Tugas Algoritma Pemrograman', time: 'Deadline 23.59' }],
-  },
-  {
-    date: 'Selasa, 24 September',
-    dayName: 'Sel',
-    dayNum: 24,
-    status: 'Berat',
-    load: 95,
-    pillText: '3 tugas',
-    tasks: [
-      { title: 'Presentasi Proyek Akhir', time: '09.00 - 11.30' },
-      { title: 'Laporan Besar Basis Data', time: 'Deadline 18.00' },
-      { title: 'Kuis Desain UI/UX', time: 'Deadline 23.59' },
-    ],
-  },
-  {
-    date: 'Rabu, 25 September',
-    dayName: 'Rab',
-    dayNum: 25,
-    status: 'Sedang',
-    load: 35,
-    pillText: '1 tugas',
-    tasks: [{ title: 'Diskusi Kelompok Riset', time: '16.00 - 17.30' }],
-  },
-  {
-    date: 'Kamis, 26 September',
-    dayName: 'Kam',
-    dayNum: 26,
-    status: 'Ringan',
-    load: 0,
-    pillText: 'Bebas',
-    tasks: [],
-  },
-  {
-    date: 'Jumat, 27 September',
-    dayName: 'Jum',
-    dayNum: 27,
-    status: 'Sedang',
-    load: 60,
-    pillText: '2 tugas',
-    tasks: [
-      { title: 'Asistensi Modul 4', time: '14.00 - 16.00' },
-      { title: 'Submit Revisi Bab 2', time: 'Deadline 23.59' },
-    ],
-  },
-  {
-    date: 'Sabtu, 28 September',
-    dayName: 'Sab',
-    dayNum: 28,
-    status: 'Ringan',
-    load: 0,
-    pillText: 'Bebas',
-    tasks: [],
-  },
-  {
-    date: 'Minggu, 29 September',
-    dayName: 'Min',
-    dayNum: 29,
-    status: 'Sedang',
-    load: 30,
-    pillText: '1 tugas',
-    tasks: [{ title: 'Persiapan Mingguan & Jadwal', time: '19.00' }],
-  },
-];
+export const INITIAL_CALENDAR_DAYS: CalendarDay[] = generateRealtimeCalendarDays();
 
 export const TREND_POINTS: TrendPoint[] = [
   { day: 1, val: '3%', percentNum: 3, cx: 66.0, cy: 224.0 },
@@ -269,3 +151,219 @@ export const HEATMAP_DATA: HeatmapRow[] = [
     ],
   },
 ];
+
+/* ==========================================================================
+   FOKUS & DISTRAKSI MOCK DATA
+   ========================================================================== */
+
+export const FOCUS_OVERVIEW_TODAY: FocusOverviewData = {
+  date: getTodayDateString(),
+  focusPercent: 78,
+  distractPercent: 22,
+  focusDuration: '5j 30m',
+  distractDuration: '1j 34m',
+  motivationalNote: 'Keren! Kamu sudah lebih fokus dari kemarin 👍',
+};
+
+export const FOCUS_TOP_DISTRACTORS: FocusTopDistractor[] = [
+  {
+    id: 'distract-1',
+    name: 'YouTube',
+    durationMinutes: 42,
+    durationLabel: '42 menit',
+    percentage: 88, // relative visual fill ~88% of bar
+  },
+  {
+    id: 'distract-2',
+    name: 'Instagram',
+    durationMinutes: 28,
+    durationLabel: '28 menit',
+    percentage: 58,
+  },
+  {
+    id: 'distract-3',
+    name: 'Discord',
+    durationMinutes: 19,
+    durationLabel: '19 menit',
+    percentage: 40,
+  },
+  {
+    id: 'distract-4',
+    name: 'Mobile Legends',
+    durationMinutes: 15,
+    durationLabel: '15 menit',
+    percentage: 31,
+  },
+  {
+    id: 'distract-5',
+    name: 'Twitter/X',
+    durationMinutes: 10,
+    durationLabel: '10 menit',
+    percentage: 21,
+  },
+];
+
+export const FOCUS_STREAK_DAYS: FocusStreakDay[] = generateRealtimeStreakDays();
+
+export const FOCUS_STREAK_INFO = {
+  currentStreak: 12,
+  targetRule: 'berturut-turut fokus >4 jam/hari',
+  bestRecord: 18,
+  days: FOCUS_STREAK_DAYS,
+};
+
+export const FOCUS_WEEKLY_BARS: FocusDailyBar[] = generateRealtimeWeeklyBars();
+
+/* ==========================================================================
+   LAPORAN & REKOMENDASI MOCK DATA
+   ========================================================================== */
+
+export const WEEKLY_INSIGHT: WeeklyInsightData = {
+  title: 'Kamu sudah berusaha keras minggu ini.',
+  description:
+    'Beban tugas dan pola tidurmu membuat energi menurun di tengah minggu. Untungnya, kamu merespons 4 dari 5 intervensi yang muncul.',
+  weeklyScore: 68,
+  zoneName: 'zona oranye',
+  note: 'Lebih baik dari kemarin — terus beri ruang untuk pulih.',
+};
+
+export const WELLNESS_PLAYBOOK: WellnessPlaybookItem[] = [
+  {
+    id: 'pb-1',
+    stepNumber: 1,
+    title: 'Batasi layar setelah 22.00',
+    description: 'Sisakan 30 menit untuk bersiap tidur tanpa notifikasi.',
+    actionLabel: 'Mulai malam ini',
+    isPrimary: true,
+  },
+  {
+    id: 'pb-2',
+    stepNumber: 2,
+    title: 'Ambil jeda jalan kaki 30 menit',
+    description: 'Pilih waktu sebelum jam 14.00, saat stres biasanya naik.',
+    actionLabel: 'Jadwalkan besok',
+    isPrimary: false,
+  },
+  {
+    id: 'pb-3',
+    stepNumber: 3,
+    title: 'Hubungi orang yang kamu percaya',
+    description: 'Ceritakan satu hal yang membuatmu terasa berat minggu ini.',
+    actionLabel: 'Saat kamu siap',
+    isPrimary: false,
+  },
+];
+
+export const PLAYBOOK_ADVISORY =
+  'Jika kondisi ini berlanjut 7 hari, pertimbangkan konsultasi ke BK kampus atau dokter.';
+
+export const WEEKLY_SUMMARY_STATS: WeeklySummaryStat[] = [
+  {
+    id: 'stat-muncul',
+    value: '5 kali',
+    label: 'intervensi muncul',
+    colorType: 'orange',
+  },
+  {
+    id: 'stat-selesai',
+    value: '4 / 5',
+    label: 'intervensi selesai',
+    colorType: 'green',
+  },
+  {
+    id: 'stat-risiko',
+    value: '3 hari',
+    label: 'risiko tinggi',
+    colorType: 'red',
+  },
+];
+
+export const INTERVENTION_HISTORY: InterventionHistoryItem[] = [
+  {
+    id: 'hist-1',
+    title: 'Breathing 4-7-8',
+    status: 'Selesai · 60 detik',
+    time: 'Hari ini, 14.10',
+    isCompleted: true,
+  },
+  {
+    id: 'hist-2',
+    title: 'Focus Lock',
+    status: 'Selesai · 10 menit',
+    time: 'Kemarin, 20.42',
+    isCompleted: true,
+  },
+  {
+    id: 'hist-3',
+    title: 'Microbreak 20-20-20',
+    status: 'Dilewati',
+    time: 'Kemarin, 15.30',
+    isCompleted: false,
+  },
+];
+
+export const DAILY_REFLECTION_INFO = {
+  tag: 'REFLEKSI HARI INI',
+  question: 'Hal baik apa yang ingin kamu ulang besok?',
+  actionText: 'Tulis refleksi →',
+};
+
+/* ==========================================================================
+   SETTINGS MOCK DATA
+   ========================================================================== */
+
+export const INITIAL_SENSOR_PERMISSIONS: SensorPermissionItem[] = [
+  {
+    id: 'sensor-camera',
+    iconType: 'camera',
+    title: 'Kamera BioVisual',
+    description: 'Mendeteksi pola kedipan dan ketegangan wajah secara on-device.',
+    enabled: false,
+  },
+  {
+    id: 'sensor-window',
+    iconType: 'window',
+    title: 'Aktivitas Jendela',
+    description: 'Membedakan aplikasi akademik dan distraksi untuk laporan fokus.',
+    enabled: false,
+  },
+  {
+    id: 'sensor-heart',
+    iconType: 'heart',
+    title: 'Check-in suasana hati',
+    description: 'Menyimpan jawaban check-in singkat yang kamu isi sendiri.',
+    enabled: true,
+  },
+];
+
+export const INITIAL_INTERVENTION_SETTINGS: InterventionSettingItem[] = [
+  {
+    id: 'inter-breathing',
+    title: 'Breathing 4-7-8',
+    description: 'Tawarkan saat sinyal stres naik.',
+    enabled: true,
+  },
+  {
+    id: 'inter-focuslock',
+    title: 'Focus Lock',
+    description: 'Aktif saat distraksi > 5 menit.',
+    enabled: true,
+  },
+  {
+    id: 'inter-nudge',
+    title: 'Nudge 20-20-20',
+    description: 'Pengingat setelah 45 menit fokus.',
+    enabled: true,
+  },
+];
+
+export const INITIAL_WHITELIST_APPS: string[] = ['VS Code', 'Google Docs', 'Notion'];
+
+export const INITIAL_USER_PROFILE: UserProfileInfo = {
+  name: 'Raka Pratama',
+  email: 'raka.pratama@student.ac.id',
+  role: 'Mahasiswa',
+};
+
+
+
