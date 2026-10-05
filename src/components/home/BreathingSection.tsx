@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 interface BreathingSectionProps {
   onNotify?: (msg: string, icon: string) => void;
+  onInterventionComplete?: (tipe: 'breathing', durasi: number) => void;
 }
 
 const PHASES = [
@@ -10,11 +11,15 @@ const PHASES = [
   { text: 'Hembuskan (8s)', duration: 8000 },
 ];
 
-export const BreathingSection: React.FC<BreathingSectionProps> = ({ onNotify }) => {
+export const BreathingSection: React.FC<BreathingSectionProps> = ({
+  onNotify,
+  onInterventionComplete,
+}) => {
   const [isActive, setIsActive] = useState(false);
   const [promptText, setPromptText] = useState('Tekan Untuk Mulai');
   const phaseIndexRef = useRef(0);
   const timeoutRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (!isActive) {
@@ -26,6 +31,8 @@ export const BreathingSection: React.FC<BreathingSectionProps> = ({ onNotify }) 
       phaseIndexRef.current = 0;
       return;
     }
+
+    startTimeRef.current = Date.now();
 
     const step = () => {
       const currentPhase = PHASES[phaseIndexRef.current];
@@ -52,7 +59,9 @@ export const BreathingSection: React.FC<BreathingSectionProps> = ({ onNotify }) 
       onNotify?.('Latihan napas dimulai. Tarik napas secara perlahan...', '🌿');
     } else {
       setIsActive(false);
-      onNotify?.('Latihan napas selesai.', '✨');
+      const elapsedSec = Math.max(15, Math.round((Date.now() - startTimeRef.current) / 1000));
+      onNotify?.(`Latihan napas selesai (${elapsedSec} detik). Pikiran lebih tenang!`, '✨');
+      onInterventionComplete?.('breathing', elapsedSec);
     }
   };
 

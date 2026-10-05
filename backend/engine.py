@@ -203,11 +203,20 @@ def trend_up_3days(histori: List[Dict[str, Any]]) -> bool:
 
 
 def build_alasan(sub_reasons: List[str], missing_signals: List[str], is_trending: bool) -> List[str]:
-    """Menyusun daftar chips alasan explainable yang mudah dibaca juri & pengguna."""
-    alasan = list(sub_reasons)
+    """Menyusun daftar chips alasan explainable yang unik dan mudah dibaca juri & pengguna."""
+    seen = set()
+    alasan = []
+
+    for r in sub_reasons:
+        if r and r not in seen:
+            seen.add(r)
+            alasan.append(r)
 
     if is_trending:
-        alasan.append("tren: index naik 3 hari beruntun (+10)")
+        trend_msg = "tren: index naik 3 hari beruntun (+10)"
+        if trend_msg not in seen:
+            seen.add(trend_msg)
+            alasan.append(trend_msg)
 
     missing_notices = {
         "stress": "sensor visual tidak aktif hari ini",
@@ -216,8 +225,10 @@ def build_alasan(sub_reasons: List[str], missing_signals: List[str], is_trending
         "load": "belum ada data beban kerja",
     }
     for k in missing_signals:
-        if k in missing_notices:
-            alasan.append(missing_notices[k])
+        notice = missing_notices.get(k)
+        if notice and notice not in seen:
+            seen.add(notice)
+            alasan.append(notice)
 
     return alasan if alasan else ["semua sinyal dalam batas wajar"]
 

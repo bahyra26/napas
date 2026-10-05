@@ -1,11 +1,47 @@
-import React from 'react';
-import { HEATMAP_DATA, HEATMAP_HOURS } from '../../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { HEATMAP_DATA as FALLBACK_DATA, HEATMAP_HOURS as FALLBACK_HOURS } from '../../data/mockData';
+import { HeatmapRow } from '../../types';
+import { api, getStoredUserId } from '../../services/api';
 
 interface HeatmapStresProps {
   onCellInteract: (info: string) => void;
 }
 
 export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) => {
+  const [hours, setHours] = useState<string[]>(FALLBACK_HOURS);
+  const [rows, setRows] = useState<HeatmapRow[]>(FALLBACK_DATA);
+  const [peakHours, setPeakHours] = useState<string>('pukul 14:00 - 18:00');
+  const [heaviestDay, setHeaviestDay] = useState<string>(
+    'Hari Selasa dan Jumat adalah hari dengan akumulasi stres tertinggi minggu ini.'
+  );
+  const [advice, setAdvice] = useState<string>(
+    'Pertimbangkan untuk menjadwalkan jeda istirahat pendek atau latihan napas sebelum jam 2 siang.'
+  );
+
+  useEffect(() => {
+    async function loadHeatmap() {
+      const userId = getStoredUserId();
+      if (!userId) return;
+
+      const data = await api.getHeatmap(userId, 7);
+      if (data && data.rows && data.rows.length > 0) {
+        setHours(data.hours || FALLBACK_HOURS);
+        setRows(data.rows as HeatmapRow[]);
+        if (data.peak_stress_hours) {
+          setPeakHours(data.peak_stress_hours);
+        }
+        if (data.heaviest_day) {
+          setHeaviestDay(data.heaviest_day);
+        }
+        if (data.advice) {
+          setAdvice(data.advice);
+        }
+      }
+    }
+
+    loadHeatmap();
+  }, []);
+
   return (
     <div className="tren-card card-heatmap-wrap">
       <div className="heatmap-col">
@@ -14,7 +50,7 @@ export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) =>
           {/* Column Hour Headers */}
           <div className="heatmap-header-row">
             <span className="hm-corner"></span>
-            {HEATMAP_HOURS.map((hr) => (
+            {hours.map((hr) => (
               <span key={hr} className="hm-th">
                 {hr}
               </span>
@@ -23,7 +59,7 @@ export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) =>
 
           {/* 7 Rows (Sen s/d Min) */}
           <div className="heatmap-rows">
-            {HEATMAP_DATA.map((row) => (
+            {rows.map((row) => (
               <div className="hm-row" key={row.dayName}>
                 <span className="hm-day">{row.dayName}</span>
                 <div className="hm-cells">
@@ -53,7 +89,7 @@ export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) =>
             <div className="ket-text-block">
               <span className="ket-title">Waktu Puncak Stress</span>
               <p className="ket-desc">
-                Tingkat stres Anda paling tinggi (merah) sering terpantau pada pukul 14:00 - 18:00.
+                Tingkat stres Anda paling tinggi sering terpantau pada {peakHours}.
               </p>
             </div>
           </div>
@@ -61,18 +97,14 @@ export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) =>
             <span className="ket-bullet">•</span>
             <div className="ket-text-block">
               <span className="ket-title">Pola Hari Terberat</span>
-              <p className="ket-desc">
-                Hari Selasa dan Jumat adalah hari dengan akumulasi stres tertinggi minggu ini.
-              </p>
+              <p className="ket-desc">{heaviestDay}</p>
             </div>
           </div>
           <div className="ket-point">
             <span className="ket-bullet">•</span>
             <div className="ket-text-block">
               <span className="ket-title">Saran Singkat</span>
-              <p className="ket-desc">
-                Pertimbangkan untuk menjadwalkan jeda istirahat pendek atau latihan napas sebelum jam 2 siang.
-              </p>
+              <p className="ket-desc">{advice}</p>
             </div>
           </div>
         </div>

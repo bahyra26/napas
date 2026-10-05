@@ -2,15 +2,21 @@ import React, { useState } from 'react';
 import { MoodType } from '../../types';
 
 interface MoodCheckinProps {
-  onMoodSelect: (mood: MoodType, icon: string) => void;
+  onMoodSelect: (mood: MoodType, icon: string, score: number) => void;
+  currentScore?: number;
 }
 
-export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect }) => {
-  const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
+export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect, currentScore }) => {
+  const [selectedMood, setSelectedMood] = useState<MoodType | null>(() => {
+    if (currentScore === 5) return 'Bahagia / Senang';
+    if (currentScore === 3) return 'Netral';
+    if (currentScore && currentScore <= 2) return 'Sedih';
+    return null;
+  });
 
-  const handleSelect = (mood: MoodType, icon: string) => {
+  const handleSelect = (mood: MoodType, icon: string, score: number) => {
     setSelectedMood(mood);
-    onMoodSelect(mood, icon);
+    onMoodSelect(mood, icon, score);
   };
 
   return (
@@ -37,11 +43,11 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect }) => {
       </div>
 
       <div className="mood-list">
-        {/* Happy Button */}
+        {/* Happy Button (Skor: 5) */}
         <button
           type="button"
           className={`mood-btn mood-happy ${selectedMood === 'Bahagia / Senang' ? 'active' : ''}`}
-          onClick={() => handleSelect('Bahagia / Senang', '😊')}
+          onClick={() => handleSelect('Bahagia / Senang', '😊', 5)}
         >
           <svg className="mood-icon" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
@@ -53,11 +59,11 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect }) => {
           <span className="mood-check-badge">✓</span>
         </button>
 
-        {/* Neutral Button */}
+        {/* Neutral Button (Skor: 3) */}
         <button
           type="button"
           className={`mood-btn mood-neutral ${selectedMood === 'Netral' ? 'active' : ''}`}
-          onClick={() => handleSelect('Netral', '😐')}
+          onClick={() => handleSelect('Netral', '😐', 3)}
         >
           <svg className="mood-icon" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
@@ -69,11 +75,11 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect }) => {
           <span className="mood-check-badge">✓</span>
         </button>
 
-        {/* Sad Button */}
+        {/* Sad Button (Skor: 1) */}
         <button
           type="button"
           className={`mood-btn mood-sad ${selectedMood === 'Sedih' ? 'active' : ''}`}
-          onClick={() => handleSelect('Sedih', '😔')}
+          onClick={() => handleSelect('Sedih', '😔', 1)}
         >
           <svg className="mood-icon" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"></circle>

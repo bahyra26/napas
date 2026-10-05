@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   INITIAL_INTERVENTION_SETTINGS,
   INITIAL_SENSOR_PERMISSIONS,
@@ -18,6 +18,7 @@ import { DataAccountCard } from './DataAccountCard';
 import { AddAppModal } from '../modals/AddAppModal';
 import { ThresholdModal } from '../modals/ThresholdModal';
 import { ProfileModal } from '../modals/ProfileModal';
+import { api, getStoredUserId } from '../../services/api';
 
 interface SettingsViewProps {
   onNotify: (message: string, icon?: string) => void;
@@ -35,20 +36,57 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify }) => {
   const [isThresholdOpen, setIsThresholdOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const handleToggleSensor = (id: string) => {
+  useEffect(() => {
+    async function loadUserData() {
+      const userId = getStoredUserId();
+      if (!userId) return;
+
+      const user = await api.getUser(userId);
+      if (user) {
+        setUserProfile({
+          name: user.nama,
+          email: user.email,
+          role: 'Mahasiswa',
+        });
+        setSensors((prev) =>
+          prev.map((s) => {
+            if (s.id === 'sensor-camera') {
+              return { ...s, enabled: user.consent_camera };
+            }
+            if (s.id === 'sensor-window') {
+              return { ...s, enabled: user.consent_window };
+            }
+            return s;
+          })
+        );
+      }
+    }
+
+    loadUserData();
+  }, []);
+
+  const handleToggleSensor = async (id: string) => {
+    const target = sensors.find((s) => s.id === id);
+    if (!target) return;
+
+    const newState = !target.enabled;
     setSensors((prev) =>
-      prev.map((s) => {
-        if (s.id === id) {
-          const newState = !s.enabled;
-          onNotify(
-            `${s.title} sekarang ${newState ? 'diaktifkan' : 'dinonaktifkan'}.`,
-            newState ? '🔒' : '⚪'
-          );
-          return { ...s, enabled: newState };
-        }
-        return s;
-      })
+      prev.map((s) => (s.id === id ? { ...s, enabled: newState } : s))
     );
+
+    onNotify(
+      `${target.title} sekarang ${newState ? 'diaktifkan' : 'dinonaktifkan'}.`,
+      newState ? '🔒' : '⚪'
+    );
+
+    const userId = getStoredUserId();
+    if (userId) {
+      if (id === 'sensor-camera') {
+        await api.updateUser(userId, { consent_camera: newState });
+      } else if (id === 'sensor-window') {
+        await api.updateUser(userId, { consent_window: newState });
+      }
+    }
   };
 
   const handleToggleIntervention = (id: string) => {
@@ -111,9 +149,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify }) => {
     onNotify('Fitur manajemen penghapusan data aman siap digunakan.', '🛡️');
   };
 
-  const handleSaveProfile = (updated: UserProfileInfo) => {
+  const handleSaveProfile = async (updated: UserProfileInfo) => {
     setUserProfile(updated);
     onNotify(`Profil ${updated.name} berhasil diperbarui!`, '👤');
+
+    const userId = getStoredUserId();
+    if (userId) {
+      await api.updateUser(userId, {
+        nama: updated.name,
+        email: updated.email,
+      });
+    }
   };
 
   return (

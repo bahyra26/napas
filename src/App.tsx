@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { CalendarDay, MoodType, TabType, TaskItem, ToastState } from './types';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { CalendarDay, MoodType, PriorityType, TabType, TaskItem, ToastState } from './types';
 import { INITIAL_CALENDAR_DAYS, INITIAL_TASKS } from './data/mockData';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
@@ -22,23 +22,19 @@ import { AgendaDetail } from './components/deadline/AgendaDetail';
 import { FokusView } from './components/fokus/FokusView';
 import { LaporanView } from './components/laporan/LaporanView';
 import { SettingsView } from './components/settings/SettingsView';
+import { api, getStoredUserId, setStoredUserId } from './services/api';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    document.body.setAttribute('data-tab', activeTab);
-    const titles: Record<TabType, string> = {
-      home: 'Profil Raka',
-      tren: 'Tren Kesejahteraan',
-      deadline: 'Deadline Radar',
-      fokus: 'Fokus & Distraksi',
-      laporan: 'Laporan & Rekomendasi',
-      settings: 'Settings',
-    };
-    document.title = `NAPAS · ${titles[activeTab]}`;
-  }, [activeTab]);
+  // Backend state
+  const [userId, setUserId] = useState<string | null>(getStoredUserId());
+  const [burnoutScore, setBurnoutScore] = useState<number>(18);
+  const [zonaLabel, setZonaLabel] = useState<string>('Hijau (Prima)');
+  const [trendText, setTrendText] = useState<string>('Kondisi stabil');
+  const [alasanChips, setAlasanChips] = useState<string[]>([]);
+  const [todayCheckinScore, setTodayCheckinScore] = useState<number | undefined>(undefined);
 
   // Data states
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
@@ -69,26 +65,158 @@ export const App: React.FC = () => {
     }, 2800);
   };
 
-  const handleRefreshScore = () => {
-    showToast('Skor diperbarui: 18% (Kondisi Prima)', '✨');
+  useEffect(() => {
+    document.body.setAttribute('data-tab', activeTab);
+    const titles: Record<TabType, string> = {
+      home: 'Profil Raka',
+      tren: 'Tren Kesejahteraan',
+      deadline: 'Deadline Radar',
+      fokus: 'Fokus & Distraksi',
+      laporan: 'Laporan & Rekomendasi',
+      settings: 'Settings',
+    };
+    document.title = `NAPAS · ${titles[activeTab]}`;
+  }, [activeTab]);
+
+  // Load index today from backend
+  const loadIndexToday = useCallback(async (uid: string) => {
+    const data = await api.getTodayIndex(uid);
+    if (data) {
+      setBurnoutScore(Math.round(data.index));
+      const zonaMap: Record<string, string> = {
+        hijau: 'Hijau (Prima)',
+        kuning: 'Kuning (Waspada)',
+        oranye: 'Oranye (Beban Tinggi)',
+        merah: 'Merah (Kritis)',
+      };
+      setZonaLabel(zonaMap[data.zona] || data.zona);
+      if (data.alasan && data.alasan.length > 0) {
+        setAlasanChips(data.alasan);
+      }
+      if (data.trend_flag) {
+        setTrendText('+10 tren naik');
+      } else {
+        setTrendText('Kondisi stabil');
+      }
+    }
+  }, []);
+
+  // Load workloads from backend
+  const loadWorkloads = useCallback(async (uid: string) => {
+    const workloads = await api.getWorkloads(uid);
+    if (workloads && workloads.length > 0) {
+      const activeWorkloads = workloads.filter((w) => w.status !== 'selesai');
+      if (activeWorkloads.length > 0) {
+        const mapped: TaskItem[] = activeWorkloads.map((w) => {
+          let meta = 'Mendatang';
+          try {
+            const dl = new Date(w.deadline);
+            meta = dl.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+          } catch {}
+          const priority: PriorityType =
+            w.effort >= 4 ? 'red' : w.effort >= 3 ? 'yellow' : 'green';
+          return {
+            id: w.id,
+            title: w.judul,
+            meta,
+            priority,
+          };
+        });
+        setTasks(mapped);
+      }
+    }
+  }, []);
+
+  // Initialize User on Mount
+  useEffect(() => {
+    async function initUserAndData() {
+      let uid = getStoredUserId();
+      if (!uid) {
+        // Coba inisialisasi default demo user Raka Pratama
+        const demoUser = await api.initDemoUser();
+        if (demoUser) {
+          uid = demoUser.id;
+          setStoredUserId(demoUser.id, demoUser.nama);
+          setUserId(demoUser.id);
+        }
+      }
+
+      if (uid) {
+        setUserId(uid);
+        await Promise.all([
+          loadIndexToday(uid),
+          loadWorkloads(uid),
+          api.getTodayCheckIn(uid).then((ci) => {
+            if (ci) setTodayCheckinScore(ci.skor);
+          }),
+        ]);
+      }
+    }
+
+    initUserAndData();
+  }, [loadIndexToday, loadWorkloads]);
+
+  const handleRefreshScore = async () => {
+    if (userId) {
+      await loadIndexToday(userId);
+      showToast(`Skor diperbarui: ${burnoutScore}% (${zonaLabel})`, '✨');
+    } else {
+      showToast('Skor diperbarui: 18% (Kondisi Prima)', '✨');
+    }
   };
 
-  const handleMoodSelect = (mood: MoodType, icon: string) => {
+  const handleMoodSelect = async (mood: MoodType, icon: string, score: number) => {
     showToast(`Mood dicatat: ${mood}`, icon);
+    setTodayCheckinScore(score);
+
+    if (userId) {
+      await api.postCheckIn(userId, score, `Mood: ${mood}`);
+      // Re-fetch index today supaya engine menghitung check-in baru
+      await loadIndexToday(userId);
+    }
   };
 
-  const handleDeleteTask = (id: string) => {
+  const handleBreathingComplete = async (tipe: 'breathing', durasi: number) => {
+    if (userId) {
+      await api.postIntervention(userId, tipe, durasi, true);
+    }
+  };
+
+  const handleDeleteTask = async (id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
     showToast('Tugas dihapus!', '🗑️');
+
+    if (userId) {
+      await api.deleteWorkload(id);
+      await loadIndexToday(userId);
+    }
   };
 
-  const handleAddTask = (newTask: Omit<TaskItem, 'id'>) => {
+  const handleAddTask = async (newTask: Omit<TaskItem, 'id'>) => {
+    const tempId = `task-${Date.now()}`;
     const item: TaskItem = {
       ...newTask,
-      id: `task-${Date.now()}`,
+      id: tempId,
     };
     setTasks((prev) => [item, ...prev]);
     showToast('Tugas baru berhasil ditambahkan!', '✅');
+
+    if (userId) {
+      const effortNum = newTask.priority === 'red' ? 5 : newTask.priority === 'yellow' ? 3 : 1;
+      const tomorrowIso = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+      const saved = await api.createWorkload({
+        user_id: userId,
+        judul: newTask.title,
+        jenis: 'tugas',
+        deadline: tomorrowIso,
+        est_jam: 2.0,
+        effort: effortNum,
+      });
+      if (saved) {
+        setTasks((prev) => prev.map((t) => (t.id === tempId ? { ...t, id: saved.id } : t)));
+        await loadIndexToday(userId);
+      }
+    }
   };
 
   const handleSelectDay = (day: CalendarDay) => {
@@ -171,14 +299,25 @@ export const App: React.FC = () => {
             <section id="view-home" className="page-view active">
               <main className="dashboard-grid">
                 <section className="col col-left">
-                  <GaugeCircle onRefresh={handleRefreshScore} />
-                  <KenapaCard />
+                  <GaugeCircle
+                    score={burnoutScore}
+                    zonaLabel={zonaLabel}
+                    trendText={trendText}
+                    onRefresh={handleRefreshScore}
+                  />
+                  <KenapaCard alasan={alasanChips} />
                 </section>
 
-                <MoodCheckin onMoodSelect={handleMoodSelect} />
+                <MoodCheckin
+                  currentScore={todayCheckinScore}
+                  onMoodSelect={handleMoodSelect}
+                />
 
                 <section className="col col-right">
-                  <BreathingSection onNotify={showToast} />
+                  <BreathingSection
+                    onNotify={showToast}
+                    onInterventionComplete={handleBreathingComplete}
+                  />
                   <QuickTasks
                     tasks={tasks}
                     onDeleteTask={handleDeleteTask}

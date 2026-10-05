@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db import supabase
-from routers import users, workload, metrics, checkins, interventions, index, demo
+from routers import users, workload, metrics, checkins, interventions, index, demo, insights
 
 app = FastAPI(
     title="NAPAS v2 — Burnout Radar Backend API",
@@ -26,6 +26,7 @@ app.include_router(checkins.router)
 app.include_router(interventions.router)
 app.include_router(index.router)
 app.include_router(demo.router)
+app.include_router(insights.router)
 
 @app.get("/health", tags=["System"])
 def health_check():

@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FOCUS_OVERVIEW_TODAY,
   FOCUS_STREAK_INFO,
   FOCUS_TOP_DISTRACTORS,
   FOCUS_WEEKLY_BARS,
 } from '../../data/mockData';
-import { FocusDailyBar, FocusTopDistractor } from '../../types';
+import { FocusDailyBar, FocusOverviewData, FocusTopDistractor } from '../../types';
 import { FokusTopFilter } from './FokusTopFilter';
 import { FokusOverviewCard } from './FokusOverviewCard';
 import { TopPencuriWaktuCard } from './TopPencuriWaktuCard';
 import { FocusStreakCard } from './FocusStreakCard';
 import { FokusVsDistraksiChart } from './FokusVsDistraksiChart';
+import { api, getStoredUserId } from '../../services/api';
 
 interface FokusViewProps {
   onNotify: (message: string, icon?: string) => void;
@@ -18,28 +19,39 @@ interface FokusViewProps {
 
 export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
   const [selectedRange, setSelectedRange] = useState('7 hari terakhir');
-  const [distractors, setDistractors] = useState(FOCUS_TOP_DISTRACTORS);
-  const [weeklyBars, setWeeklyBars] = useState(FOCUS_WEEKLY_BARS);
+  const [overview, setOverview] = useState<FocusOverviewData>(FOCUS_OVERVIEW_TODAY);
+  const [distractors, setDistractors] = useState<FocusTopDistractor[]>(FOCUS_TOP_DISTRACTORS);
+  const [streakInfo, setStreakInfo] = useState(FOCUS_STREAK_INFO);
+  const [weeklyBars, setWeeklyBars] = useState<FocusDailyBar[]>(FOCUS_WEEKLY_BARS);
+
+  const fetchFocusData = async (days = 7) => {
+    const userId = getStoredUserId();
+    if (!userId) return;
+
+    const data = await api.getFocusSummary(userId, days);
+    if (data) {
+      if (data.overview) setOverview(data.overview as FocusOverviewData);
+      if (data.top_distractors && data.top_distractors.length > 0) {
+        setDistractors(data.top_distractors);
+      }
+      if (data.streak) {
+        setStreakInfo(data.streak);
+      }
+      if (data.weekly_bars && data.weekly_bars.length > 0) {
+        setWeeklyBars(data.weekly_bars);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchFocusData(7);
+  }, []);
 
   const handleRangeChange = (range: string) => {
     setSelectedRange(range);
     onNotify(`Rentang waktu diganti ke: ${range}`, '📅');
-    if (range === '7 hari terakhir') {
-      setWeeklyBars(FOCUS_WEEKLY_BARS);
-      setDistractors(FOCUS_TOP_DISTRACTORS);
-    } else {
-      setWeeklyBars(
-        FOCUS_WEEKLY_BARS.map((bar) => {
-          const adjFocus = Math.min(92, Math.max(65, bar.focusPercent + (range.includes('14') ? 2 : -3)));
-          return {
-            ...bar,
-            focusPercent: adjFocus,
-            distractPercent: 100 - adjFocus,
-          };
-        })
-      );
-      setDistractors(FOCUS_TOP_DISTRACTORS);
-    }
+    const days = range.includes('14') ? 14 : range.includes('30') ? 30 : 7;
+    fetchFocusData(days);
   };
 
   const handleDistractorClick = (item: FocusTopDistractor) => {
@@ -48,7 +60,7 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
 
   const handleStreakClick = () => {
     onNotify(
-      `Streak ${FOCUS_STREAK_INFO.currentStreak} hari aktif! Pertahankan rekor terbaik ${FOCUS_STREAK_INFO.bestRecord} hari.`,
+      `Streak ${streakInfo.currentStreak} hari aktif! Pertahankan rekor terbaik ${streakInfo.bestRecord} hari.`,
       '🔥'
     );
   };
@@ -60,7 +72,8 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
     );
   };
 
-  const handleRefreshOverview = () => {
+  const handleRefreshOverview = async () => {
+    await fetchFocusData(7);
     onNotify('Data fokus hari ini berhasil diperbarui!', '✨');
   };
 
@@ -68,7 +81,7 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
     <div className="fokus-container">
       {/* Top Filter and Date Row */}
       <FokusTopFilter
-        currentDate={FOCUS_OVERVIEW_TODAY.date}
+        currentDate={overview.date}
         selectedRange={selectedRange}
         onRangeChange={handleRangeChange}
       />
@@ -76,7 +89,7 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
       {/* Top 3 Cards Grid */}
       <div className="fokus-top-grid">
         <FokusOverviewCard
-          data={FOCUS_OVERVIEW_TODAY}
+          data={overview}
           onRefresh={handleRefreshOverview}
         />
         <TopPencuriWaktuCard
@@ -84,10 +97,10 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
           onItemClick={handleDistractorClick}
         />
         <FocusStreakCard
-          currentStreak={FOCUS_STREAK_INFO.currentStreak}
-          targetRule={FOCUS_STREAK_INFO.targetRule}
-          bestRecord={FOCUS_STREAK_INFO.bestRecord}
-          days={FOCUS_STREAK_INFO.days}
+          currentStreak={streakInfo.currentStreak}
+          targetRule={streakInfo.targetRule}
+          bestRecord={streakInfo.bestRecord}
+          days={streakInfo.days}
           onStreakClick={handleStreakClick}
         />
       </div>

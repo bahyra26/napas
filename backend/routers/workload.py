@@ -52,3 +52,12 @@ def update_workload_status(item_id: str, payload: WorkloadUpdateStatus):
         raise HTTPException(status_code=404, detail="Item tidak ditemukan")
 
     return res.data[0]
+
+@router.delete("/{item_id}")
+def delete_workload_item(item_id: str):
+    """Menghapus item workload dari database."""
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Database belum terhubung. Pastikan file .env sudah diisi.")
+
+    res = supabase.table("workload_items").delete().eq("id", item_id).execute()
+    return {"status": "ok", "deleted_id": item_id}

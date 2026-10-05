@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { TREND_POINTS } from '../../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { TREND_POINTS as FALLBACK_POINTS } from '../../data/mockData';
 import { TrendPoint } from '../../types';
+import { api, getStoredUserId } from '../../services/api';
 
 const Y_AXIS_LEVELS = [
   { label: '100%', y: 30 },
@@ -12,6 +13,10 @@ const Y_AXIS_LEVELS = [
 ];
 
 export const TrendChart: React.FC = () => {
+  const [points, setPoints] = useState<TrendPoint[]>(FALLBACK_POINTS);
+  const [isTrendAlert, setIsTrendAlert] = useState<boolean>(true);
+  const [trendAlertText, setTrendAlertText] = useState<string>('4 hari beruntun naik — tren memburuk');
+
   const [tooltip, setTooltip] = useState<{
     show: boolean;
     day: number;
@@ -30,15 +35,49 @@ export const TrendChart: React.FC = () => {
 
   const [hoveredPoint, setHoveredPoint] = useState<TrendPoint | null>(null);
 
+  useEffect(() => {
+    async function loadHistory() {
+      const userId = getStoredUserId();
+      if (!userId) return;
+
+      const history = await api.getIndexHistory(userId, 14);
+      if (history && history.length >= 2) {
+        const total = history.length;
+        const mappedPoints: TrendPoint[] = history.map((item, idx) => {
+          const valNum = Number(item.index) || 0;
+          const cx = total > 1 ? 66.0 + (idx / (total - 1)) * (730.0 - 66.0) : 372.5;
+          const cy = 230.0 - (Math.min(100, Math.max(0, valNum)) / 100.0) * 200.0;
+          return {
+            day: idx + 1,
+            val: `${valNum}%`,
+            percentNum: valNum,
+            cx: Number(cx.toFixed(1)),
+            cy: Number(cy.toFixed(1)),
+            isIntervention: idx === total - 3,
+          };
+        });
+        setPoints(mappedPoints);
+
+        const latest = history[history.length - 1];
+        if (latest && latest.trend_flag) {
+          setIsTrendAlert(true);
+          setTrendAlertText('Index naik beruntun — tren memburuk (+10)');
+        } else {
+          setIsTrendAlert(false);
+          setTrendAlertText('Fluktuasi harian dalam ambang kendali');
+        }
+      }
+    }
+
+    loadHistory();
+  }, []);
+
   const handlePointInteraction = (point: TrendPoint) => {
-    // Calculate exact percentage position from SVG viewBox (770 x 260)
-    // This is 100% immune to CSS body zoom (1.25x), devicePixelRatio, and resizing
     const xPercent = (point.cx / 770) * 100;
     const yPercent = (point.cy / 260) * 100;
 
-    // Shift alignment inward for edge points so tooltip never overflows card edges
     let alignMode: 'center' | 'left' | 'right' = 'center';
-    if (point.day >= 9 || point.cx > 450) {
+    if (point.day >= points.length - 4 || point.cx > 450) {
       alignMode = 'right';
     } else if (point.day <= 3 || point.cx < 190) {
       alignMode = 'left';
@@ -60,13 +99,13 @@ export const TrendChart: React.FC = () => {
     setTooltip((prev) => ({ ...prev, show: false }));
   };
 
-  // Build the polyline path string dynamically from TREND_POINTS
-  const polylinePath = TREND_POINTS.map(
+  // Build the polyline path string dynamically from points
+  const polylinePath = points.map(
     (p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.cx.toFixed(1)} ${p.cy.toFixed(1)}`
   ).join(' ');
 
   const interventionPoint =
-    TREND_POINTS.find((p) => p.isIntervention) || TREND_POINTS[10];
+    points.find((p) => p.isIntervention) || points[Math.max(0, points.length - 3)];
 
   return (
     <div className="tren-card card-chart-14d">
@@ -106,28 +145,30 @@ export const TrendChart: React.FC = () => {
             strokeLinejoin="round"
           />
 
-          {/* Intervention Marker at Day 11 */}
-          <g className="marker-group" id="interventionMarker">
-            <text
-              x={interventionPoint.cx}
-              y={interventionPoint.cy - 16}
-              textAnchor="middle"
-              className="marker-label"
-            >
-              Intervensi
-            </text>
-            <circle
-              cx={interventionPoint.cx}
-              cy={interventionPoint.cy}
-              r={5}
-              className="marker-dot"
-              fill="#01332a"
-              stroke="#ffffff"
-              strokeWidth="2.5"
-            />
-          </g>
+          {/* Intervention Marker */}
+          {interventionPoint && (
+            <g className="marker-group" id="interventionMarker">
+              <text
+                x={interventionPoint.cx}
+                y={interventionPoint.cy - 16}
+                textAnchor="middle"
+                className="marker-label"
+              >
+                Intervensi
+              </text>
+              <circle
+                cx={interventionPoint.cx}
+                cy={interventionPoint.cy}
+                r={5}
+                className="marker-dot"
+                fill="#01332a"
+                stroke="#ffffff"
+                strokeWidth="2.5"
+              />
+            </g>
+          )}
 
-          {/* Hover highlight circle (appears only on hover) */}
+          {/* Hover highlight circle */}
           {hoveredPoint && !hoveredPoint.isIntervention && (
             <circle
               cx={hoveredPoint.cx}
@@ -140,9 +181,9 @@ export const TrendChart: React.FC = () => {
             />
           )}
 
-          {/* Transparent Hit Areas for smooth hover & click interactions */}
+          {/* Transparent Hit Areas */}
           <g className="chart-hit-areas">
-            {TREND_POINTS.map((point) => (
+            {points.map((point) => (
               <circle
                 key={point.day}
                 cx={point.cx}
@@ -172,12 +213,16 @@ export const TrendChart: React.FC = () => {
         )}
       </div>
 
-      {/* Warning Pill at bottom-left */}
+      {/* Alert Pill at bottom-left */}
       <div className="chart-alert-pill">
         <svg className="alert-pill-icon" viewBox="0 0 24 24" fill="#111111">
-          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+          {isTrendAlert ? (
+            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+          ) : (
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+          )}
         </svg>
-        <span>4 hari beruntun naik — tren memburuk</span>
+        <span>{trendAlertText}</span>
       </div>
     </div>
   );

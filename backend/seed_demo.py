@@ -109,9 +109,9 @@ def run_seed():
     print("[OK] 2 log intervensi tersimpan.")
 
     print("\n" + "=" * 55)
-    print("🎉 SUKSES! Seed data demo selesai.")
-    print(f"👉 USER_ID RAKA: {user_id}")
-    print(f"👉 Tes API: http://localhost:8000/index/today?user_id={user_id}")
+    print("[SUKSES] Seed data demo selesai.")
+    print(f"USER_ID RAKA: {user_id}")
+    print(f"Tes API: http://localhost:8000/index/today?user_id={user_id}")
     print("=" * 55 + "\n")
 
 if __name__ == "__main__":
