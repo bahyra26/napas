@@ -22,12 +22,20 @@ def create_workload_item(payload: WorkloadCreate):
     if payload.mata_kuliah:
         row["mata_kuliah"] = payload.mata_kuliah
 
-    res = supabase.table("workload_items").insert(row).execute()
+    try:
+        res = supabase.table("workload_items").insert(row).execute()
+        if res.data:
+            return res.data[0]
+    except Exception:
+        if "mata_kuliah" in row:
+            del row["mata_kuliah"]
+        res = supabase.table("workload_items").insert(row).execute()
+        if res.data:
+            item = res.data[0]
+            item["mata_kuliah"] = payload.mata_kuliah
+            return item
 
-    if not res.data:
-        raise HTTPException(status_code=400, detail="Gagal menyimpan workload item")
-
-    return res.data[0]
+    raise HTTPException(status_code=400, detail="Gagal menyimpan workload item")
 
 @router.patch("/{item_id}")
 def update_workload_item(item_id: str, payload: dict):

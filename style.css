@@ -5471,6 +5471,367 @@ body[data-tab="settings"] .dashboard-container {
   border-color: #0a5445;
 }
 
+/* ==========================================================================
+   WEB FOCUS SANCTUARY & DOMAIN WHITELIST STYLING
+   ========================================================================== */
+.focus-whitelist-section {
+  background: #f8faf9;
+  border: 1px solid #dbe7e1;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+
+.whitelist-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.whitelist-title {
+  font-size: 13px;
+  color: #01332a;
+}
+
+.btn-add-site-toggle {
+  background: #e8f5e9;
+  color: #0b845d;
+  border: 1px dashed #0b845d;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-site-toggle:hover {
+  background: #0b845d;
+  color: #fff;
+}
+
+.add-site-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #c8e6c9;
+}
+
+.form-input-site {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.btn-save-site {
+  background: #0b845d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.whitelist-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.whitelist-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #d0ded6;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #2e3a35;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s;
+}
+
+.whitelist-chip:hover {
+  border-color: #0b845d;
+  transform: translateY(-1px);
+}
+
+.chip-link-btn {
+  color: #0b845d;
+  text-decoration: none;
+  font-weight: bold;
+  margin-left: 2px;
+}
+
+.chip-del-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.chip-del-btn:hover {
+  color: #d32f2f;
+}
+
+/* Link Checker Sandbox */
+.link-checker-box {
+  background: #fafaf7;
+  border: 1px solid #e3e1d8;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+
+.link-checker-box label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.link-checker-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-check-url {
+  background: #01332a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.checker-feedback {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checker-feedback.allowed {
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #a5d6a7;
+}
+
+.checker-feedback.blocked {
+  background: #ffebee;
+  color: #b71c1c;
+  border: 1px solid #ffcdd2;
+}
+
+.btn-quick-whitelist {
+  background: #0b845d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+/* Active Sanctuary Launchpad & Audio */
+.active-focus-launchpad {
+  margin: 16px 0;
+  text-align: center;
+}
+
+.launchpad-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #01332a;
+  margin-bottom: 8px;
+}
+
+.launchpad-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-launch-site {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e8f5e9;
+  color: #0b845d;
+  border: 1px solid #c8e6c9;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-launch-site:hover {
+  background: #0b845d;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(11, 132, 93, 0.2);
+}
+
+.focus-audio-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #f0f7f3;
+  border: 1px solid #d4e7dc;
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+}
+
+.audio-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #01332a;
+}
+
+.audio-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-ambient {
+  background: #ffffff;
+  border: 1px solid #cbdcd2;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ambient.active {
+  background: #0b845d;
+  color: #fff;
+  border-color: #0b845d;
+}
+
+.volume-slider-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #555;
+}
+
+.volume-slider {
+  width: 80px;
+  cursor: pointer;
+}
+
+.btn-zen-fullscreen {
+  background: #01332a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Custom Login Form */
+.custom-login-form {
+  background: #f7faf8;
+  border: 1px solid #d5e5dc;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.custom-form-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #01332a;
+  margin-bottom: 10px;
+}
+
+.custom-form-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-custom-submit {
+  flex: 1;
+  background: #0b845d;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-custom-submit:hover {
+  background: #08694a;
+}
+
+.btn-custom-cancel {
+  background: #e0ded8;
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-show-custom-login {
+  background: #ffffff;
+  color: #01332a;
+  border: 1px solid #c7d7ce;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 6px;
+  transition: all 0.2s;
+}
+
+.btn-show-custom-login:hover {
+  background: #f2f8f5;
+  border-color: #0b845d;
+}
+
+
 
 
 

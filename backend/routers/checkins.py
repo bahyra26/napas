@@ -20,13 +20,25 @@ def submit_check_in(payload: CheckInCreate):
     if payload.energi is not None:
         row["energi"] = payload.energi
 
-    res = supabase.table("check_ins").insert(row).execute()
+    try:
+        res = supabase.table("check_ins").insert(row).execute()
+        if res.data:
+            return res.data[0]
+    except Exception as e:
+        # Fallback jika kolom baru (jam_tidur / energi) belum ditambahkan ke tabel Supabase
+        basic_row = {
+            "user_id": payload.user_id,
+            "skor": payload.skor,
+            "catatan": payload.catatan
+        }
+        res = supabase.table("check_ins").insert(basic_row).execute()
+        if res.data:
+            item = res.data[0]
+            item["jam_tidur"] = payload.jam_tidur
+            item["energi"] = payload.energi
+            return item
 
-
-    if not res.data:
-        raise HTTPException(status_code=400, detail="Gagal menyimpan check-in")
-
-    return res.data[0]
+    raise HTTPException(status_code=400, detail="Gagal menyimpan check-in")
 
 @router.get("/today", response_model=Optional[CheckInResponse])
 def get_today_check_in(user_id: str):

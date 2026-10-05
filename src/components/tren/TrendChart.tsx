@@ -34,43 +34,44 @@ export const TrendChart: React.FC = () => {
   });
 
   const [hoveredPoint, setHoveredPoint] = useState<TrendPoint | null>(null);
+  const [selectedDays, setSelectedDays] = useState<number>(14);
 
-  useEffect(() => {
-    async function loadHistory() {
-      const userId = getStoredUserId();
-      if (!userId) return;
+  const loadHistory = async (days: number) => {
+    const userId = getStoredUserId();
+    if (!userId) return;
 
-      const history = await api.getIndexHistory(userId, 14);
-      if (history && history.length >= 2) {
-        const total = history.length;
-        const mappedPoints: TrendPoint[] = history.map((item, idx) => {
-          const valNum = Number(item.index) || 0;
-          const cx = total > 1 ? 66.0 + (idx / (total - 1)) * (730.0 - 66.0) : 372.5;
-          const cy = 230.0 - (Math.min(100, Math.max(0, valNum)) / 100.0) * 200.0;
-          return {
-            day: idx + 1,
-            val: `${valNum}%`,
-            percentNum: valNum,
-            cx: Number(cx.toFixed(1)),
-            cy: Number(cy.toFixed(1)),
-            isIntervention: idx === total - 3,
-          };
-        });
-        setPoints(mappedPoints);
+    const history = await api.getIndexHistory(userId, days);
+    if (history && history.length >= 2) {
+      const total = history.length;
+      const mappedPoints: TrendPoint[] = history.map((item, idx) => {
+        const valNum = Number(item.index) || 0;
+        const cx = total > 1 ? 66.0 + (idx / (total - 1)) * (730.0 - 66.0) : 372.5;
+        const cy = 230.0 - (Math.min(100, Math.max(0, valNum)) / 100.0) * 200.0;
+        return {
+          day: idx + 1,
+          val: `${valNum}%`,
+          percentNum: valNum,
+          cx: Number(cx.toFixed(1)),
+          cy: Number(cy.toFixed(1)),
+          isIntervention: idx === total - 3,
+        };
+      });
+      setPoints(mappedPoints);
 
-        const latest = history[history.length - 1];
-        if (latest && latest.trend_flag) {
-          setIsTrendAlert(true);
-          setTrendAlertText('Index naik beruntun — tren memburuk (+10)');
-        } else {
-          setIsTrendAlert(false);
-          setTrendAlertText('Fluktuasi harian dalam ambang kendali');
-        }
+      const latest = history[history.length - 1];
+      if (latest && latest.trend_flag) {
+        setIsTrendAlert(true);
+        setTrendAlertText('Index naik beruntun — tren memburuk (+10)');
+      } else {
+        setIsTrendAlert(false);
+        setTrendAlertText('Fluktuasi harian dalam ambang kendali');
       }
     }
+  };
 
-    loadHistory();
-  }, []);
+  useEffect(() => {
+    loadHistory(selectedDays);
+  }, [selectedDays]);
 
   const handlePointInteraction = (point: TrendPoint) => {
     const xPercent = (point.cx / 770) * 100;
@@ -109,8 +110,31 @@ export const TrendChart: React.FC = () => {
 
   return (
     <div className="tren-card card-chart-14d">
-      <div className="chart-header-row">
-        <h2 className="chart-subtitle">14 Hari Terakhir</h2>
+      <div className="chart-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 className="chart-subtitle">{selectedDays} Hari Terakhir</h2>
+        <div className="chart-range-buttons" style={{ display: 'flex', gap: '6px' }}>
+          {[7, 14, 30].map((d) => (
+            <button
+              key={d}
+              type="button"
+              className={`btn-range-tab ${selectedDays === d ? 'active' : ''}`}
+              onClick={() => setSelectedDays(d)}
+              style={{
+                background: selectedDays === d ? '#01332a' : '#f0eee6',
+                color: selectedDays === d ? '#ffffff' : '#333333',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {d} Hari
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="chart-canvas-area" id="trendChartContainer">

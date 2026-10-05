@@ -46,7 +46,26 @@ export const KesimpulanCard: React.FC = () => {
 
   return (
     <div className="tren-card card-kesimpulan">
-      <h2 className="tren-card-title">Kesimpulan</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <h2 className="tren-card-title" style={{ margin: 0 }}>Kesimpulan & Rekomendasi</h2>
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="btn-print-summary"
+          style={{
+            background: '#e8f5e9',
+            color: '#0b845d',
+            border: '1px solid #c8e6c9',
+            borderRadius: '6px',
+            padding: '4px 10px',
+            fontSize: '11px',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          📄 Cetak / Simpan PDF
+        </button>
+      </div>
       <p className="kesimpulan-paragraph">{conclusion}</p>
     </div>
   );

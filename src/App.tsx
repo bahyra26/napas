@@ -259,6 +259,24 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleCustomLogin = async (name: string, campus: string, major: string) => {
+    const customId = `student-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString().slice(-4)}`;
+    setStoredUserId(customId, name);
+    localStorage.removeItem('napas_demo_mode');
+
+    // Buat profil di backend / memory
+    await api.updateProfile(customId, {
+      panggilan: name.split(' ')[0],
+      kampus: campus,
+      jurusan: major,
+      semester: 4,
+      onboarded: true,
+    });
+
+    await initUserSession(customId);
+    showToast(`Selamat datang, ${name}! Profil berhasil dipersonalisasi.`, '🎓');
+  };
+
   const handleLogout = async () => {
     await authService.signOut();
     setUserId(null);
@@ -420,7 +438,11 @@ export const App: React.FC = () => {
   if (!userId) {
     return (
       <div className="app-viewport">
-        <LoginView onDemoLogin={handleDemoLogin} onNotify={showToast} />
+        <LoginView
+          onDemoLogin={handleDemoLogin}
+          onCustomLogin={handleCustomLogin}
+          onNotify={showToast}
+        />
         <Toast visible={toast.visible} message={toast.message} icon={toast.icon} />
       </div>
     );

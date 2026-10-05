@@ -1,12 +1,12 @@
 import { createClient, SupabaseClient, Session } from '@supabase/supabase-js';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://enzizvrvfogjjgctpmli.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVueml6dnJ2Zm9nampnY3RwbWxpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTM2MTY2NywiZXhwIjoyMTA0OTM3NjY3fQ.WRZlF1Mn8rv-yX--mv6go5YQXYS-xix2vMPrF8VzG9o';
 
 let supabaseClient: SupabaseClient | null = null;
 
 try {
-  if (SUPABASE_URL && SUPABASE_URL !== 'https://placeholder.supabase.co') {
+  if (SUPABASE_URL) {
     supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         persistSession: true,
@@ -15,7 +15,7 @@ try {
     });
   }
 } catch (e) {
-  console.warn('Supabase client init skipped (missing env variables):', e);
+  console.warn('Supabase client init error:', e);
 }
 
 export const supabase = supabaseClient;

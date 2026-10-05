@@ -3,18 +3,49 @@ import { authService } from '../../services/supabase';
 
 interface LoginViewProps {
   onDemoLogin: () => void;
+  onCustomLogin?: (name: string, campus: string, major: string) => void;
   onNotify: (message: string, icon?: string) => void;
 }
 
-export const LoginView: React.FC<LoginViewProps> = ({ onDemoLogin, onNotify }) => {
+export const LoginView: React.FC<LoginViewProps> = ({
+  onDemoLogin,
+  onCustomLogin,
+  onNotify,
+}) => {
   const [loading, setLoading] = useState(false);
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customCampus, setCustomCampus] = useState('Universitas Gadjah Mada');
+  const [customMajor, setCustomMajor] = useState('Ilmu Komputer');
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     const res = await authService.signInWithGoogle();
     if (res.error) {
       setLoading(false);
-      onNotify(res.error, '⚠️');
+      onNotify(
+        `${res.error} (Tips: Gunakan opsi 'Masuk dengan Identitas Mahasiswa' di bawah untuk langsung mencoba tanpa setup Google OAuth)`,
+        'ℹ️'
+      );
+      // Buka form kustom otomatis jika Google OAuth belum dikonfigurasi di dashboard Supabase
+      setShowCustomForm(true);
+    }
+  };
+
+  const handleCustomSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customName.trim()) {
+      onNotify('Silakan masukkan nama atau panggilan Anda.', '⚠️');
+      return;
+    }
+    if (onCustomLogin) {
+      onCustomLogin(customName.trim(), customCampus.trim(), customMajor.trim());
+    } else {
+      // Fallback: simpan ke localStorage
+      const id = `user-${Date.now()}`;
+      localStorage.setItem('napas_user_id', id);
+      localStorage.setItem('napas_user_name', customName.trim());
+      window.location.reload();
     }
   };
 
@@ -24,10 +55,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onDemoLogin, onNotify }) =
         {/* Logo and Header */}
         <div className="login-header">
           <div className="login-logo-circle">
-            <img src="/assets/napas.png" alt="Logo NAPAS" className="login-logo-img" onError={(e) => {
-              // fallback if asset path is relative
-              (e.target as HTMLImageElement).src = './assets/napas.png';
-            }} />
+            <img
+              src="/assets/napas.png"
+              alt="Logo NAPAS"
+              className="login-logo-img"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = './assets/napas.png';
+              }}
+            />
           </div>
           <h1 className="login-title">NAPAS</h1>
           <p className="login-tagline">Radar Burnout & Kesejahteraan Mahasiswa</p>
@@ -38,6 +73,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onDemoLogin, onNotify }) =
 
         {/* Action Buttons */}
         <div className="login-actions">
+          {/* Tombol Google Auth */}
           <button
             type="button"
             className="btn-google-login"
@@ -65,6 +101,66 @@ export const LoginView: React.FC<LoginViewProps> = ({ onDemoLogin, onNotify }) =
             <span>{loading ? 'Menghubungkan...' : 'Masuk dengan Akun Google / Kampus'}</span>
           </button>
 
+          {/* Form Masuk Mahasiswa Kustom */}
+          {showCustomForm ? (
+            <form className="custom-login-form" onSubmit={handleCustomSubmit}>
+              <div className="custom-form-title">
+                <span>🎓 Masuk dengan Identitas Mahasiswa:</span>
+              </div>
+              <div className="form-group-compact">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Nama Lengkap / Panggilan Anda"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="form-group-compact">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Nama Kampus (misal: UGM, ITB, UI)"
+                  value={customCampus}
+                  onChange={(e) => setCustomCampus(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group-compact">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Program Studi / Jurusan"
+                  value={customMajor}
+                  onChange={(e) => setCustomMajor(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="custom-form-buttons">
+                <button type="submit" className="btn-custom-submit">
+                  Masuk & Mulai Personalisasi 🚀
+                </button>
+                <button
+                  type="button"
+                  className="btn-custom-cancel"
+                  onClick={() => setShowCustomForm(false)}
+                >
+                  Tutup
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              type="button"
+              className="btn-show-custom-login"
+              onClick={() => setShowCustomForm(true)}
+            >
+              <span>🎓 Masuk dengan Nama Mahasiswa Sendiri</span>
+            </button>
+          )}
+
           <div className="login-divider">
             <span>atau</span>
           </div>
@@ -74,17 +170,27 @@ export const LoginView: React.FC<LoginViewProps> = ({ onDemoLogin, onNotify }) =
             className="btn-demo-quick"
             onClick={onDemoLogin}
           >
-            <span>⚡ Mode Demo Cepat (Profil Raka)</span>
+            <span>⚡ Mode Demo Cepat (Profil Raka - JOINTS)</span>
           </button>
         </div>
 
         {/* Privacy Note */}
         <div className="login-privacy-footer">
           <div className="privacy-pill">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shield-icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="shield-icon"
+            >
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
-            <span><strong>Ethics & Privacy by Design:</strong> Data sensor & jendela diproses lokal di perangkatmu (On-Device).</span>
+            <span>
+              <strong>Privacy by Design:</strong> Data fokus diproses lokal di dalam browser Anda.
+            </span>
           </div>
         </div>
       </div>
