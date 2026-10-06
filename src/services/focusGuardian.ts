@@ -68,25 +68,12 @@ export const DEFAULT_STUDENT_WHITELIST: WhitelistWebsite[] = [
   },
 ];
 
-export const KNOWN_DISTRACTIONS = [
-  { domain: 'youtube.com', name: 'YouTube', icon: '▶️' },
-  { domain: 'instagram.com', name: 'Instagram', icon: '📷' },
-  { domain: 'tiktok.com', name: 'TikTok', icon: '🎵' },
-  { domain: 'discord.com', name: 'Discord', icon: '💬' },
-  { domain: 'twitter.com', name: 'Twitter / X', icon: '🐦' },
-  { domain: 'x.com', name: 'Twitter / X', icon: '🐦' },
-  { domain: 'facebook.com', name: 'Facebook', icon: '👥' },
-  { domain: 'netflix.com', name: 'Netflix', icon: '🎬' },
-  { domain: 'reddit.com', name: 'Reddit', icon: '🤖' },
-  { domain: 'twitch.tv', name: 'Twitch', icon: '🎮' },
-];
-
 /**
  * Ekstraksi hostname/domain dari link atau teks bebas
  */
 export function extractDomain(inputUrl: string): string {
   if (!inputUrl) return '';
-  let clean = inputUrl.trim();
+  let clean = inputUrl.trim().toLowerCase();
   if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
     clean = 'https://' + clean;
   }
@@ -99,22 +86,24 @@ export function extractDomain(inputUrl: string): string {
       .replace(/^www\./, '')
       .split('/')[0]
       .split('?')[0]
+      .split(':')[0]
       .toLowerCase();
   }
 }
 
 /**
  * Memeriksa apakah suatu link/domain masuk dalam whitelist yang diizinkan.
- * Mencakup seluruh path dan subdomain pada website tersebut.
+ * Mencakup seluruh path, endpoint, parameter, dan subdomain pada website tersebut.
+ * Mengadopsi Strict Whitelist: apapun yang di luar whitelist adalah false.
  */
 export function isUrlAllowed(
   urlOrDomain: string,
   whitelist: WhitelistWebsite[]
-): { allowed: boolean; matchedWebsite?: WhitelistWebsite; isKnownDistraction?: boolean; distractionName?: string } {
+): { allowed: boolean; matchedWebsite?: WhitelistWebsite } {
   const targetDomain = extractDomain(urlOrDomain);
   if (!targetDomain) return { allowed: false };
 
-  // Cek apakah ada di whitelist
+  // Cek apakah ada di whitelist (base domain match atau subdomain match)
   for (const item of whitelist) {
     const whiteDomain = extractDomain(item.domain || item.url);
     if (
@@ -123,13 +112,6 @@ export function isUrlAllowed(
       whiteDomain.endsWith('.' + targetDomain)
     ) {
       return { allowed: true, matchedWebsite: item };
-    }
-  }
-
-  // Cek apakah tergolong distraksi populer
-  for (const d of KNOWN_DISTRACTIONS) {
-    if (targetDomain === d.domain || targetDomain.endsWith('.' + d.domain)) {
-      return { allowed: false, isKnownDistraction: true, distractionName: d.name };
     }
   }
 

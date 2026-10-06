@@ -32,8 +32,6 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
     tested: boolean;
     allowed: boolean;
     matchedDomain?: string;
-    isKnownDistraction?: boolean;
-    distractionName?: string;
   } | null>(null);
 
   // Subscribe ke global focus store
@@ -72,9 +70,7 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
     setCheckResult({
       tested: true,
       allowed: res.allowed,
-      matchedDomain: res.matchedWebsite?.domain,
-      isKnownDistraction: res.isKnownDistraction,
-      distractionName: res.distractionName,
+      matchedDomain: res.matchedWebsite?.domain || extractDomain(testUrl),
     });
   };
 
@@ -95,8 +91,8 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
         onNotify(`Membuka link yang diizinkan: ${url}`, '✅');
       }
     } else {
-      const targetName = check.distractionName || extractDomain(url);
-      focusStore.triggerDistractionWarning(targetName, 3);
+      const targetDomain = extractDomain(url);
+      focusStore.triggerDistractionWarning(targetDomain || 'Website Terlarang', 3);
     }
   };
 
@@ -122,10 +118,10 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
 
   const handleToggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => {});
+      document.documentElement.requestFullscreen?.().catch(() => { });
       onNotify('Mode Zen Layar Penuh diaktifkan ⛶', '✨');
     } else {
-      document.exitFullscreen?.().catch(() => {});
+      document.exitFullscreen?.().catch(() => { });
     }
   };
 
@@ -318,8 +314,8 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
                   {checkResult.allowed ? (
                     <div className="feedback-content">
                       <span>
-                        ✅ <strong>Diizinkan!</strong> Link ini berada di domain{' '}
-                        <code>{checkResult.matchedDomain}</code> (semua sub-halaman aman dibuka saat fokus).
+                        ✅ <strong>Diizinkan!</strong> Base domain{' '}
+                        <code>{checkResult.matchedDomain}</code> ada di whitelist. Seluruh halaman, modul, & endpoint website ini bebas dibuka saat sesi fokus.
                       </span>
                       <button
                         type="button"
@@ -329,23 +325,11 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
                         Buka Website ↗
                       </button>
                     </div>
-                  ) : checkResult.isKnownDistraction ? (
+                  ) : (
                     <div className="feedback-content">
                       <span>
-                        ⛔ <strong>Distraksi Terdeteksi:</strong> Website ini adalah{' '}
-                        <strong>{checkResult.distractionName}</strong>. Jika dibuka saat sesi fokus, akan otomatis ditutup dalam 3 detik!
+                        ⛔ <strong>Di Luar Whitelist:</strong> Domain <code>{extractDomain(testUrl)}</code> belum diizinkan. Jika dibuka saat fokus, tab akan otomatis ditutup dalam 3 detik.
                       </span>
-                      <button
-                        type="button"
-                        className="btn-test-block"
-                        onClick={() => focusStore.triggerDistractionWarning(checkResult.distractionName || 'Distraksi', 3)}
-                      >
-                        Uji Peringatan & Auto-Switch ⚡
-                      </button>
-                    </div>
-                  ) : (
-                    <span>
-                      ⚠️ <strong>Belum Diizinkan:</strong> Domain <code>{extractDomain(testUrl)}</code> belum masuk whitelist.
                       <button
                         type="button"
                         className="btn-quick-whitelist"
@@ -353,11 +337,12 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
                           const domain = extractDomain(testUrl);
                           focusStore.addWebsite(domain, testUrl);
                           setCheckResult({ tested: true, allowed: true, matchedDomain: domain });
+                          onNotify(`Domain ${domain} berhasil ditambahkan ke whitelist!`, '✅');
                         }}
                       >
-                        + Izinkan Website Ini
+                        + Izinkan Base Domain Ini
                       </button>
-                    </span>
+                    </div>
                   )}
                 </div>
               )}

@@ -1,0 +1,87 @@
+
+===== 2026-10-06 12:23:29 SESI b2b5d43e-c193-4f0b-9f54-9de87c869691 =====
+domains=['127.0.0.1', 'canva.com', 'chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'canva', 'chatgpt', 'chatgpt / riset ai', 'docs', 'dokumen', 'drive', 'e-learning', 'e-learning kampus', 'elearning', 'github', 'google', 'google docs', 'google docs & drive', 'google drive', 'iinstagram', 'indonesia', 'instagram', 'journal', 'jurnal', 'jurnal & perpustakaan', 'kampus', 'kesehatan mental', 'learning', 'localhost', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'notion workspace', 'perpustakaan', 'riset', 'ruang belajar', 'ugm', 'wikipedia', 'wikipedia indonesia', 'workspace', 'youtube']
+
+===== 2026-10-06 12:23:29 SESI b2b5d43e-c193-4f0b-9f54-9de87c869691 =====
+domains=['127.0.0.1', 'canva.com', 'chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'canva', 'chatgpt', 'chatgpt / riset ai', 'docs', 'dokumen', 'drive', 'e-learning', 'e-learning kampus', 'elearning', 'github', 'google', 'google docs', 'google docs & drive', 'google drive', 'iinstagram', 'indonesia', 'instagram', 'journal', 'jurnal', 'jurnal & perpustakaan', 'kampus', 'kesehatan mental', 'learning', 'localhost', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'notion workspace', 'perpustakaan', 'riset', 'ruang belajar', 'ugm', 'wikipedia', 'wikipedia indonesia', 'workspace', 'youtube']
+12:23:49 | ALLOW-TITLE     | url=- | domain=- | title=Beranda - Canva - Opera
+12:23:50 | BLOCK           | url=- | domain=- | title=Spanyol_Havana_Muhammad Mikail Laurana - A5 - Opera
+12:23:56 | ALLOW-TITLE     | url=- | domain=- | title=Beranda - Canva - Opera
+
+===== 2026-10-06 12:24:38 SESI ses-1791264277918 =====
+domains=['127.0.0.1', 'canva.com', 'chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'canva', 'chatgpt', 'chatgpt / riset ai', 'docs', 'dokumen', 'drive', 'e-learning', 'e-learning kampus', 'elearning', 'github', 'google', 'google docs', 'google docs & drive', 'google drive', 'iinstagram', 'indonesia', 'instagram', 'journal', 'jurnal', 'jurnal & perpustakaan', 'kampus', 'kesehatan mental', 'learning', 'localhost', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'notion workspace', 'perpustakaan', 'riset', 'ruang belajar', 'ugm', 'wikipedia', 'wikipedia indonesia', 'workspace', 'youtube']
+12:24:58 | BLOCK           | url=- | domain=- | title=Desain tanpa judul - Selebaran (A4) - Opera
+12:25:03 | ALLOW-TITLE     | url=- | domain=- | title=Beranda - Canva - Opera
+12:25:22 | BLOCK           | url=- | domain=- | title=mikaillauranaotwsukses/mikaillauranaotwsukses - Opera
+12:25:43 | ALLOW-TITLE     | url=- | domain=- | title=(860) Uchiha Clan All Ultimate Jutsus & Team Ultimate Jutsus! (4K 60FPS)- Naruto
+
+===== 2026-10-06 12:26:00 SESI ses-1791264360888 =====
+domains=['127.0.0.1', 'canva.com', 'chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'canva', 'chatgpt', 'chatgpt / riset ai', 'docs', 'dokumen', 'drive', 'e-learning', 'e-learning kampus', 'elearning', 'github', 'google', 'google docs', 'google docs & drive', 'google drive', 'iinstagram', 'indonesia', 'instagram', 'journal', 'jurnal', 'jurnal & perpustakaan', 'kampus', 'kesehatan mental', 'learning', 'localhost', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'notion workspace', 'perpustakaan', 'riset', 'ruang belajar', 'ugm', 'wikipedia', 'wikipedia indonesia', 'workspace', 'youtube']
+12:26:37 | BLOCK           | url=- | domain=- | title=mikaillauranaotwsukses/MikoFundamental - Opera
+
+===== 2026-10-06 14:07:48 SESI cefc769e-5f51-4c22-9993-3d35bb71b130 =====
+domains=['chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'chatgpt', 'docs', 'elearning', 'google', 'instagram', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia', 'youtube']
+
+===== 2026-10-06 14:07:48 SESI cefc769e-5f51-4c22-9993-3d35bb71b130 =====
+domains=['chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'chatgpt', 'docs', 'elearning', 'google', 'instagram', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia', 'youtube']
+
+===== 2026-10-06 14:08:11 SESI ses-1791270491150 =====
+domains=['canva.com', 'chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'canva', 'chatgpt', 'docs', 'elearning', 'google', 'instagram', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia', 'youtube']
+14:08:28 | ALLOW-TITLE     | url=- | domain=- | title=Desain tanpa judul - Cerita Instagram - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-06 14:08:57 SESI ses-1791270537860 =====
+domains=['canva.com', 'chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'canva', 'chatgpt', 'docs', 'elearning', 'github', 'google', 'instagram', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia', 'youtube']
+14:09:15 | BLOCK           | url=- | domain=- | title=mikaillauranaotwsukses/mikaillauranaotwsukses - Opera | uia=docs:0 edits:0 nodes:11 docval=[]
+
+===== 2026-10-06 15:27:47 SESI ses-1791275267353 =====
+domains=['canva.com', 'chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'canva', 'chatgpt', 'docs', 'elearning', 'github', 'google', 'instagram', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia', 'youtube']
+15:28:05 | ALLOW-TITLE     | url=- | domain=- | title=(863) NYOBAIN MAIN WNI SIMULATOR… SAMPE STRESS! 😭 - YouTube - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:28:21 | ALLOW-TITLE     | url=- | domain=- | title=Instagram - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-06 15:28:37 SESI ses-1791275317422 =====
+domains=['canva.com', 'chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'canva', 'chatgpt', 'docs', 'elearning', 'github', 'google', 'instagram', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia', 'youtube']
+15:28:47 | BLOCK           | url=- | domain=- | title=Muhammad Mikail Laurana - DOMjudge - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:28:53 | BLOCK           | url=- | domain=- | title=HENN - How (Not) To Make Your Own AmbaCar - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-06 15:29:20 SESI ses-1791275360364 =====
+domains=['canva.com', 'chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'canva', 'chatgpt', 'docs', 'elearning', 'github', 'google', 'instagram', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia', 'youtube']
+15:29:22 | ALLOW-TITLE     | url=- | domain=- | title=Instagram - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:29:23 | ALLOW-TITLE     | url=- | domain=- | title=Salinan dari DP PEMBAYARAN JAKET - Google Spreadsheet - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:29:26 | ALLOW-TITLE     | url=- | domain=- | title=CASE STUDY XLSMART - Google Drive - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:29:28 | ALLOW-TITLE     | url=- | domain=- | title=drive.google.com/drive/folders/15KdpAVLxvty9_0D7V_ppDLqxuQ6iJMrF - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:29:29 | ALLOW-TITLE     | url=- | domain=- | title=CASE STUDY XLSMART - Google Drive - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:29:41 | ALLOW-TITLE     | url=- | domain=- | title=Beranda - Google Drive - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:30:17 | ALLOW-TITLE     | url=- | domain=- | title=canva.com - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:30:20 | ALLOW-TITLE     | url=- | domain=- | title=Beranda - Canva - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:30:32 | BLOCK           | url=- | domain=- | title=Loading… - Opera | uia=docs:1 edits:0 nodes:9 docval=['chrome://startpageshared/']
+15:30:33 | SKIP-TRANSITION | url=- | domain=- | title=Speed Dial - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-06 15:31:19 SESI ses-1791275479077 =====
+domains=['canva.com', 'chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'canva', 'chatgpt', 'docs', 'elearning', 'github', 'google', 'instagram', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia', 'youtube']
+15:31:23 | BLOCK           | url=- | domain=- | title=Home / X - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:31:25 | BLOCK           | url=- | domain=- | title=(4) Home / X - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:31:29 | ALLOW-TITLE     | url=- | domain=- | title=(863) NYOBAIN MAIN WNI SIMULATOR… SAMPE STRESS! 😭 - YouTube - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-06 15:31:42 SESI ses-1791275502974 =====
+domains=['canva.com', 'chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'instagram.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org', 'youtube.com']
+tokens=['127.0.0.1', 'canva', 'chatgpt', 'docs', 'elearning', 'github', 'google', 'instagram', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia', 'youtube']
+15:31:45 | SKIP-TRANSITION | url=- | domain=- | title=Speed Dial - Opera | uia=docs:1 edits:0 nodes:9 docval=['chrome://startpageshared/']
+15:31:47 | ALLOW-TITLE     | url=- | domain=- | title=FOTO - Google Drive - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:31:49 | ALLOW-TITLE     | url=- | domain=- | title=Folder - Google Drive - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:31:52 | ALLOW-TITLE     | url=- | domain=- | title=FOTO - Google Drive - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:32:11 | ALLOW-TITLE     | url=- | domain=- | title=Beranda - Google Drive - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:32:46 | BLOCK           | url=https://drive.google.com/drive/home | domain=drive.google.com | title=Beranda - Google Drive - Opera
+15:32:48 | ALLOW-TITLE     | url=- | domain=- | title=Library | Notion - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+15:32:49 | BLOCK           | url=- | domain=- | title=HENN - How (Not) To Make Your Own AmbaCar - Opera | uia=docs:0 edits:0 nodes:7 docval=[]

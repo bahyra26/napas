@@ -385,6 +385,9 @@ class FocusSessionStore {
 
     ambientAudio.playChime();
 
+    // Otomatis jalankan companion agent di background jika belum berjalan
+    api.startDesktopAgent().catch(() => {});
+
     // Kirim keyword whitelist ke Desktop Agent
     const keywords = extractAllKeywords(this.state.whitelist);
     agentClient.startSession({

@@ -719,5 +719,29 @@ export const api = {
       return null;
     }
   },
+
+  async startDesktopAgent(): Promise<{ status: string; port?: number } | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/focus-sessions/agent/start`, {
+        method: 'POST',
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
+
+  async stopDesktopAgent(): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/focus-sessions/agent/stop`, {
+        method: 'POST',
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
 };
 

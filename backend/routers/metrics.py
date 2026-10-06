@@ -238,11 +238,15 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
     today_sessions = [s for s in focus_sessions if (s.get("mulai") or "") >= today_start]
     today_metrics = [m for m in all_metrics if (m.get("ts") or "") >= today_start]
 
-    # Hitung total detik fokus & distraksi hari ini
+    # Hitung total detik fokus & distraksi hari ini (Hanya dari sesi riil, hindari duplikasi dengan sensor_metrics)
     tot_focus_sec = sum(int(s.get("focus_seconds") or 0) for s in today_sessions)
     tot_dist_sec = sum(int(s.get("distraction_seconds") or 0) for s in today_sessions)
-    tot_focus_sec += sum(int(m.get("focus_seconds") or 0) for m in today_metrics)
-    tot_dist_sec += sum(int(m.get("distraction_seconds") or 0) for m in today_metrics)
+
+    # Tambahkan metrics sensor hanya jika bukan berasal dari sesi fokus (mencegah double-counting)
+    for m in today_metrics:
+        if m.get("app_category") != "Focus Session":
+            tot_focus_sec += int(m.get("focus_seconds") or 0)
+            tot_dist_sec += int(m.get("distraction_seconds") or 0)
 
     has_real_today = (tot_focus_sec + tot_dist_sec) > 0
 
@@ -265,8 +269,24 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
     else:
         note = "Belum ada sesi fokus tercatat hari ini. Tekan 'Mulai Sesi Fokus' untuk merekam waktu belajarmu! 🚀"
 
-    focus_dur_label = f"{f_hours}j {f_mins}m" if f_hours > 0 else f"{f_mins} menit"
-    distract_dur_label = f"{d_hours}j {d_mins}m" if d_hours > 0 else f"{d_mins} menit"
+    # Format label durasi yang konsisten dan akurat
+    if tot_focus_sec == 0:
+        focus_dur_label = "0 menit"
+    elif tot_focus_sec < 60:
+        focus_dur_label = f"{tot_focus_sec} detik"
+    elif f_hours > 0:
+        focus_dur_label = f"{f_hours}j {f_mins}m"
+    else:
+        focus_dur_label = f"{f_mins} menit"
+
+    if tot_dist_sec == 0:
+        distract_dur_label = "0 menit"
+    elif tot_dist_sec < 60:
+        distract_dur_label = f"{tot_dist_sec} detik"
+    elif d_hours > 0:
+        distract_dur_label = f"{d_hours}j {d_mins}m"
+    else:
+        distract_dur_label = f"{d_mins} menit"
 
     overview = FocusOverview(
         date=current_wib.strftime("%d %B %Y"),
@@ -277,24 +297,45 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
         motivationalNote=note
     )
 
-    # 3. Top Pencuri Waktu (Hanya dari riil blocked_apps sesi, kosongkan jika belum ada)
+    # 3. Top Pencuri Waktu (Hanya aplikasi distraksi riil, jangan masukkan situs belajar/LMS)
+    STUDY_TERMS_FILTER = {
+        "github", "gitlab", "ugm", "elearning", "moodle", "canvas", "classroom",
+        "docs", "drive", "notion", "wikipedia", "chatgpt", "claude", "beranda",
+        "dashboard", "computer", "organisasi", "townhall", "itdev", "mikail",
+        "napas", "localhost", "127.0.0.1", "code", "visual studio", "terminal",
+        "powershell", "cmd", "acrobat", "word", "excel", "powerpoint", "figma",
+        "zoom", "untitled", "new tab", "tab baru"
+    }
+
     distractor_counts: Dict[str, int] = {}
     for s in focus_sessions:
         b_apps = s.get("blocked_apps") or {}
         if isinstance(b_apps, dict):
             for app_name, count in b_apps.items():
+                name_lower = app_name.lower().strip()
+                # Abaikan tab belajar atau kata kunci akademik agar tidak salah masuk ke pencuri waktu
+                if any(st in name_lower for st in STUDY_TERMS_FILTER):
+                    continue
                 clean_name = app_name.replace(".exe", "").capitalize()
                 distractor_counts[clean_name] = distractor_counts.get(clean_name, 0) + int(count)
 
     max_distract = max(distractor_counts.values()) if distractor_counts else 1
     top_distractors = []
-    for idx, (app_name, mins) in enumerate(sorted(distractor_counts.items(), key=lambda x: x[1], reverse=True)[:5]):
+    for idx, (app_name, secs) in enumerate(sorted(distractor_counts.items(), key=lambda x: x[1], reverse=True)[:5]):
+        if secs < 60:
+            lbl = f"{secs} detik"
+            dur_num = max(1, round(secs / 60))
+        else:
+            m = secs // 60
+            lbl = f"{m} menit"
+            dur_num = m
+
         top_distractors.append(FocusTopDistractor(
             id=f"distract-{idx+1}",
             name=app_name,
-            durationMinutes=mins,
-            durationLabel=f"{mins} menit" if mins >= 1 else "1 menit",
-            percentage=min(100, round((mins / max_distract) * 100))
+            durationMinutes=dur_num,
+            durationLabel=lbl,
+            percentage=min(100, round((secs / max_distract) * 100))
         ))
 
     # 4. Focus Streak (Dihitung murni dari hari aktif)

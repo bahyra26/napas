@@ -45,17 +45,87 @@ def start_focus_session(payload: FocusSessionStart):
 
     return saved
 
+import sys
+import os
+import subprocess
+import socket
+
+_AGENT_PROCESS = None
+
+STUDY_TERMS_FILTER = {
+    "github", "gitlab", "ugm", "elearning", "moodle", "canvas", "classroom",
+    "docs", "drive", "notion", "wikipedia", "chatgpt", "claude", "beranda",
+    "dashboard", "computer", "organisasi", "townhall", "itdev", "mikail",
+    "napas", "localhost", "127.0.0.1", "code", "visual studio", "terminal",
+    "powershell", "cmd", "acrobat", "word", "excel", "powerpoint", "figma",
+    "zoom", "untitled", "new tab", "tab baru"
+}
+
+def is_agent_port_active(port=8765) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.4)
+        return s.connect_ex(('127.0.0.1', port)) == 0
+
+@router.post("/agent/start")
+def start_desktop_agent():
+    global _AGENT_PROCESS
+    if is_agent_port_active(8765):
+        return {"status": "already_running", "port": 8765}
+
+    agent_script = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "agent", "napas_agent.py"))
+    python_exe = sys.executable
+    if os.path.exists(agent_script):
+        creationflags = 0
+        if sys.platform == "win32":
+            creationflags = 0x08000000  # CREATE_NO_WINDOW
+        try:
+            _AGENT_PROCESS = subprocess.Popen(
+                [python_exe, agent_script],
+                creationflags=creationflags
+            )
+            return {"status": "started", "pid": _AGENT_PROCESS.pid, "port": 8765}
+        except Exception as e:
+            return {"status": "error", "detail": str(e)}
+    return {"status": "error", "message": "File napas_agent.py tidak ditemukan"}
+
+@router.post("/agent/stop")
+def stop_desktop_agent():
+    global _AGENT_PROCESS
+    if _AGENT_PROCESS:
+        try:
+            _AGENT_PROCESS.terminate()
+        except Exception:
+            pass
+        _AGENT_PROCESS = None
+    return {"status": "stopped"}
+
+@router.get("/agent/status")
+def get_agent_status():
+    return {
+        "online": is_agent_port_active(8765),
+        "port": 8765
+    }
+
 @router.post("/{session_id}/finish")
 def finish_focus_session(session_id: str, payload: FocusSessionFinish):
     now_iso = now_wib().isoformat()
-    blocked_count = sum(payload.blocked_apps.values()) if payload.blocked_apps else 0
+
+    # Filter out educational websites from blocked_apps to prevent false stats
+    clean_blocked_apps = {}
+    if payload.blocked_apps:
+        for app, cnt in payload.blocked_apps.items():
+            app_lower = app.lower().strip()
+            if not any(st in app_lower for st in STUDY_TERMS_FILTER):
+                clean_blocked_apps[app] = cnt
+
+    blocked_count = sum(clean_blocked_apps.values())
 
     upd = {
         "selesai": now_iso,
         "focus_seconds": payload.focus_seconds,
         "distraction_seconds": payload.distraction_seconds,
         "blocked_count": blocked_count,
-        "blocked_apps": payload.blocked_apps,
+        "blocked_apps": clean_blocked_apps,
         "completed": payload.completed
     }
 
