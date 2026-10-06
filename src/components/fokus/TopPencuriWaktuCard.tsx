@@ -35,28 +35,35 @@ export const TopPencuriWaktuCard: React.FC<TopPencuriWaktuCardProps> = ({
       </div>
 
       {/* Distraction List */}
-      <div className="pencuri-list">
-        {distractors.map((item) => (
-          <div
-            key={item.id}
-            className="pencuri-item"
-            onClick={() => onItemClick?.(item)}
-            title={`${item.name}: ${item.durationLabel}`}
-          >
-            <div className="pencuri-item-info">
-              <span className="pencuri-item-name">{item.name}</span>
-              <span className="pencuri-item-duration">{item.durationLabel}</span>
-            </div>
+      {distractors.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '24px 12px', color: '#666', fontSize: '12px' }}>
+          <span style={{ fontSize: '24px', display: 'block', marginBottom: '6px' }}>✨</span>
+          <span>Belum ada aplikasi/website distraksi tercatat. Bagus! Pertahankan fokus belajarmu.</span>
+        </div>
+      ) : (
+        <div className="pencuri-list">
+          {distractors.map((item) => (
+            <div
+              key={item.id}
+              className="pencuri-item"
+              onClick={() => onItemClick?.(item)}
+              title={`${item.name}: ${item.durationLabel}`}
+            >
+              <div className="pencuri-item-info">
+                <span className="pencuri-item-name">{item.name}</span>
+                <span className="pencuri-item-duration">{item.durationLabel}</span>
+              </div>
 
-            <div className="pencuri-progress-track">
-              <div
-                className="pencuri-progress-fill"
-                style={{ width: `${item.percentage}%` }}
-              />
+              <div className="pencuri-progress-track">
+                <div
+                  className="pencuri-progress-fill"
+                  style={{ width: `${item.percentage}%` }}
+                />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

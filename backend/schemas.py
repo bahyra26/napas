@@ -292,6 +292,8 @@ class StudySessionUpdate(BaseModel):
 
 # --- FOCUS SESSION ---
 class FocusSessionStart(BaseModel):
+    id: Optional[str] = None
+    session_id: Optional[str] = None
     user_id: str
     workload_id: Optional[str] = None
     judul: Optional[str] = None

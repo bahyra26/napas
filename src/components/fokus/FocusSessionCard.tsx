@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { api, getStoredUserId } from '../../services/api';
+import React, { useState, useEffect } from 'react';
+import {
+  focusStore,
+  FocusSessionState,
+} from '../../services/focusSessionStore';
 import {
   WhitelistWebsite,
-  DEFAULT_STUDENT_WHITELIST,
   isUrlAllowed,
   extractDomain,
-  ambientAudio,
 } from '../../services/focusGuardian';
 
 interface FocusSessionCardProps {
@@ -17,23 +18,10 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
   onSessionCompleted,
   onNotify,
 }) => {
-  const [isRunning, setIsRunning] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  // Global & Persistent Focus State
+  const [session, setSession] = useState<FocusSessionState>(() => focusStore.getState());
 
-  // Configuration
-  const [taskName, setTaskName] = useState('Mengerjakan Tugas & Studi Mandiri');
-  const [durationMinutes, setDurationMinutes] = useState(25);
-
-  // Website Whitelist
-  const [whitelist, setWhitelist] = useState<WhitelistWebsite[]>(() => {
-    const saved = localStorage.getItem('napas_focus_whitelist');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return DEFAULT_STUDENT_WHITELIST;
-  });
+  // Form states
   const [newSiteName, setNewSiteName] = useState('');
   const [newSiteUrl, setNewSiteUrl] = useState('');
   const [showAddSite, setShowAddSite] = useState(false);
@@ -48,73 +36,39 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
     distractionName?: string;
   } | null>(null);
 
-  // Live Stats
-  const [secondsRemaining, setSecondsRemaining] = useState(25 * 60);
-  const [focusSeconds, setFocusSeconds] = useState(0);
-  const [distractSeconds, setDistractSeconds] = useState(0);
-  const [distractionCount, setDistractionCount] = useState(0);
-  const [isTabDistracted, setIsTabDistracted] = useState(false);
-  const [lastDistractDuration, setLastDistractDuration] = useState<number | null>(null);
-
-  // Audio Ambient
-  const [activeSound, setActiveSound] = useState<'none' | 'rain' | 'binaural'>('none');
-  const [soundVolume, setSoundVolume] = useState(0.3);
-
-  // Refs
-  const timerRef = useRef<number | null>(null);
-  const distractStartRef = useRef<number | null>(null);
-  const origTitleRef = useRef<string>(document.title);
-
-  // Simpan whitelist ke localStorage & sync ke profil
-  const saveWhitelist = (items: WhitelistWebsite[]) => {
-    setWhitelist(items);
-    localStorage.setItem('napas_focus_whitelist', JSON.stringify(items));
-    const userId = getStoredUserId();
-    if (userId) {
-      api.updateProfile(userId, {
-        focus_whitelist: items.map((i) => i.domain),
-      });
-    }
-  };
+  // Subscribe ke global focus store
+  useEffect(() => {
+    focusStore.setCallbacks(onNotify, onSessionCompleted);
+    const unsubscribe = focusStore.subscribe((newState) => {
+      setSession({ ...newState });
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [onNotify, onSessionCompleted]);
 
   const handleAddWebsite = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSiteUrl.trim()) return;
 
-    const domain = extractDomain(newSiteUrl);
-    if (!domain) {
+    const success = focusStore.addWebsite(newSiteName, newSiteUrl);
+    if (success) {
+      setNewSiteName('');
+      setNewSiteUrl('');
+      setShowAddSite(false);
+    } else {
       onNotify('Format URL tidak valid.', '⚠️');
-      return;
     }
-
-    const name = newSiteName.trim() || domain;
-    const newItem: WhitelistWebsite = {
-      id: `w-${Date.now()}`,
-      name,
-      url: newSiteUrl.startsWith('http') ? newSiteUrl : `https://${newSiteUrl}`,
-      domain,
-      category: 'other',
-      icon: '🌐',
-    };
-
-    const updated = [...whitelist, newItem];
-    saveWhitelist(updated);
-    setNewSiteName('');
-    setNewSiteUrl('');
-    setShowAddSite(false);
-    onNotify(`Website "${name}" (${domain}) berhasil diizinkan! Mencakup seluruh halamannya.`, '✅');
   };
 
-  const handleRemoveWebsite = (id: string, name: string) => {
-    const updated = whitelist.filter((w) => w.id !== id);
-    saveWhitelist(updated);
-    onNotify(`"${name}" dihapus dari whitelist.`, '🗑️');
+  const handleRemoveWebsite = (id: string) => {
+    focusStore.removeWebsite(id);
   };
 
   // URL Checker function
   const handleCheckUrl = () => {
     if (!testUrl.trim()) return;
-    const res = isUrlAllowed(testUrl, whitelist);
+    const res = isUrlAllowed(testUrl, session.whitelist);
     setCheckResult({
       tested: true,
       allowed: res.allowed,
@@ -124,52 +78,34 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
     });
   };
 
-  // Visibility / Blur detection saat sesi berjalan
-  useEffect(() => {
-    if (!isRunning) {
-      document.title = origTitleRef.current;
-      return;
-    }
+  // Peluncur website yang diizinkan (Tidak dihitung distraksi!)
+  const handleLaunchAllowedSite = (site: WhitelistWebsite) => {
+    focusStore.launchAllowedSite(site);
+  };
 
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // Mahasiswa beralih ke tab/aplikasi lain
-        setIsTabDistracted(true);
-        distractStartRef.current = Date.now();
-        setDistractionCount((prev) => prev + 1);
-        document.title = '⚠️ [NAPAS] Sesi Belajar Berjalan! Yuk Kembali!';
+  // Navigasi URL dari bar sandbox
+  const handleNavigateUrl = (url: string) => {
+    if (!url.trim()) return;
+    const check = isUrlAllowed(url, session.whitelist);
+    if (check.allowed) {
+      if (check.matchedWebsite) {
+        focusStore.launchAllowedSite(check.matchedWebsite);
       } else {
-        // Mahasiswa kembali ke tab NAPAS
-        setIsTabDistracted(false);
-        document.title = origTitleRef.current;
-        if (distractStartRef.current) {
-          const diffSec = Math.round((Date.now() - distractStartRef.current) / 1000);
-          if (diffSec > 1) {
-            setDistractSeconds((prev) => prev + diffSec);
-            setLastDistractDuration(diffSec);
-            ambientAudio.playChime();
-          }
-          distractStartRef.current = null;
-        }
+        window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
+        onNotify(`Membuka link yang diizinkan: ${url}`, '✅');
       }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      document.title = origTitleRef.current;
-    };
-  }, [isRunning]);
+    } else {
+      const targetName = check.distractionName || extractDomain(url);
+      focusStore.triggerDistractionWarning(targetName, 3);
+    }
+  };
 
   // Audio ambient controls
   const handleToggleSound = (type: 'rain' | 'binaural') => {
-    if (activeSound === type) {
-      ambientAudio.stop();
-      setActiveSound('none');
+    if (session.activeSound === type) {
+      focusStore.setSound('none');
     } else {
-      if (type === 'rain') ambientAudio.playRain(soundVolume);
-      if (type === 'binaural') ambientAudio.playBinaural(soundVolume);
-      setActiveSound(type);
+      focusStore.setSound(type, session.soundVolume);
       onNotify(
         type === 'rain'
           ? 'Memutar suara hujan lembut untuk ketenangan pikiran 🌧️'
@@ -181,11 +117,9 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
-    setSoundVolume(val);
-    ambientAudio.setVolume(val);
+    focusStore.setVolume(val);
   };
 
-  // Toggle fullscreen
   const handleToggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen?.().catch(() => {});
@@ -193,88 +127,6 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
     } else {
       document.exitFullscreen?.().catch(() => {});
     }
-  };
-
-  const handleStartSession = async () => {
-    const userId = getStoredUserId();
-    if (!userId) {
-      onNotify('Silakan login terlebih dahulu.', '⚠️');
-      return;
-    }
-
-    const newSessionId = `ses-${Date.now()}`;
-    setSessionId(newSessionId);
-    setIsRunning(true);
-    setSecondsRemaining(durationMinutes * 60);
-    setFocusSeconds(0);
-    setDistractSeconds(0);
-    setDistractionCount(0);
-    setLastDistractDuration(null);
-    origTitleRef.current = document.title;
-
-    ambientAudio.playChime();
-
-    // Catat ke backend
-    await api.startFocusSession({
-      user_id: userId,
-      judul: taskName,
-      target_menit: durationMinutes,
-      agent_connected: true,
-    });
-
-    // Countdown visual
-    timerRef.current = window.setInterval(() => {
-      setSecondsRemaining((prev) => {
-        if (prev <= 1) {
-          handleStopSession(true);
-          return 0;
-        }
-        setFocusSeconds((f) => f + 1);
-        return prev - 1;
-      });
-    }, 1000);
-
-    onNotify(
-      `Sesi fokus ${durationMinutes} menit dimulai! Guard website aktif melindungi konsentrasimu.`,
-      '🎯'
-    );
-  };
-
-  const handleStopSession = async (completed = false) => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
-    ambientAudio.stop();
-    setActiveSound('none');
-    setIsRunning(false);
-    document.title = origTitleRef.current;
-
-    if (sessionId) {
-      const blockedAppsSummary: Record<string, number> = {};
-      if (distractionCount > 0) {
-        blockedAppsSummary['Tab Distraksi'] = distractionCount;
-      }
-
-      await api.finishFocusSession(sessionId, {
-        focus_seconds: focusSeconds || durationMinutes * 60 - secondsRemaining,
-        distraction_seconds: distractSeconds,
-        blocked_apps: blockedAppsSummary,
-        completed,
-      });
-    }
-
-    ambientAudio.playChime();
-
-    onNotify(
-      completed
-        ? `🎉 Selamat! Sesi belajar ${durationMinutes} menit selesai dengan sukses!`
-        : 'Sesi fokus diakhiri.',
-      completed ? '🏆' : '⏹️'
-    );
-
-    onSessionCompleted();
   };
 
   const formatTime = (secs: number) => {
@@ -285,12 +137,15 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
 
   return (
     <div className="focus-session-card">
-      {/* Top Banner: Status Web Focus Guardian */}
+      {/* Top Banner: Status Guard */}
       <div className="agent-status-banner online">
         <div className="agent-indicator-pill">
           <span className="dot-indicator"></span>
           <span>
-            <strong>NAPAS Web Focus Sanctuary:</strong> Perlindungan fokus aktif di dalam browser. Seluruh website di whitelist diizinkan penuh (termasuk semua sub-halaman).
+            <strong>NAPAS Focus Sanctuary:</strong>
+            {session.agentOnline
+              ? ' Companion Desktop Aktif — Auto-switch kembali ke NAPAS jika membuka distraksi.'
+              : ' Guard Browser Aktif — Link di whitelist diizinkan penuh tanpa dihitung distraksi.'}
           </span>
         </div>
         <div className="banner-quick-actions">
@@ -305,30 +160,42 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
         </div>
       </div>
 
-      {/* Peringatan kembali ke tab */}
-      {lastDistractDuration !== null && !isTabDistracted && (
-        <div className="agent-distraction-alert">
-          <span className="alert-pulse">🌿</span>
-          <span>
-            Kamu sempat meninggalkan ruang belajar selama <strong>{lastDistractDuration} detik</strong>. Yuk kembali fokus ke tugasmu!
-          </span>
-          <button
-            type="button"
-            className="btn-dismiss-alert"
-            onClick={() => setLastDistractDuration(null)}
-          >
-            ×
-          </button>
+      {/* MODAL PERINGATAN DISTRAKSI DENGAN HITUNG MUNDUR AUTO-SWITCH */}
+      {session.distractionWarning && session.distractionWarning.active && (
+        <div className="distraction-warning-modal-overlay">
+          <div className="distraction-warning-modal-card">
+            <div className="warning-modal-icon">⛔</div>
+            <h3 className="warning-modal-title">Akses Website Tidak Diizinkan!</h3>
+            <p className="warning-modal-desc">
+              Kamu mencoba membuka <strong>{session.distractionWarning.site}</strong> yang berada di luar whitelist belajar fokusmu.
+            </p>
+            <div className="warning-countdown-badge">
+              <span>Beralih kembali ke Ruang Belajar dalam:</span>
+              <strong className="countdown-number">{session.distractionWarning.countdown} detik</strong>
+            </div>
+            <div className="warning-modal-actions">
+              <button
+                type="button"
+                className="btn-force-back-now"
+                onClick={() => {
+                  focusStore.dismissDistractionWarning();
+                  onNotify('Segera kembali ke Ruang Belajar NAPAS! 🎯', '✨');
+                }}
+              >
+                Kembali Sekarang 🚀
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Main Focus Control Area */}
-      {!isRunning ? (
+      {!session.isRunning ? (
         <div className="focus-idle-state">
           <div className="focus-setup-header">
             <h3>Ruang Belajar & Guard Website Fokus</h3>
             <p>
-              Tentukan target tugasmu dan atur link/website yang diperbolehkan dibuka. Kamu bebas berpindah halaman di dalam website yang diizinkan (misal e-learning kampus).
+              Tentukan target tugasmu dan link/website yang diperbolehkan dibuka. Kamu bebas berpindah halaman di dalam website yang diizinkan (misal e-learning kampus) tanpa dihitung distraksi!
             </p>
           </div>
 
@@ -338,21 +205,21 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
               <input
                 type="text"
                 className="form-input"
-                value={taskName}
-                onChange={(e) => setTaskName(e.target.value)}
+                value={session.taskName}
+                onChange={(e) => focusStore.setTaskName(e.target.value)}
                 placeholder="Contoh: Belajar Modul 4 Pemrograman Web / Cicil Makalah AI"
               />
             </div>
 
             <div className="duration-selector-row">
-              <label>Durasi Sesi:</label>
+              <label>Pilih Durasi:</label>
               <div className="duration-buttons">
                 {[15, 25, 45, 60, 90].map((dur) => (
                   <button
                     key={dur}
                     type="button"
-                    className={`btn-dur ${durationMinutes === dur ? 'active' : ''}`}
-                    onClick={() => setDurationMinutes(dur)}
+                    className={`btn-dur ${session.durationMinutes === dur ? 'active' : ''}`}
+                    onClick={() => focusStore.setDurationMinutes(dur)}
                   >
                     {dur}m {dur === 25 ? '(Pomodoro)' : dur === 60 ? '(Deep Work)' : ''}
                   </button>
@@ -364,7 +231,7 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
             <div className="focus-whitelist-section">
               <div className="whitelist-header-row">
                 <span className="whitelist-title">
-                  🌐 <strong>Website Belajar yang Diizinkan</strong> ({whitelist.length} Domain Aktif)
+                  🌐 <strong>Website Belajar yang Diizinkan</strong> ({session.whitelist.length} Domain Aktif)
                 </span>
                 <button
                   type="button"
@@ -401,24 +268,22 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
 
               {/* Chips Website Terdaftar */}
               <div className="whitelist-chips-container">
-                {whitelist.map((w) => (
+                {session.whitelist.map((w) => (
                   <div key={w.id} className="whitelist-chip" title={`Domain: ${w.domain} (Mencakup seluruh halamannya)`}>
                     <span className="chip-icon">{w.icon}</span>
                     <span className="chip-name">{w.name}</span>
-                    <a
-                      href={w.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
                       className="chip-link-btn"
                       title="Uji coba buka website ini"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={() => handleLaunchAllowedSite(w)}
                     >
                       ↗
-                    </a>
+                    </button>
                     <button
                       type="button"
                       className="chip-del-btn"
-                      onClick={() => handleRemoveWebsite(w.id, w.name)}
+                      onClick={() => handleRemoveWebsite(w.id)}
                       title="Hapus dari whitelist"
                     >
                       ×
@@ -430,12 +295,12 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
 
             {/* Sandbox Penguji Link */}
             <div className="link-checker-box">
-              <label>🔍 Cek Keabsahan Link Website:</label>
+              <label>🔍 Cek / Simulasikan Buka Website:</label>
               <div className="link-checker-input-row">
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="Tempel URL di sini untuk memeriksa (contoh: https://elearning.ugm.ac.id/mod/assign/...)"
+                  placeholder="Ketik atau tempel URL (misal: https://elearning.ugm.ac.id/mod/quiz/...)"
                   value={testUrl}
                   onChange={(e) => {
                     setTestUrl(e.target.value);
@@ -451,15 +316,33 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
               {checkResult && checkResult.tested && (
                 <div className={`checker-feedback ${checkResult.allowed ? 'allowed' : 'blocked'}`}>
                   {checkResult.allowed ? (
-                    <span>
-                      ✅ <strong>Diizinkan!</strong> Link ini berada di domain{' '}
-                      <code>{checkResult.matchedDomain}</code> (semua halaman website ini aman dibuka saat fokus).
-                    </span>
+                    <div className="feedback-content">
+                      <span>
+                        ✅ <strong>Diizinkan!</strong> Link ini berada di domain{' '}
+                        <code>{checkResult.matchedDomain}</code> (semua sub-halaman aman dibuka saat fokus).
+                      </span>
+                      <button
+                        type="button"
+                        className="btn-launch-allowed"
+                        onClick={() => handleNavigateUrl(testUrl)}
+                      >
+                        Buka Website ↗
+                      </button>
+                    </div>
                   ) : checkResult.isKnownDistraction ? (
-                    <span>
-                      ⛔ <strong>Distraksi Terdeteksi:</strong> Website ini adalah{' '}
-                      <strong>{checkResult.distractionName}</strong> dan berada di luar whitelist belajar.
-                    </span>
+                    <div className="feedback-content">
+                      <span>
+                        ⛔ <strong>Distraksi Terdeteksi:</strong> Website ini adalah{' '}
+                        <strong>{checkResult.distractionName}</strong>. Jika dibuka saat sesi fokus, akan otomatis ditutup dalam 3 detik!
+                      </span>
+                      <button
+                        type="button"
+                        className="btn-test-block"
+                        onClick={() => focusStore.triggerDistractionWarning(checkResult.distractionName || 'Distraksi', 3)}
+                      >
+                        Uji Peringatan & Auto-Switch ⚡
+                      </button>
+                    </div>
                   ) : (
                     <span>
                       ⚠️ <strong>Belum Diizinkan:</strong> Domain <code>{extractDomain(testUrl)}</code> belum masuk whitelist.
@@ -468,20 +351,8 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
                         className="btn-quick-whitelist"
                         onClick={() => {
                           const domain = extractDomain(testUrl);
-                          const updated = [
-                            ...whitelist,
-                            {
-                              id: `w-${Date.now()}`,
-                              name: domain,
-                              url: testUrl.startsWith('http') ? testUrl : `https://${testUrl}`,
-                              domain,
-                              category: 'other' as const,
-                              icon: '🌐',
-                            },
-                          ];
-                          saveWhitelist(updated);
+                          focusStore.addWebsite(domain, testUrl);
                           setCheckResult({ tested: true, allowed: true, matchedDomain: domain });
-                          onNotify(`Domain "${domain}" berhasil ditambahkan ke whitelist!`, '✅');
                         }}
                       >
                         + Izinkan Website Ini
@@ -496,9 +367,9 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
             <button
               type="button"
               className="btn-start-focus"
-              onClick={handleStartSession}
+              onClick={() => focusStore.startSession()}
             >
-              <span>Mulai Sesi Fokus ({durationMinutes} Menit) 🎯</span>
+              <span>Mulai Sesi Fokus ({session.durationMinutes} Menit) 🎯</span>
             </button>
           </div>
         </div>
@@ -506,29 +377,68 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
         /* Active Focus Sanctuary */
         <div className="focus-active-state">
           <div className="focus-timer-ring">
-            <div className="timer-number">{formatTime(secondsRemaining)}</div>
-            <div className="timer-sublabel">{taskName}</div>
+            <div className="timer-number">{formatTime(session.secondsRemaining)}</div>
+            <div className="timer-sublabel">{session.taskName}</div>
           </div>
+
+          {/* Indicator jika sedang aktif belajar di website yang diizinkan */}
+          {session.activeStudySite && (
+            <div className="active-study-site-banner">
+              <span className="study-pulse-dot">🟢</span>
+              <span className="study-site-text">
+                Sedang Belajar di: <strong>{session.activeStudySite.name}</strong> ({session.activeStudySite.domain}) —{' '}
+                <em>Waktu fokus terus bertambah, bebas membuka materi & kuis.</em>
+              </span>
+              <button
+                type="button"
+                className="btn-done-study-site"
+                onClick={() => focusStore.clearActiveStudySite()}
+                title="Tutup indikator situs ini"
+              >
+                Selesai Belajar di Tab Ini
+              </button>
+            </div>
+          )}
 
           {/* Quick Launch Websites in Focus */}
           <div className="active-focus-launchpad">
-            <span className="launchpad-title">🚀 Buka Website Belajar (Bebas Navigasi Seluruh Halaman):</span>
+            <span className="launchpad-title">
+              🚀 Website Belajar yang Diizinkan (Klik untuk membuka — tetap dihitung Waktu Fokus):
+            </span>
             <div className="launchpad-buttons">
-              {whitelist.map((w) => (
-                <a
+              {session.whitelist.map((w) => (
+                <button
                   key={w.id}
-                  href={w.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-launch-site"
-                  title={`Buka ${w.name} di tab baru`}
+                  type="button"
+                  className={`btn-launch-site ${session.activeStudySite?.id === w.id ? 'active-site' : ''}`}
+                  onClick={() => handleLaunchAllowedSite(w)}
+                  title={`Buka ${w.name} (mencakup seluruh halaman)`}
                 >
                   <span>{w.icon}</span>
                   <span>{w.name}</span>
                   <span className="launch-icon">↗</span>
-                </a>
+                </button>
               ))}
             </div>
+          </div>
+
+          {/* Input Navigator Penguji Link saat fokus */}
+          <div className="focus-url-navigator-row">
+            <input
+              type="text"
+              className="form-input-nav"
+              placeholder="Buka atau uji link website lain saat sesi fokus..."
+              value={testUrl}
+              onChange={(e) => setTestUrl(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleNavigateUrl(testUrl)}
+            />
+            <button
+              type="button"
+              className="btn-nav-go"
+              onClick={() => handleNavigateUrl(testUrl)}
+            >
+              Buka / Validasi ↗
+            </button>
           </div>
 
           {/* Audio Ambience Synthesizer */}
@@ -537,19 +447,19 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
             <div className="audio-buttons">
               <button
                 type="button"
-                className={`btn-ambient ${activeSound === 'rain' ? 'active' : ''}`}
+                className={`btn-ambient ${session.activeSound === 'rain' ? 'active' : ''}`}
                 onClick={() => handleToggleSound('rain')}
               >
-                🌧️ {activeSound === 'rain' ? 'Matikan Hujan' : 'Suara Hujan'}
+                🌧️ {session.activeSound === 'rain' ? 'Matikan Hujan' : 'Suara Hujan'}
               </button>
               <button
                 type="button"
-                className={`btn-ambient ${activeSound === 'binaural' ? 'active' : ''}`}
+                className={`btn-ambient ${session.activeSound === 'binaural' ? 'active' : ''}`}
                 onClick={() => handleToggleSound('binaural')}
               >
-                🧠 {activeSound === 'binaural' ? 'Matikan Gelombang' : 'Binaural Alpha (14Hz)'}
+                🧠 {session.activeSound === 'binaural' ? 'Matikan Gelombang' : 'Binaural Alpha (14Hz)'}
               </button>
-              {activeSound !== 'none' && (
+              {session.activeSound !== 'none' && (
                 <div className="volume-slider-group">
                   <span>Vol:</span>
                   <input
@@ -557,7 +467,7 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
                     min="0"
                     max="1"
                     step="0.05"
-                    value={soundVolume}
+                    value={session.soundVolume}
                     onChange={handleVolumeChange}
                     className="volume-slider"
                   />
@@ -569,16 +479,16 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
           {/* Live Stats Row */}
           <div className="focus-live-stats">
             <div className="live-stat-item">
-              <span className="stat-num color-green">{Math.floor(focusSeconds / 60)}m {focusSeconds % 60}s</span>
+              <span className="stat-num color-green">{Math.floor(session.focusSeconds / 60)}m {session.focusSeconds % 60}s</span>
               <span className="stat-desc">Waktu Fokus Efektif</span>
             </div>
             <div className="live-stat-item">
-              <span className="stat-num color-orange">{distractionCount}×</span>
-              <span className="stat-desc">Beralih Tab / Jendela</span>
+              <span className="stat-num color-orange">{session.distractionCount}×</span>
+              <span className="stat-desc">Distraksi Dicegah</span>
             </div>
             <div className="live-stat-item">
-              <span className="stat-num color-red">{distractSeconds}s</span>
-              <span className="stat-desc">Total Waktu Distraksi</span>
+              <span className="stat-num" title={session.agentWindow}>{session.agentWindow.slice(0, 14)}...</span>
+              <span className="stat-desc">Jendela / Tab Aktif</span>
             </div>
           </div>
 
@@ -587,14 +497,14 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
             <button
               type="button"
               className="btn-finish-focus"
-              onClick={() => handleStopSession(true)}
+              onClick={() => focusStore.stopSession(true)}
             >
               Selesaikan Sesi Belajar ✅
             </button>
             <button
               type="button"
               className="btn-cancel-focus"
-              onClick={() => handleStopSession(false)}
+              onClick={() => focusStore.stopSession(false)}
             >
               Akhiri Lebih Awal
             </button>

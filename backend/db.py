@@ -38,3 +38,16 @@ def start_of_day_wib(dt: datetime = None) -> datetime:
 def iso_start_today() -> str:
     """Batas bawah filter 'hari ini' untuk query Supabase (ts gte ...)."""
     return start_of_day_wib().isoformat()
+
+import uuid
+import re
+
+UUID_REGEX = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.I)
+
+def ensure_uuid(user_id: str) -> str:
+    """Memastikan user_id selalu berformat UUID valid (RFC-4122) yang diterima Supabase Postgres."""
+    if not user_id:
+        return str(uuid.uuid4())
+    if UUID_REGEX.match(user_id):
+        return user_id
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, user_id))

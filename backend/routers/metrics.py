@@ -197,12 +197,14 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
 
     # 1. Ambil data sesi fokus riil
     from routers.focus import _MEM_FOCUS_SESSIONS
+    from db import ensure_uuid
+    u_uuid = ensure_uuid(user_id)
     focus_sessions = []
     if supabase:
         try:
             fs_res = supabase.table("focus_sessions") \
                 .select("*") \
-                .eq("user_id", user_id) \
+                .in_("user_id", [user_id, u_uuid]) \
                 .gte("mulai", hist_start) \
                 .order("mulai", desc=False) \
                 .execute()
@@ -212,7 +214,7 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
             pass
 
     # Gabungkan dengan memory session jika ada
-    mem_sessions = _MEM_FOCUS_SESSIONS.get(user_id, [])
+    mem_sessions = _MEM_FOCUS_SESSIONS.get(user_id, []) or _MEM_FOCUS_SESSIONS.get(u_uuid, [])
     known_ids = {s.get("id") for s in focus_sessions}
     for ms in mem_sessions:
         if ms.get("id") not in known_ids and (ms.get("mulai") or "") >= hist_start:
@@ -224,7 +226,7 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
         try:
             res = supabase.table("sensor_metrics") \
                 .select("*") \
-                .eq("user_id", user_id) \
+                .in_("user_id", [user_id, u_uuid]) \
                 .gte("ts", hist_start) \
                 .order("ts", desc=False) \
                 .execute()
@@ -242,15 +244,11 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
     tot_focus_sec += sum(int(m.get("focus_seconds") or 0) for m in today_metrics)
     tot_dist_sec += sum(int(m.get("distraction_seconds") or 0) for m in today_metrics)
 
-    # Jika mahasiswa baru saja mulai atau belum ada log hari ini, berikan baseline produktif
     has_real_today = (tot_focus_sec + tot_dist_sec) > 0
-    if not has_real_today:
-        tot_focus_sec = 2 * 3600 + 45 * 60  # 2j 45m
-        tot_dist_sec = 28 * 60             # 28m
 
     tot_sec = tot_focus_sec + tot_dist_sec
-    f_pct = round((tot_focus_sec / tot_sec) * 100) if tot_sec > 0 else 85
-    d_pct = 100 - f_pct
+    f_pct = round((tot_focus_sec / tot_sec) * 100) if tot_sec > 0 else 0
+    d_pct = 100 - f_pct if tot_sec > 0 else 0
 
     f_hours = tot_focus_sec // 3600
     f_mins = (tot_focus_sec % 3600) // 60
@@ -265,7 +263,7 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
         else:
             note = f"Distraksi terdeteksi cukup tinggi ({d_pct}%). Istirahat sejenak 🌿"
     else:
-        note = "Belum ada sesi baru hari ini. Mulai sesi fokus untuk merekam waktu belajarmu! 🚀"
+        note = "Belum ada sesi fokus tercatat hari ini. Tekan 'Mulai Sesi Fokus' untuk merekam waktu belajarmu! 🚀"
 
     focus_dur_label = f"{f_hours}j {f_mins}m" if f_hours > 0 else f"{f_mins} menit"
     distract_dur_label = f"{d_hours}j {d_mins}m" if d_hours > 0 else f"{d_mins} menit"
@@ -279,7 +277,7 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
         motivationalNote=note
     )
 
-    # 3. Top Pencuri Waktu (Aggregated from real blocked apps / distractors)
+    # 3. Top Pencuri Waktu (Hanya dari riil blocked_apps sesi, kosongkan jika belum ada)
     distractor_counts: Dict[str, int] = {}
     for s in focus_sessions:
         b_apps = s.get("blocked_apps") or {}
@@ -288,16 +286,6 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
                 clean_name = app_name.replace(".exe", "").capitalize()
                 distractor_counts[clean_name] = distractor_counts.get(clean_name, 0) + int(count)
 
-    # Tambahkan default wajar jika belum banyak distraksi tercatat
-    if not distractor_counts:
-        distractor_counts = {
-            "YouTube": 38,
-            "Instagram": 24,
-            "Discord": 16,
-            "TikTok": 12,
-            "Twitter / X": 8
-        }
-
     max_distract = max(distractor_counts.values()) if distractor_counts else 1
     top_distractors = []
     for idx, (app_name, mins) in enumerate(sorted(distractor_counts.items(), key=lambda x: x[1], reverse=True)[:5]):
@@ -305,11 +293,11 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
             id=f"distract-{idx+1}",
             name=app_name,
             durationMinutes=mins,
-            durationLabel=f"{mins} menit",
+            durationLabel=f"{mins} menit" if mins >= 1 else "1 menit",
             percentage=min(100, round((mins / max_distract) * 100))
         ))
 
-    # 4. Focus Streak (Dihitung dari hari aktif)
+    # 4. Focus Streak (Dihitung murni dari hari aktif)
     active_days_set = set()
     for s in focus_sessions:
         raw_m = s.get("mulai")
@@ -328,8 +316,7 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
     for i in range(7):
         target_date = today_date - timedelta(days=6 - i)
         w_day = target_date.weekday()
-        # Jika hari aktif atau ada log
-        is_done = target_date in active_days_set or (i < 5)  # baseline untuk profil aktif
+        is_done = target_date in active_days_set
         if is_done:
             consecutive_streak += 1
         streak_days.append(FocusStreakDay(
@@ -339,13 +326,13 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
         ))
 
     streak_info = FocusStreakInfo(
-        currentStreak=max(consecutive_streak, 5),
+        currentStreak=consecutive_streak,
         targetRule="fokus produktif tercatat per hari",
-        bestRecord=14,
+        bestRecord=consecutive_streak,
         days=streak_days
     )
 
-    # 5. Weekly Bars (Dihitung per hari dari rentang `days`)
+    # 5. Weekly Bars (Dihitung per hari murni dari sesi nyata)
     chart_days = min(days, 14)
     weekly_bars: List[FocusDailyBar] = []
 
@@ -354,7 +341,6 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
         t_date = target_dt.date()
         w_idx = target_dt.weekday()
 
-        # Filter sesi untuk hari t_date
         day_f_sec = 0
         day_d_sec = 0
         for s in focus_sessions:
@@ -368,15 +354,9 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
                 except Exception:
                     pass
 
-        # Jika tidak ada data spesifik pada hari lampau, berikan kurva akademis realistis
-        if day_f_sec + day_d_sec == 0:
-            base_hrs = 3.5 + (i * 0.7) % 3.0
-            day_f_sec = int(base_hrs * 3600 * 0.82)
-            day_d_sec = int(base_hrs * 3600 * 0.18)
-
         total_day_sec = day_f_sec + day_d_sec
-        bar_f_pct = round((day_f_sec / total_day_sec) * 100) if total_day_sec > 0 else 80
-        bar_d_pct = 100 - bar_f_pct
+        bar_f_pct = round((day_f_sec / total_day_sec) * 100) if total_day_sec > 0 else 0
+        bar_d_pct = 100 - bar_f_pct if total_day_sec > 0 else 0
         tot_hrs = total_day_sec / 3600.0
 
         f_h = day_f_sec // 3600
@@ -392,7 +372,7 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
             distractPercent=bar_d_pct,
             focusDuration=f"{f_h}j {f_m}m" if f_h > 0 else f"{f_m}m",
             distractDuration=f"{d_h}j {d_m}m" if d_h > 0 else f"{d_m}m",
-            totalDuration=f"{tot_hrs:.1f} jam",
+            totalDuration=f"{tot_hrs:.1f} jam" if tot_hrs > 0 else "0 jam",
             totalHoursNum=round(tot_hrs, 1)
         ))
 

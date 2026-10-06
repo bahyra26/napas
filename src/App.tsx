@@ -260,7 +260,10 @@ export const App: React.FC = () => {
   };
 
   const handleCustomLogin = async (name: string, campus: string, major: string) => {
-    const customId = `student-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString().slice(-4)}`;
+    const customId =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : 'c0000000-0000-4000-8000-' + Date.now().toString(16).padStart(12, '0');
     setStoredUserId(customId, name);
     localStorage.removeItem('napas_demo_mode');
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any
-from db import supabase, now_wib, start_of_day_wib, iso_start_today
+from db import supabase, now_wib, start_of_day_wib, iso_start_today, ensure_uuid
 from schemas import BurnoutIndexResponse
 from engine import (
     calculate_load_score,
@@ -22,6 +22,8 @@ def get_or_compute_today_index(user_id: str):
     """
     if not supabase:
         raise HTTPException(status_code=500, detail="Database belum terhubung. Pastikan file .env sudah diisi.")
+
+    user_id = ensure_uuid(user_id)
 
     current_wib = now_wib()
     today_wib_str = current_wib.date().isoformat()

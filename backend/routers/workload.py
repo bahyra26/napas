@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from db import supabase
+from db import supabase, ensure_uuid
 from schemas import WorkloadCreate, WorkloadUpdateStatus, WorkloadResponse
 
 router = APIRouter(prefix="/workload", tags=["Workload"])
@@ -10,8 +10,9 @@ def create_workload_item(payload: WorkloadCreate):
     if not supabase:
         raise HTTPException(status_code=500, detail="Database belum terhubung. Pastikan file .env sudah diisi.")
 
+    u_id = ensure_uuid(payload.user_id)
     row = {
-        "user_id": payload.user_id,
+        "user_id": u_id,
         "judul": payload.judul,
         "jenis": payload.jenis,
         "deadline": payload.deadline.isoformat(),
@@ -61,9 +62,10 @@ def get_user_workloads(user_id: str):
     if not supabase:
         raise HTTPException(status_code=500, detail="Database belum terhubung. Pastikan file .env sudah diisi.")
 
+    u_id = ensure_uuid(user_id)
     res = supabase.table("workload_items") \
         .select("*") \
-        .eq("user_id", user_id) \
+        .eq("user_id", u_id) \
         .order("deadline", desc=False) \
         .execute()
 

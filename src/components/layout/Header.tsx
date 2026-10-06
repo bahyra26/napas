@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TabType } from '../../types';
+import { focusStore, FocusSessionState } from '../../services/focusSessionStore';
 
 interface HeaderProps {
   activeTab: TabType;
@@ -22,6 +23,13 @@ export const Header: React.FC<HeaderProps> = ({
   isSyncingCalendar = false,
   onLogout,
 }) => {
+  const [focusState, setFocusState] = useState<FocusSessionState>(() => focusStore.getState());
+
+  useEffect(() => {
+    const unsub = focusStore.subscribe((st) => setFocusState({ ...st }));
+    return () => unsub();
+  }, []);
+
   const titles: Record<TabType, string> = {
     home: `Profil ${studentName}`,
     tren: 'Tren Kesejahteraan',
@@ -29,6 +37,12 @@ export const Header: React.FC<HeaderProps> = ({
     fokus: 'Fokus & Distraksi',
     laporan: 'Laporan & Rekomendasi',
     settings: 'Settings & Profil',
+  };
+
+  const formatMinSec = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
   };
 
   return (
@@ -47,6 +61,52 @@ export const Header: React.FC<HeaderProps> = ({
         <h1 className="header-title" id="pageHeaderTitle">
           {titles[activeTab] || 'NAPAS'}
         </h1>
+
+        {/* Global Live Focus Badge */}
+        {focusState.isRunning && (
+          <div
+            className="header-focus-live-badge"
+            onClick={() => onSelectTab?.('fokus')}
+            title="Sesi fokus sedang berjalan! Klik untuk melihat tab Fokus."
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              marginLeft: '12px',
+              padding: '4px 10px',
+              borderRadius: '20px',
+              backgroundColor: 'rgba(34, 197, 94, 0.12)',
+              border: '1px solid rgba(34, 197, 94, 0.35)',
+              color: '#15803d',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              animation: 'pulse 2s infinite',
+            }}
+          >
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: '#22c55e',
+                boxShadow: '0 0 6px #22c55e',
+              }}
+            ></span>
+            <span>🎯 {formatMinSec(focusState.secondsRemaining)}</span>
+            <span
+              style={{
+                maxWidth: '120px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                opacity: 0.85,
+              }}
+            >
+              · {focusState.taskName}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="header-right">

@@ -137,6 +137,58 @@ export function isUrlAllowed(
 }
 
 /**
+ * Ekstraksi seluruh kata kunci (keywords) dari daftar whitelist untuk dikirimkan ke Desktop Agent.
+ * Memastikan pengecekan judul jendela (window title) di Windows mengenali nama LMS, website,
+ * maupun domain belajar tanpa false positive distraksi.
+ */
+export function extractAllKeywords(whitelist: WhitelistWebsite[]): string[] {
+  const keywordsSet = new Set<string>();
+
+  // Keyword esensial project NAPAS (wajib selalu aman)
+  ['napas', 'localhost', '127.0.0.1', 'kesehatan mental', 'ruang belajar'].forEach((k) =>
+    keywordsSet.add(k.toLowerCase())
+  );
+
+  for (const item of whitelist) {
+    // 1. Domain penuh
+    const dom = extractDomain(item.domain || item.url);
+    if (dom) {
+      keywordsSet.add(dom.toLowerCase());
+      // Bagian domain tanpa ekstensi TLD (.com, .ac.id, .org, dll)
+      const parts = dom.split('.');
+      if (parts.length > 0) {
+        parts.forEach((p) => {
+          if (p.length >= 3 && !['com', 'org', 'net', 'id', 'ac', 'edu', 'gov'].includes(p)) {
+            keywordsSet.add(p.toLowerCase());
+          }
+        });
+      }
+      if (dom.includes('elearning')) {
+        keywordsSet.add('elearning');
+        keywordsSet.add('e-learning');
+      }
+      if (dom.includes('docs.google')) {
+        keywordsSet.add('docs');
+        keywordsSet.add('dokumen');
+        keywordsSet.add('google docs');
+        keywordsSet.add('google drive');
+      }
+    }
+
+    // 2. Kata-kata dari nama website (misal: "E-Learning Kampus", "Google Docs")
+    if (item.name) {
+      const words = item.name.toLowerCase().split(/[\s\-_/\\|,.]+/);
+      words.forEach((w) => {
+        if (w.length >= 3) keywordsSet.add(w);
+      });
+      keywordsSet.add(item.name.toLowerCase());
+    }
+  }
+
+  return Array.from(keywordsSet);
+}
+
+/**
  * Web Audio Ambient Sound Generator (Rain, Lo-Fi Pink Noise, Binaural Beats)
  * Bekerja murni via Web Audio API browser tanpa file audio eksternal.
  */

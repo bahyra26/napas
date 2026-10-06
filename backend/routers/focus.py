@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from db import supabase, now_wib
+from db import supabase, now_wib, ensure_uuid
 from schemas import FocusSessionStart, FocusSessionFinish
 
 router = APIRouter(prefix="/focus-sessions", tags=["Focus Sessions"])
@@ -12,10 +12,11 @@ _MEM_FOCUS_SESSIONS: dict = {}
 def start_focus_session(payload: FocusSessionStart):
     import uuid
     now_iso = now_wib().isoformat()
-    session_id = str(uuid.uuid4())
+    session_id = payload.session_id or payload.id or str(uuid.uuid4())
+    u_id = ensure_uuid(payload.user_id)
     row = {
         "id": session_id,
-        "user_id": payload.user_id,
+        "user_id": u_id,
         "workload_id": payload.workload_id,
         "judul": payload.judul or "Sesi Fokus Belajar",
         "mulai": now_iso,
@@ -98,11 +99,12 @@ def finish_focus_session(session_id: str, payload: FocusSessionFinish):
 
 @router.get("/{user_id}/active")
 def get_active_session(user_id: str):
+    u_uuid = ensure_uuid(user_id)
     if supabase:
         try:
             res = supabase.table("focus_sessions") \
                 .select("*") \
-                .eq("user_id", user_id) \
+                .eq("user_id", u_uuid) \
                 .eq("completed", False) \
                 .order("mulai", desc=True) \
                 .limit(1) \
@@ -112,17 +114,18 @@ def get_active_session(user_id: str):
         except Exception:
             pass
 
-    mem_list = _MEM_FOCUS_SESSIONS.get(user_id, [])
+    mem_list = _MEM_FOCUS_SESSIONS.get(user_id, []) or _MEM_FOCUS_SESSIONS.get(u_uuid, [])
     active = [s for s in mem_list if not s.get("completed")]
     return active[-1] if active else None
 
 @router.get("/{user_id}")
 def list_focus_sessions(user_id: str, limit: int = Query(default=10, ge=1, le=50)):
+    u_uuid = ensure_uuid(user_id)
     if supabase:
         try:
             res = supabase.table("focus_sessions") \
                 .select("*") \
-                .eq("user_id", user_id) \
+                .eq("user_id", u_uuid) \
                 .order("mulai", desc=True) \
                 .limit(limit) \
                 .execute()
@@ -131,5 +134,5 @@ def list_focus_sessions(user_id: str, limit: int = Query(default=10, ge=1, le=50
         except Exception:
             pass
 
-    mem_list = _MEM_FOCUS_SESSIONS.get(user_id, [])
+    mem_list = _MEM_FOCUS_SESSIONS.get(user_id, []) or _MEM_FOCUS_SESSIONS.get(u_uuid, [])
     return list(reversed(mem_list))[:limit]

@@ -145,6 +145,7 @@ class AgentClient {
   public startSession(params: {
     sessionId: string;
     whitelist?: string[];
+    whitelist_keywords?: string[];
     blacklist?: string[];
     action?: string;
   }) {
@@ -154,8 +155,21 @@ class AgentClient {
         type: 'start_session',
         session_id: params.sessionId,
         whitelist: params.whitelist,
+        whitelist_keywords: params.whitelist_keywords,
         blacklist: params.blacklist,
         action: params.action || 'warn_then_close',
+      })
+    );
+    return true;
+  }
+
+  public setStudySite(site?: string, keywords?: string[]) {
+    if (!this.isConnected || !this.ws) return false;
+    this.ws.send(
+      JSON.stringify({
+        type: 'set_study_site',
+        site: site || null,
+        keywords: keywords || [],
       })
     );
     return true;
