@@ -77,6 +77,22 @@ export const authService = {
     }
   },
 
+  async resetPassword(email: string): Promise<{ error?: string }> {
+    if (!supabaseClient) {
+      return { error: 'Supabase client belum terkonfigurasi' };
+    }
+    try {
+      const redirectUrl = window.location.origin + window.location.pathname;
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: redirectUrl,
+      });
+      if (error) return { error: error.message };
+      return {};
+    } catch (err: any) {
+      return { error: err?.message || 'Gagal mengirim email reset password' };
+    }
+  },
+
   async signInWithGoogle(): Promise<{ error?: string }> {
     if (!supabaseClient) {
       return {

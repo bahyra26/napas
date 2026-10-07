@@ -13,7 +13,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
   onCustomLogin,
   onNotify,
 }) => {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   const [loading, setLoading] = useState(false);
 
   // Login Form States
@@ -28,6 +28,10 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [regUsername, setRegUsername] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
+
+  // Forgot Password States
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
 
   // Password Strength Criteria
   const hasMinLen = regPassword.length >= 8;
@@ -61,7 +65,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
     setLoading(true);
 
     try {
-      // Coba auth Supabase jika tersedia
       const res = await authService.signInWithPassword(loginEmailOrUser, loginPassword);
       if (res.user) {
         setLoading(false);
@@ -74,7 +77,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
       // Supabase unconfigured / offline -> fallback lokal
     }
 
-    // Fallback: Login lokal mulus
     setLoading(false);
     const resolvedName = loginEmailOrUser.includes('@')
       ? loginEmailOrUser.split('@')[0]
@@ -131,7 +133,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
       // Supabase unconfigured / offline -> fallback lokal
     }
 
-    // Fallback: Buat akun lokal langsung
     setLoading(false);
     const cleanName = regFullName.trim();
     if (onCustomLogin) {
@@ -142,6 +143,28 @@ export const LoginView: React.FC<LoginViewProps> = ({
       window.location.reload();
     }
     onNotify(`Akun berhasil dibuat! Selamat datang di NAPAS, ${cleanName}!`, '🎉');
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      onNotify('Silakan masukkan email akun Anda.', '⚠️');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await authService.resetPassword(forgotEmail);
+      if (res.error) {
+        onNotify(res.error, 'ℹ️');
+      }
+    } catch {
+      // fallback
+    }
+
+    setLoading(false);
+    setForgotSent(true);
+    onNotify(`Tautan pemulihan kata sandi telah dikirim ke ${forgotEmail}!`, '📧');
   };
 
   return (
@@ -175,25 +198,33 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   <br />
                   Kembali!
                 </>
-              ) : (
+              ) : mode === 'register' ? (
                 <>
                   Mulai Perjalanan
                   <br />
                   Lebih Baik
+                </>
+              ) : (
+                <>
+                  Atur Ulang
+                  <br />
+                  Kata Sandi
                 </>
               )}
             </h1>
             <p className="auth-intro-desc">
               {mode === 'login'
                 ? 'Pantau kesehatan mentalmu, langkah kecil untuk hidup yang lebih baik.'
-                : 'Daftar sekarang dan temukan cara untuk menjaga kesehatan mentalmu setiap hari.'}
+                : mode === 'register'
+                ? 'Daftar sekarang dan temukan cara untuk menjaga kesehatan mentalmu setiap hari.'
+                : 'Tenang, luangkan napas sejenak. Kami akan bantu memulihkan akses ke akunmu.'}
             </p>
           </div>
 
           {/* Illustration Section */}
           <div className="auth-illustration-container">
             <div className="auth-illustration-backdrop">
-              {mode === 'login' ? (
+              {mode === 'login' || mode === 'forgot' ? (
                 <img
                   src="./assets/Meditasi.png"
                   alt="Meditasi NAPAS"
@@ -236,13 +267,15 @@ export const LoginView: React.FC<LoginViewProps> = ({
             <span className="auth-badge-text">
               {mode === 'login'
                 ? 'Jaga kesehatan mental, raih versi terbaik dirimu.'
-                : 'Kamu tidak sendirian. NAPAS selalu ada untukmu.'}
+                : mode === 'register'
+                ? 'Kamu tidak sendirian. NAPAS selalu ada untukmu.'
+                : 'Keamanan dan privasi akunmu selalu terjaga.'}
             </span>
           </div>
         </div>
 
         {/* ==================================================================
-            RIGHT PANEL: FORM (LOGIN / DAFTAR AKUN)
+            RIGHT PANEL: FORM (LOGIN / DAFTAR AKUN / LUPA PASSWORD)
             ================================================================== */}
         <div className="auth-right">
           {mode === 'login' ? (
@@ -327,9 +360,10 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   <button
                     type="button"
                     className="auth-forgot-link"
-                    onClick={() =>
-                      onNotify('Gunakan opsi Google atau login langsung dengan nama Anda.', 'ℹ️')
-                    }
+                    onClick={() => {
+                      setMode('forgot');
+                      setForgotSent(false);
+                    }}
                   >
                     Lupa password?
                   </button>
@@ -388,6 +422,132 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   Daftar sekarang
                 </button>
               </p>
+            </>
+          ) : mode === 'forgot' ? (
+            /* ------------------ LUPA PASSWORD FORM ------------------ */
+            <>
+              {!forgotSent ? (
+                <>
+                  <div className="auth-form-header">
+                    <h2 className="auth-form-title">Lupa Password</h2>
+                    <p className="auth-form-subtitle">
+                      Masukkan email yang terdaftar untuk menerima tautan pemulihan kata sandi
+                    </p>
+                  </div>
+
+                  <form className="auth-form" onSubmit={handleForgotSubmit}>
+                    {/* Email Input */}
+                    <div className="auth-field">
+                      <label className="auth-label">Email Akun</label>
+                      <div className="auth-input-wrapper">
+                        <span className="auth-input-icon">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                          </svg>
+                        </span>
+                        <input
+                          type="email"
+                          className="auth-input"
+                          placeholder="Masukkan email aktif Anda"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          required
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    <button type="submit" className="auth-submit-btn" disabled={loading}>
+                      <span>{loading ? 'Mengirim Tautan...' : 'Kirim Tautan Reset'}</span>
+                      <span>→</span>
+                    </button>
+
+                    <div className="auth-divider">
+                      <span>atau</span>
+                    </div>
+
+                    {/* Alternative Google Login */}
+                    <button
+                      type="button"
+                      className="auth-google-btn"
+                      onClick={handleGoogleLogin}
+                      disabled={loading}
+                    >
+                      <img
+                        src="./assets/google.png"
+                        alt="Google"
+                        className="auth-google-img"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.onerror = null;
+                          target.src = './assets/search.png';
+                        }}
+                      />
+                      <span>Masuk Langsung dengan Google</span>
+                    </button>
+                  </form>
+
+                  {/* Switch to Login */}
+                  <p className="auth-switch-text">
+                    Ingat kata sandi Anda?
+                    <button
+                      type="button"
+                      className="auth-switch-btn"
+                      onClick={() => {
+                        setMode('login');
+                        setForgotSent(false);
+                      }}
+                    >
+                      Login di sini
+                    </button>
+                  </p>
+                </>
+              ) : (
+                /* Success State */
+                <div className="auth-success-state">
+                  <div className="auth-success-icon-wrap">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#0d7b5f"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="auth-success-icon"
+                    >
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                  </div>
+                  <h2 className="auth-form-title">Email Terkirim!</h2>
+                  <p className="auth-success-desc">
+                    Tautan pemulihan kata sandi telah dikirim ke <strong>{forgotEmail}</strong>. Silakan periksa kotak masuk atau folder spam email Anda.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="auth-submit-btn"
+                    onClick={() => {
+                      setMode('login');
+                      setForgotSent(false);
+                    }}
+                  >
+                    <span>Kembali ke Halaman Login</span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="auth-resend-btn"
+                    onClick={handleForgotSubmit}
+                    disabled={loading}
+                  >
+                    Belum menerima email? Kirim ulang
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             /* ------------------ REGISTER (DAFTAR AKUN) FORM ------------------ */

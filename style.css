@@ -5110,6 +5110,69 @@ body[data-tab="settings"] .dashboard-container {
   transform: translateY(-1px);
 }
 
+/* Forgot Password Success State */
+.auth-success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 0;
+  animation: modalScaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-success-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #e6f7ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(13, 123, 95, 0.15);
+}
+
+.auth-success-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.auth-success-desc {
+  font-size: 13.5px;
+  color: #4a5568;
+  line-height: 1.6;
+  margin: 10px 0 24px;
+  max-width: 330px;
+}
+
+.auth-success-desc strong {
+  color: #0d6e53;
+  word-break: break-all;
+}
+
+.auth-resend-btn {
+  background: none;
+  border: none;
+  color: #718096;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: color 0.2s;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.auth-resend-btn:hover:not(:disabled) {
+  color: #0d7b5f;
+  text-decoration: underline;
+}
+
+.auth-resend-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .auth-card {
