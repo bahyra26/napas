@@ -36,6 +36,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             src="./assets/logo_brain.png"
             alt="NAPAS Logo"
             className="sidebar-logo-img"
+            onError={(e) => {
+              const target = e.currentTarget;
+              target.onerror = null;
+              target.src = './assets/napas.png';
+            }}
           />
           <span className="sidebar-logo-text">NAPAS</span>
         </div>

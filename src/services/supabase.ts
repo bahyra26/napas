@@ -33,6 +33,50 @@ export const authService = {
     return !!supabaseClient;
   },
 
+  async signInWithPassword(emailOrUsername: string, password: string): Promise<{ user?: any; error?: string }> {
+    if (!supabaseClient) {
+      return { error: 'Supabase client belum terkonfigurasi' };
+    }
+    try {
+      const email = emailOrUsername.includes('@') ? emailOrUsername.trim() : `${emailOrUsername.trim()}@napas.app`;
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) return { error: error.message };
+      return { user: data.user };
+    } catch (err: any) {
+      return { error: err?.message || 'Gagal masuk akun' };
+    }
+  },
+
+  async signUpWithEmail(params: {
+    email: string;
+    password: string;
+    fullName: string;
+    username: string;
+  }): Promise<{ user?: any; error?: string }> {
+    if (!supabaseClient) {
+      return { error: 'Supabase client belum terkonfigurasi' };
+    }
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: params.email.trim(),
+        password: params.password,
+        options: {
+          data: {
+            full_name: params.fullName.trim(),
+            username: params.username.trim(),
+          },
+        },
+      });
+      if (error) return { error: error.message };
+      return { user: data.user };
+    } catch (err: any) {
+      return { error: err?.message || 'Gagal mendaftar akun' };
+    }
+  },
+
   async signInWithGoogle(): Promise<{ error?: string }> {
     if (!supabaseClient) {
       return {
