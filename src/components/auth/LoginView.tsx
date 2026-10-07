@@ -192,278 +192,31 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
           {/* Illustration Section */}
           <div className="auth-illustration-container">
-            {mode === 'login' ? (
-              /* Mindful Calm Breathing Person Illustration */
-              <svg
-                viewBox="0 0 320 280"
-                className="auth-illustration-svg"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <defs>
-                  <radialGradient id="mintGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#d5eee1" />
-                    <stop offset="100%" stopColor="#c3e6d5" stopOpacity="0.4" />
-                  </radialGradient>
-                  <linearGradient id="hoodieGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#0d5c48" />
-                    <stop offset="100%" stopColor="#094536" />
-                  </linearGradient>
-                  <linearGradient id="leafGrad1" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#1f7d5e" />
-                    <stop offset="100%" stopColor="#43b88b" />
-                  </linearGradient>
-                  <linearGradient id="leafGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#2a8f6d" />
-                    <stop offset="100%" stopColor="#5cc99e" />
-                  </linearGradient>
-                </defs>
-
-                {/* Circular Halo */}
-                <circle cx="160" cy="155" r="105" fill="url(#mintGlow)" />
-                <circle cx="160" cy="155" r="95" fill="#daf0e5" />
-
-                {/* Amber Sun Dot */}
-                <circle cx="242" cy="78" r="14" fill="#f09a3e" />
-
-                {/* Mindful Air Swirls */}
-                <path
-                  d="M 238 120 C 242 118 248 119 250 123"
-                  stroke="#3b9673"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
+            <div className="auth-illustration-backdrop">
+              {mode === 'login' ? (
+                <img
+                  src="./assets/Meditasi.png"
+                  alt="Meditasi NAPAS"
+                  className="auth-illustration-img"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.onerror = null;
+                    target.src = './assets/meditasi.png';
+                  }}
                 />
-                <path
-                  d="M 252 135 C 255 133 260 134 262 138"
-                  stroke="#3b9673"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
+              ) : (
+                <img
+                  src="./assets/Background.png"
+                  alt="Perjalanan NAPAS"
+                  className="auth-illustration-img"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.onerror = null;
+                    target.src = './assets/background.png';
+                  }}
                 />
-                <path
-                  d="M 72 130 C 76 128 80 130 82 134"
-                  stroke="#3b9673"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-
-                {/* Foliage Left */}
-                <path
-                  d="M 70 215 C 60 180 85 150 95 155 C 105 160 102 190 92 215 Z"
-                  fill="url(#leafGrad1)"
-                />
-                <path
-                  d="M 90 220 C 80 165 110 135 120 142 C 128 150 120 185 108 220 Z"
-                  fill="url(#leafGrad2)"
-                />
-
-                {/* Foliage Right */}
-                <path
-                  d="M 248 220 C 258 180 230 150 220 156 C 210 162 215 195 228 220 Z"
-                  fill="url(#leafGrad1)"
-                />
-                <path
-                  d="M 230 220 C 242 165 210 135 198 142 C 190 150 200 185 212 220 Z"
-                  fill="url(#leafGrad2)"
-                />
-
-                {/* Hoodie Body */}
-                <path
-                  d="M 112 250 C 114 205 134 190 160 190 C 186 190 206 205 208 250 Z"
-                  fill="url(#hoodieGrad)"
-                />
-                <path
-                  d="M 148 190 Q 160 206 172 190"
-                  stroke="#063227"
-                  strokeWidth="3"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 154 198 L 153 222"
-                  stroke="#063227"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 166 198 L 167 222"
-                  stroke="#063227"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-
-                {/* Neck & Shadow */}
-                <path d="M 150 170 L 150 192 L 170 192 L 170 170 Z" fill="#fcdbbd" />
-                <path
-                  d="M 150 182 Q 160 188 170 182 L 170 192 L 150 192 Z"
-                  fill="#ebbe9d"
-                />
-
-                {/* Face */}
-                <path
-                  d="M 142 144 C 142 170 154 178 166 178 C 178 178 184 168 184 148 C 184 126 174 122 158 122 C 146 122 142 132 142 144 Z"
-                  fill="#fcdbbd"
-                />
-
-                {/* Ear */}
-                <path
-                  d="M 139 146 C 137 142 139 138 143 138 L 143 150 C 139 150 138 148 139 146 Z"
-                  fill="#f5c7a4"
-                />
-
-                {/* Peaceful Closed Eye */}
-                <path
-                  d="M 165 145 Q 171 150 176 146"
-                  stroke="#0d4838"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                {/* Eyebrow */}
-                <path
-                  d="M 163 139 Q 171 140 178 142"
-                  stroke="#0a392c"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                {/* Gentle Smile */}
-                <path
-                  d="M 167 160 Q 172 165 178 162"
-                  stroke="#0d4838"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                <circle cx="177" cy="154" r="5" fill="#fca898" opacity="0.45" />
-
-                {/* Hair */}
-                <path
-                  d="M 135 140 C 130 120 144 100 162 100 C 178 100 185 110 188 124 C 190 134 186 140 184 142 C 180 130 175 125 162 124 C 152 123 145 130 142 142 C 140 144 136 144 135 140 Z"
-                  fill="#0c3c2f"
-                />
-                <path
-                  d="M 138 126 C 132 122 134 112 140 110 C 148 108 152 116 148 122 Z"
-                  fill="#0c3c2f"
-                />
-              </svg>
-            ) : (
-              /* Plant & Health Tablet Device Illustration */
-              <svg
-                viewBox="0 0 320 280"
-                className="auth-illustration-svg"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <defs>
-                  <radialGradient id="regMintGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#d5eee1" />
-                    <stop offset="100%" stopColor="#c3e6d5" stopOpacity="0.4" />
-                  </radialGradient>
-                  <linearGradient id="potGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#145844" />
-                    <stop offset="100%" stopColor="#0b382b" />
-                  </linearGradient>
-                  <linearGradient id="leafGradA" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#258664" />
-                    <stop offset="100%" stopColor="#4bc295" />
-                  </linearGradient>
-                </defs>
-
-                {/* Circular Halo */}
-                <circle cx="160" cy="155" r="105" fill="url(#regMintGlow)" />
-                <circle cx="160" cy="155" r="95" fill="#daf0e5" />
-
-                {/* Amber Sun Dot */}
-                <circle cx="242" cy="78" r="14" fill="#f09a3e" />
-
-                {/* Potted Plant */}
-                <path
-                  d="M 98 226 L 104 252 C 104 254 106 256 109 256 L 135 256 C 138 256 140 254 140 252 L 146 226 Z"
-                  fill="url(#potGrad)"
-                />
-                <rect x="94" y="218" width="56" height="10" rx="4" fill="#1b6650" />
-
-                {/* Plant Stems & Leaves */}
-                <path
-                  d="M 122 218 C 122 170 120 145 118 128"
-                  stroke="#165b46"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 120 190 C 108 178 98 175 94 176 C 92 186 104 196 118 196 Z"
-                  fill="url(#leafGradA)"
-                />
-                <path
-                  d="M 122 170 C 134 158 144 155 148 156 C 150 166 138 176 124 176 Z"
-                  fill="url(#leafGradA)"
-                />
-                <path
-                  d="M 119 146 C 107 134 97 131 93 132 C 91 142 103 152 117 152 Z"
-                  fill="url(#leafGradA)"
-                />
-                <path
-                  d="M 118 132 C 122 114 116 104 118 104 C 120 104 128 116 122 132 Z"
-                  fill="url(#leafGradA)"
-                />
-
-                {/* Health Tablet Card */}
-                <rect
-                  x="156"
-                  y="126"
-                  width="120"
-                  height="98"
-                  rx="14"
-                  fill="#ffffff"
-                  stroke="#259a72"
-                  strokeWidth="3"
-                />
-
-                {/* Heart Badge with ECG Wave */}
-                <g transform="translate(198, 140)">
-                  <rect x="-8" y="-4" width="48" height="42" rx="10" fill="#e4f6ec" />
-                  <path
-                    d="M 16 7 C 12 1 4 3 4 11 C 4 19 16 26 16 26 C 16 26 28 19 28 11 C 28 3 20 1 16 7 Z"
-                    fill="#17634d"
-                  />
-                  <path
-                    d="M 8 13 L 12 13 L 14 9 L 16 18 L 18 11 L 20 14 L 24 14"
-                    stroke="#ffffff"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                </g>
-
-                {/* Checklist Rows */}
-                <g transform="translate(174, 188)">
-                  <circle cx="8" cy="8" r="6" fill="#187258" />
-                  <path
-                    d="M 5 8 L 7.5 10.5 L 11 6"
-                    stroke="#ffffff"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                  <rect x="20" y="5.5" width="62" height="5.5" rx="2.75" fill="#caeada" />
-                </g>
-
-                <g transform="translate(174, 206)">
-                  <circle cx="8" cy="8" r="6" fill="#187258" />
-                  <path
-                    d="M 5 8 L 7.5 10.5 L 11 6"
-                    stroke="#ffffff"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                  <rect x="20" y="5.5" width="46" height="5.5" rx="2.75" fill="#caeada" />
-                </g>
-              </svg>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Bottom Trust Badge */}
@@ -600,24 +353,16 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   onClick={handleGoogleLogin}
                   disabled={loading}
                 >
-                  <svg className="google-icon" viewBox="0 0 24 24" width="18" height="18">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
+                  <img
+                    src="./assets/google.png"
+                    alt="Google"
+                    className="auth-google-img"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.onerror = null;
+                      target.src = './assets/search.png';
+                    }}
+                  />
                   <span>Login dengan Google</span>
                 </button>
 
@@ -793,24 +538,16 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   onClick={handleGoogleLogin}
                   disabled={loading}
                 >
-                  <svg className="google-icon" viewBox="0 0 24 24" width="18" height="18">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
+                  <img
+                    src="./assets/google.png"
+                    alt="Google"
+                    className="auth-google-img"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.onerror = null;
+                      target.src = './assets/search.png';
+                    }}
+                  />
                   <span>Daftar dengan Google</span>
                 </button>
 

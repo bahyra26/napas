@@ -4746,7 +4746,31 @@ body[data-tab="settings"] .dashboard-container {
   align-items: center;
   justify-content: center;
   z-index: 1;
-  margin: 6px 0 10px;
+  margin: 4px 0 10px;
+  position: relative;
+}
+
+.auth-illustration-backdrop {
+  width: 210px;
+  height: 210px;
+  border-radius: 50%;
+  background: #dbeee3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: visible;
+}
+
+.auth-illustration-img {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 12px rgba(10, 84, 69, 0.05));
 }
 
 .auth-illustration-svg {
@@ -5033,6 +5057,14 @@ body[data-tab="settings"] .dashboard-container {
   background: #f8fafc;
   border-color: #cbd5e1;
   box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.auth-google-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
 }
 
 .auth-switch-text {
