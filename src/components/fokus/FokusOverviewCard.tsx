@@ -3,23 +3,25 @@ import { FocusOverviewData } from '../../types';
 
 interface FokusOverviewCardProps {
   data: FocusOverviewData;
+  periodLabel?: string;
   onRefresh?: () => void;
 }
 
 export const FokusOverviewCard: React.FC<FokusOverviewCardProps> = ({
   data,
+  periodLabel = 'Hari Ini',
   onRefresh,
 }) => {
   // SVG Donut calculation
-  // Radius = 50, Circumference = 2 * PI * 50 = ~314.16
-  const radius = 50;
-  const circumference = 2 * Math.PI * radius; // 314.16
+  // Radius = 48, Circumference = 2 * PI * 48 = ~301.59
+  const radius = 48;
+  const circumference = 2 * Math.PI * radius;
   
-  // 78% fokus, 22% distraksi
-  // Small 4px visual gap between arcs for sleek dashboard look
-  const gap = 4;
-  const focusLength = (circumference - gap * 2) * (data.focusPercent / 100);
-  const distractLength = (circumference - gap * 2) * (data.distractPercent / 100);
+  const focusPct = Math.min(100, Math.max(0, data.focusPercent || 0));
+  const distractPct = Math.min(100 - focusPct, Math.max(0, data.distractPercent || 0));
+
+  const focusLength = (focusPct / 100) * circumference;
+  const distractLength = (distractPct / 100) * circumference;
 
   return (
     <div className="fokus-card fokus-card-overview">
@@ -28,51 +30,52 @@ export const FokusOverviewCard: React.FC<FokusOverviewCardProps> = ({
         <div className="fokus-donut-wrapper">
           <svg
             className="fokus-donut-svg"
-            viewBox="0 0 130 130"
-            width="128"
-            height="128"
+            viewBox="0 0 120 120"
+            width="124"
+            height="124"
           >
-            {/* Background track */}
+            {/* Background track (soft emerald/mint, eliminates white broken gap) */}
             <circle
-              cx="65"
-              cy="65"
+              cx="60"
+              cy="60"
               r={radius}
               fill="none"
-              stroke="#e2ebe6"
-              strokeWidth="14"
+              stroke="rgba(11, 132, 93, 0.15)"
+              strokeWidth="12"
             />
-            {/* Distraction Arc (Orange) on right side */}
-            <circle
-              cx="65"
-              cy="65"
-              r={radius}
-              fill="none"
-              stroke="#df7826"
-              strokeWidth="14"
-              strokeDasharray={`${distractLength} ${circumference}`}
-              strokeDashoffset="0"
-              strokeLinecap="round"
-              transform="rotate(66 65 65)"
-              className="donut-segment-distract"
-            />
-            {/* Focus Arc (Green) spanning the rest */}
-            <circle
-              cx="65"
-              cy="65"
-              r={radius}
-              fill="none"
-              stroke="#0b845d"
-              strokeWidth="14"
-              strokeDasharray={`${focusLength} ${circumference}`}
-              strokeDashoffset="0"
-              strokeLinecap="round"
-              transform="rotate(152 65 65)"
-              className="donut-segment-focus"
-            />
+            {/* Distraction Arc (Orange) - seamlessly fills remaining share */}
+            {distractPct > 0 && (
+              <circle
+                cx="60"
+                cy="60"
+                r={radius}
+                fill="none"
+                stroke="#df7826"
+                strokeWidth="12"
+                strokeDasharray={`${distractLength} ${circumference}`}
+                strokeDashoffset={-focusLength}
+                className="donut-segment-distract"
+              />
+            )}
+            {/* Focus Arc (Emerald Green) - starts at 12 o'clock */}
+            {focusPct > 0 && (
+              <circle
+                cx="60"
+                cy="60"
+                r={radius}
+                fill="none"
+                stroke="#0b845d"
+                strokeWidth="12"
+                strokeDasharray={`${focusLength} ${circumference}`}
+                strokeDashoffset="0"
+                strokeLinecap={distractPct > 0 ? 'butt' : 'round'}
+                className="donut-segment-focus"
+              />
+            )}
           </svg>
 
           {/* Donut Center Label */}
-          <div className="fokus-donut-center" onClick={onRefresh} title="Skor Fokus">
+          <div className="fokus-donut-center" onClick={onRefresh} title="Skor Fokus (Klik untuk segarkan)">
             <span className="fokus-donut-percent">{data.focusPercent}%</span>
             <span className="fokus-donut-subtext">fokus</span>
           </div>
@@ -80,7 +83,7 @@ export const FokusOverviewCard: React.FC<FokusOverviewCardProps> = ({
 
         {/* Stats on the right of donut */}
         <div className="fokus-stats-col">
-          <h3 className="fokus-stats-title">Hari Ini</h3>
+          <h3 className="fokus-stats-title">{periodLabel}</h3>
 
           <div className="fokus-stat-item">
             <div className="fokus-stat-icon-wrap icon-green">

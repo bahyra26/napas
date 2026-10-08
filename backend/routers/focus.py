@@ -58,7 +58,8 @@ STUDY_TERMS_FILTER = {
     "dashboard", "computer", "organisasi", "townhall", "itdev", "mikail",
     "napas", "localhost", "127.0.0.1", "code", "visual studio", "terminal",
     "powershell", "cmd", "acrobat", "word", "excel", "powerpoint", "figma",
-    "zoom", "untitled", "new tab", "tab baru"
+    "zoom", "untitled", "new tab", "tab baru", "loading", "memuat",
+    "speed dial", "startpage", "about:blank", "canva", "google dokumen", "google docs"
 }
 
 def is_agent_port_active(port=8765) -> bool:

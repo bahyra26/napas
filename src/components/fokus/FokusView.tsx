@@ -93,24 +93,41 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
 
   return (
     <div className="fokus-container">
-      {/* Top Filter and Date Row */}
-      <FokusTopFilter
-        currentDate={overview.date}
-        selectedRange={selectedRange}
-        onRangeChange={handleRangeChange}
-      />
-
-      {/* Interactive Focus Session & Agent Controller */}
+      {/* 1. Ruang Belajar & Guard Website Fokus (Action Hub) */}
       <FocusSessionCard
-        onSessionCompleted={() => fetchFocusData(7)}
+        onSessionCompleted={() => {
+          const days = selectedRange.includes('14') ? 14 : selectedRange.includes('30') ? 30 : 7;
+          fetchFocusData(days);
+        }}
         onNotify={onNotify}
       />
 
-      {/* Top 3 Cards Grid */}
-      <div className="fokus-top-grid">
+      {/* 2. Header Bagian Statistik & Analisis Performa Belajar */}
+      <div className="fokus-analytics-header">
+        <div className="fokus-analytics-title-group">
+          <div className="fokus-analytics-badge">
+            <span className="analytics-pulse-dot"></span>
+            <span>Statistik & Analisis</span>
+          </div>
+          <h2 className="fokus-analytics-heading">Ringkasan & Analisis Performa Belajar</h2>
+          <p className="fokus-analytics-subheading">
+            Rekapitulasi efisiensi fokus harian, streak konsistensi, dan website pencuri waktu
+          </p>
+        </div>
 
+        {/* Filter Rentang Waktu (7 hari / 14 hari / 30 hari / Bulan ini) */}
+        <FokusTopFilter
+          currentDate={overview.date}
+          selectedRange={selectedRange}
+          onRangeChange={handleRangeChange}
+        />
+      </div>
+
+      {/* 3. Top 3 Cards Grid */}
+      <div className="fokus-top-grid">
         <FokusOverviewCard
           data={overview}
+          periodLabel={selectedRange === '7 hari terakhir' ? 'Hari Ini' : selectedRange}
           onRefresh={handleRefreshOverview}
         />
         <TopPencuriWaktuCard
@@ -126,7 +143,7 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
         />
       </div>
 
-      {/* Bottom Chart Card */}
+      {/* 4. Bottom Chart Card */}
       <div className="fokus-bottom-grid">
         <FokusVsDistraksiChart
           data={weeklyBars}

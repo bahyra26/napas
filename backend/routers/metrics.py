@@ -304,7 +304,8 @@ def get_focus_summary(user_id: str, days: int = Query(default=7, ge=1, le=30)):
         "dashboard", "computer", "organisasi", "townhall", "itdev", "mikail",
         "napas", "localhost", "127.0.0.1", "code", "visual studio", "terminal",
         "powershell", "cmd", "acrobat", "word", "excel", "powerpoint", "figma",
-        "zoom", "untitled", "new tab", "tab baru"
+        "zoom", "untitled", "new tab", "tab baru", "loading", "memuat",
+        "speed dial", "startpage", "about:blank", "canva", "google dokumen", "google docs"
     }
 
     distractor_counts: Dict[str, int] = {}

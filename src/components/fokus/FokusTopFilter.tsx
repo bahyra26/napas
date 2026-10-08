@@ -61,9 +61,10 @@ export const FokusTopFilter: React.FC<FokusTopFilterProps> = ({
           className="fokus-filter-btn"
           onClick={() => setIsOpen(!isOpen)}
           aria-expanded={isOpen}
-          aria-label="Pilih rentang waktu"
+          aria-label="Pilih rentang waktu statistik"
+          title="Ubah rentang waktu data statistik di bawah"
         >
-          <span>{selectedRange}</span>
+          <span>Rentang: <strong>{selectedRange}</strong></span>
           <svg
             className={`fokus-chevron-icon ${isOpen ? 'open' : ''}`}
             width="14"
