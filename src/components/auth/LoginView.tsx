@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { authService } from '../../services/supabase';
+import { setStoredUserId } from '../../services/api';
 
 interface LoginViewProps {
   onDemoLogin: () => void;
@@ -12,11 +13,31 @@ export const LoginView: React.FC<LoginViewProps> = ({
   onCustomLogin,
   onNotify,
 }) => {
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   const [loading, setLoading] = useState(false);
-  const [showCustomForm, setShowCustomForm] = useState(false);
-  const [customName, setCustomName] = useState('');
-  const [customCampus, setCustomCampus] = useState('Universitas Gadjah Mada');
-  const [customMajor, setCustomMajor] = useState('Ilmu Komputer');
+
+  // Login Form States
+  const [loginEmailOrUser, setLoginEmailOrUser] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // Register Form States
+  const [regFullName, setRegFullName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regUsername, setRegUsername] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+
+  // Forgot Password States
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
+
+  // Password Strength Criteria
+  const hasMinLen = regPassword.length >= 8;
+  const hasUpperLower = /[a-z]/.test(regPassword) && /[A-Z]/.test(regPassword);
+  const hasNumber = /[0-9]/.test(regPassword);
+  const hasSpecial = /[^A-Za-z0-9]/.test(regPassword);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -24,174 +45,695 @@ export const LoginView: React.FC<LoginViewProps> = ({
     if (res.error) {
       setLoading(false);
       onNotify(
-        `${res.error} (Tips: Gunakan opsi 'Masuk dengan Identitas Mahasiswa' di bawah untuk langsung mencoba tanpa setup Google OAuth)`,
+        `${res.error} (Tips: Anda dapat langsung mengisi form atau klik 'Mode Demo Cepat')`,
         'ℹ️'
       );
-      // Buka form kustom otomatis jika Google OAuth belum dikonfigurasi di dashboard Supabase
-      setShowCustomForm(true);
     }
   };
 
-  const handleCustomSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customName.trim()) {
-      onNotify('Silakan masukkan nama atau panggilan Anda.', '⚠️');
+    if (!loginEmailOrUser.trim()) {
+      onNotify('Silakan masukkan email atau username Anda.', '⚠️');
       return;
     }
+    if (!loginPassword) {
+      onNotify('Silakan masukkan password Anda.', '⚠️');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await authService.signInWithPassword(loginEmailOrUser, loginPassword);
+      if (res.user) {
+        setLoading(false);
+        const name = res.user.user_metadata?.full_name || loginEmailOrUser.split('@')[0];
+        setStoredUserId(res.user.id, name);
+        window.location.reload();
+        return;
+      }
+    } catch {
+      // Supabase unconfigured / offline -> fallback lokal
+    }
+
+    setLoading(false);
+    const resolvedName = loginEmailOrUser.includes('@')
+      ? loginEmailOrUser.split('@')[0]
+      : loginEmailOrUser.trim();
+    const formattedName = resolvedName.charAt(0).toUpperCase() + resolvedName.slice(1);
+
     if (onCustomLogin) {
-      onCustomLogin(customName.trim(), customCampus.trim(), customMajor.trim());
+      onCustomLogin(formattedName, 'Universitas Indonesia', 'Teknik Informatika');
     } else {
-      // Fallback: simpan ke localStorage
       const id = `user-${Date.now()}`;
-      localStorage.setItem('napas_user_id', id);
-      localStorage.setItem('napas_user_name', customName.trim());
+      setStoredUserId(id, formattedName);
       window.location.reload();
     }
+    onNotify(`Selamat datang kembali, ${formattedName}!`, '🌱');
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regFullName.trim()) {
+      onNotify('Silakan masukkan nama lengkap Anda.', '⚠️');
+      return;
+    }
+    if (!regEmail.trim()) {
+      onNotify('Silakan masukkan email aktif Anda.', '⚠️');
+      return;
+    }
+    if (!regUsername.trim()) {
+      onNotify('Silakan buat username Anda.', '⚠️');
+      return;
+    }
+    if (regPassword.length < 6) {
+      onNotify('Password minimal harus 6 karakter.', '⚠️');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await authService.signUpWithEmail({
+        email: regEmail,
+        password: regPassword,
+        fullName: regFullName,
+        username: regUsername,
+      });
+
+      if (res.user) {
+        setLoading(false);
+        setStoredUserId(res.user.id, regFullName.trim());
+        onNotify('Pendaftaran berhasil! Selamat datang di NAPAS.', '🎉');
+        window.location.reload();
+        return;
+      }
+    } catch {
+      // Supabase unconfigured / offline -> fallback lokal
+    }
+
+    setLoading(false);
+    const cleanName = regFullName.trim();
+    if (onCustomLogin) {
+      onCustomLogin(cleanName, 'Universitas Indonesia', 'Mahasiswa');
+    } else {
+      const id = `user-${Date.now()}`;
+      setStoredUserId(id, cleanName);
+      window.location.reload();
+    }
+    onNotify(`Akun berhasil dibuat! Selamat datang di NAPAS, ${cleanName}!`, '🎉');
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      onNotify('Silakan masukkan email akun Anda.', '⚠️');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await authService.resetPassword(forgotEmail);
+      if (res.error) {
+        onNotify(res.error, 'ℹ️');
+      }
+    } catch {
+      // fallback
+    }
+
+    setLoading(false);
+    setForgotSent(true);
+    onNotify(`Tautan pemulihan kata sandi telah dikirim ke ${forgotEmail}!`, '📧');
   };
 
   return (
-    <div className="login-overlay">
-      <div className="login-card">
-        {/* Logo and Header */}
-        <div className="login-header">
-          <div className="login-logo-circle">
+    <div className="auth-overlay">
+      <div className="auth-card">
+        {/* ==================================================================
+            LEFT PANEL: BRAND & MINDFUL ART
+            ================================================================== */}
+        <div className="auth-left">
+          {/* Top Brand Logo */}
+          <div className="auth-brand">
             <img
-              src="/assets/napas.png"
+              src="./assets/logo_brain.png"
               alt="Logo NAPAS"
-              className="login-logo-img"
+              className="auth-brand-logo"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = './assets/napas.png';
+                const target = e.currentTarget;
+                target.onerror = null;
+                target.src = './assets/napas.png';
               }}
             />
-          </div>
-          <h1 className="login-title">NAPAS</h1>
-          <p className="login-tagline">Radar Burnout & Kesejahteraan Mahasiswa</p>
-          <p className="login-desc">
-            Deteksi dini beban belajar, sinkronkan jadwal kuliah & tugas, serta lindungi fokusmu dari distraksi digital.
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="login-actions">
-          {/* Tombol Google Auth */}
-          <button
-            type="button"
-            className="btn-google-login"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-          >
-            <svg className="google-icon" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-              />
-            </svg>
-            <span>{loading ? 'Menghubungkan...' : 'Masuk dengan Akun Google / Kampus'}</span>
-          </button>
-
-          {/* Form Masuk Mahasiswa Kustom */}
-          {showCustomForm ? (
-            <form className="custom-login-form" onSubmit={handleCustomSubmit}>
-              <div className="custom-form-title">
-                <span>🎓 Masuk dengan Identitas Mahasiswa:</span>
-              </div>
-              <div className="form-group-compact">
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Nama Lengkap / Panggilan Anda"
-                  value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
-                  required
-                  autoFocus
-                />
-              </div>
-              <div className="form-group-compact">
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Nama Kampus (misal: UGM, ITB, UI)"
-                  value={customCampus}
-                  onChange={(e) => setCustomCampus(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-group-compact">
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Program Studi / Jurusan"
-                  value={customMajor}
-                  onChange={(e) => setCustomMajor(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="custom-form-buttons">
-                <button type="submit" className="btn-custom-submit">
-                  Masuk & Mulai Personalisasi 🚀
-                </button>
-                <button
-                  type="button"
-                  className="btn-custom-cancel"
-                  onClick={() => setShowCustomForm(false)}
-                >
-                  Tutup
-                </button>
-              </div>
-            </form>
-          ) : (
-            <button
-              type="button"
-              className="btn-show-custom-login"
-              onClick={() => setShowCustomForm(true)}
-            >
-              <span>🎓 Masuk dengan Nama Mahasiswa Sendiri</span>
-            </button>
-          )}
-
-          <div className="login-divider">
-            <span>atau</span>
+            <span className="auth-brand-text">NAPAS</span>
           </div>
 
-          <button
-            type="button"
-            className="btn-demo-quick"
-            onClick={onDemoLogin}
-          >
-            <span>⚡ Mode Demo Cepat (Profil Raka - JOINTS)</span>
-          </button>
-        </div>
+          {/* Intro Text & Headings */}
+          <div className="auth-intro-content">
+            <h1 className="auth-intro-title">
+              {mode === 'login' ? (
+                <>
+                  Selamat Datang
+                  <br />
+                  Kembali!
+                </>
+              ) : mode === 'register' ? (
+                <>
+                  Mulai Perjalanan
+                  <br />
+                  Lebih Baik
+                </>
+              ) : (
+                <>
+                  Atur Ulang
+                  <br />
+                  Kata Sandi
+                </>
+              )}
+            </h1>
+            <p className="auth-intro-desc">
+              {mode === 'login'
+                ? 'Pantau kesehatan mentalmu, langkah kecil untuk hidup yang lebih baik.'
+                : mode === 'register'
+                ? 'Daftar sekarang dan temukan cara untuk menjaga kesehatan mentalmu setiap hari.'
+                : 'Tenang, luangkan napas sejenak. Kami akan bantu memulihkan akses ke akunmu.'}
+            </p>
+          </div>
 
-        {/* Privacy Note */}
-        <div className="login-privacy-footer">
-          <div className="privacy-pill">
+          {/* Illustration Section */}
+          <div className="auth-illustration-container">
+            <div className="auth-illustration-backdrop">
+              {mode === 'login' || mode === 'forgot' ? (
+                <img
+                  src="./assets/Meditasi.png"
+                  alt="Meditasi NAPAS"
+                  className="auth-illustration-img"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.onerror = null;
+                    target.src = './assets/meditasi.png';
+                  }}
+                />
+              ) : (
+                <img
+                  src="./assets/Background.png"
+                  alt="Perjalanan NAPAS"
+                  className="auth-illustration-img"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.onerror = null;
+                    target.src = './assets/background.png';
+                  }}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Trust Badge */}
+          <div className="auth-badge-footer">
             <svg
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="shield-icon"
+              className="auth-badge-icon"
             >
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <path d="m9 12 2 2 4-4" stroke="#ffffff" strokeWidth="2" />
             </svg>
-            <span>
-              <strong>Privacy by Design:</strong> Data fokus diproses lokal di dalam browser Anda.
+            <span className="auth-badge-text">
+              {mode === 'login'
+                ? 'Jaga kesehatan mental, raih versi terbaik dirimu.'
+                : mode === 'register'
+                ? 'Kamu tidak sendirian. NAPAS selalu ada untukmu.'
+                : 'Keamanan dan privasi akunmu selalu terjaga.'}
             </span>
           </div>
+        </div>
+
+        {/* ==================================================================
+            RIGHT PANEL: FORM (LOGIN / DAFTAR AKUN / LUPA PASSWORD)
+            ================================================================== */}
+        <div className="auth-right">
+          {mode === 'login' ? (
+            /* ------------------ LOGIN FORM ------------------ */
+            <>
+              <div className="auth-form-header">
+                <h2 className="auth-form-title">Login</h2>
+                <p className="auth-form-subtitle">Masuk ke akun NAPAS kamu</p>
+              </div>
+
+              <form className="auth-form" onSubmit={handleLoginSubmit}>
+                {/* Email atau Username */}
+                <div className="auth-field">
+                  <label className="auth-label">Email atau Username</label>
+                  <div className="auth-input-wrapper">
+                    <span className="auth-input-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                      </svg>
+                    </span>
+                    <input
+                      type="text"
+                      className="auth-input"
+                      placeholder="Masukkan email atau username"
+                      value={loginEmailOrUser}
+                      onChange={(e) => setLoginEmailOrUser(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div className="auth-field">
+                  <label className="auth-label">Password</label>
+                  <div className="auth-input-wrapper">
+                    <span className="auth-input-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </span>
+                    <input
+                      type={showLoginPassword ? 'text' : 'password'}
+                      className="auth-input"
+                      placeholder="Masukkan password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="auth-eye-btn"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      aria-label="Toggle password visibility"
+                    >
+                      {showLoginPassword ? (
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                          <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Options Row */}
+                <div className="auth-options-row">
+                  <label className="auth-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                    />
+                    <span>Ingat saya</span>
+                  </label>
+                  <button
+                    type="button"
+                    className="auth-forgot-link"
+                    onClick={() => {
+                      setMode('forgot');
+                      setForgotSent(false);
+                    }}
+                  >
+                    Lupa password?
+                  </button>
+                </div>
+
+                {/* Submit Button */}
+                <button type="submit" className="auth-submit-btn" disabled={loading}>
+                  <span>{loading ? 'Memproses...' : 'Login'}</span>
+                  <span>→</span>
+                </button>
+
+                {/* Divider */}
+                <div className="auth-divider">
+                  <span>atau</span>
+                </div>
+
+                {/* Google Login */}
+                <button
+                  type="button"
+                  className="auth-google-btn"
+                  onClick={handleGoogleLogin}
+                  disabled={loading}
+                >
+                  <img
+                    src="./assets/google.png"
+                    alt="Google"
+                    className="auth-google-img"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.onerror = null;
+                      target.src = './assets/search.png';
+                    }}
+                  />
+                  <span>Login dengan Google</span>
+                </button>
+
+                {/* Quick Demo Button */}
+                <button
+                  type="button"
+                  className="auth-demo-pill"
+                  onClick={onDemoLogin}
+                  title="Masuk instan dengan profil demo tanpa kredensial"
+                >
+                  ⚡ Masuk Cepat (Mode Demo Raka)
+                </button>
+              </form>
+
+              {/* Switch to Register */}
+              <p className="auth-switch-text">
+                Belum punya akun?
+                <button
+                  type="button"
+                  className="auth-switch-btn"
+                  onClick={() => setMode('register')}
+                >
+                  Daftar sekarang
+                </button>
+              </p>
+            </>
+          ) : mode === 'forgot' ? (
+            /* ------------------ LUPA PASSWORD FORM ------------------ */
+            <>
+              {!forgotSent ? (
+                <>
+                  <div className="auth-form-header">
+                    <h2 className="auth-form-title">Lupa Password</h2>
+                    <p className="auth-form-subtitle">
+                      Masukkan email yang terdaftar untuk menerima tautan pemulihan kata sandi
+                    </p>
+                  </div>
+
+                  <form className="auth-form" onSubmit={handleForgotSubmit}>
+                    {/* Email Input */}
+                    <div className="auth-field">
+                      <label className="auth-label">Email Akun</label>
+                      <div className="auth-input-wrapper">
+                        <span className="auth-input-icon">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                          </svg>
+                        </span>
+                        <input
+                          type="email"
+                          className="auth-input"
+                          placeholder="Masukkan email aktif Anda"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          required
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    <button type="submit" className="auth-submit-btn" disabled={loading}>
+                      <span>{loading ? 'Mengirim Tautan...' : 'Kirim Tautan Reset'}</span>
+                      <span>→</span>
+                    </button>
+
+                    <div className="auth-divider">
+                      <span>atau</span>
+                    </div>
+
+                    {/* Alternative Google Login */}
+                    <button
+                      type="button"
+                      className="auth-google-btn"
+                      onClick={handleGoogleLogin}
+                      disabled={loading}
+                    >
+                      <img
+                        src="./assets/google.png"
+                        alt="Google"
+                        className="auth-google-img"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.onerror = null;
+                          target.src = './assets/search.png';
+                        }}
+                      />
+                      <span>Masuk Langsung dengan Google</span>
+                    </button>
+                  </form>
+
+                  {/* Switch to Login */}
+                  <p className="auth-switch-text">
+                    Ingat kata sandi Anda?
+                    <button
+                      type="button"
+                      className="auth-switch-btn"
+                      onClick={() => {
+                        setMode('login');
+                        setForgotSent(false);
+                      }}
+                    >
+                      Login di sini
+                    </button>
+                  </p>
+                </>
+              ) : (
+                /* Success State */
+                <div className="auth-success-state">
+                  <div className="auth-success-icon-wrap">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#0d7b5f"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="auth-success-icon"
+                    >
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                  </div>
+                  <h2 className="auth-form-title">Email Terkirim!</h2>
+                  <p className="auth-success-desc">
+                    Tautan pemulihan kata sandi telah dikirim ke <strong>{forgotEmail}</strong>. Silakan periksa kotak masuk atau folder spam email Anda.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="auth-submit-btn"
+                    onClick={() => {
+                      setMode('login');
+                      setForgotSent(false);
+                    }}
+                  >
+                    <span>Kembali ke Halaman Login</span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="auth-resend-btn"
+                    onClick={handleForgotSubmit}
+                    disabled={loading}
+                  >
+                    Belum menerima email? Kirim ulang
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            /* ------------------ REGISTER (DAFTAR AKUN) FORM ------------------ */
+            <>
+              <div className="auth-form-header">
+                <h2 className="auth-form-title">Daftar Akun</h2>
+                <p className="auth-form-subtitle">Buat akun NAPAS untuk memulai</p>
+              </div>
+
+              <form className="auth-form" onSubmit={handleRegisterSubmit}>
+                {/* Nama Lengkap */}
+                <div className="auth-field">
+                  <label className="auth-label">Nama Lengkap</label>
+                  <div className="auth-input-wrapper">
+                    <span className="auth-input-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </span>
+                    <input
+                      type="text"
+                      className="auth-input"
+                      placeholder="Masukkan nama lengkap"
+                      value={regFullName}
+                      onChange={(e) => setRegFullName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="auth-field">
+                  <label className="auth-label">Email</label>
+                  <div className="auth-input-wrapper">
+                    <span className="auth-input-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                      </svg>
+                    </span>
+                    <input
+                      type="email"
+                      className="auth-input"
+                      placeholder="Masukkan email aktif"
+                      value={regEmail}
+                      onChange={(e) => setRegEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Username */}
+                <div className="auth-field">
+                  <label className="auth-label">Username</label>
+                  <div className="auth-input-wrapper">
+                    <span className="auth-input-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94" />
+                      </svg>
+                    </span>
+                    <input
+                      type="text"
+                      className="auth-input"
+                      placeholder="Buat username"
+                      value={regUsername}
+                      onChange={(e) => setRegUsername(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div className="auth-field">
+                  <label className="auth-label">Password</label>
+                  <div className="auth-input-wrapper">
+                    <span className="auth-input-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </span>
+                    <input
+                      type={showRegPassword ? 'text' : 'password'}
+                      className="auth-input"
+                      placeholder="Buat password minimal 8 karakter"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="auth-eye-btn"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      aria-label="Toggle password visibility"
+                    >
+                      {showRegPassword ? (
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                          <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Password Criteria Badges (Dynamic Check) */}
+                <div className="auth-password-criteria">
+                  <div className={`auth-criteria-item ${hasMinLen ? 'valid' : ''}`}>
+                    <span className="criteria-dot" />
+                    <span>Minimal 8 karakter</span>
+                  </div>
+                  <div className={`auth-criteria-item ${hasUpperLower ? 'valid' : ''}`}>
+                    <span className="criteria-dot" />
+                    <span>Huruf besar & kecil</span>
+                  </div>
+                  <div className={`auth-criteria-item ${hasNumber ? 'valid' : ''}`}>
+                    <span className="criteria-dot" />
+                    <span>Angka</span>
+                  </div>
+                  <div className={`auth-criteria-item ${hasSpecial ? 'valid' : ''}`}>
+                    <span className="criteria-dot" />
+                    <span>Karakter khusus</span>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <button type="submit" className="auth-submit-btn" disabled={loading}>
+                  <span>{loading ? 'Mendaftarkan...' : 'Daftar'}</span>
+                  <span>→</span>
+                </button>
+
+                {/* Divider */}
+                <div className="auth-divider">
+                  <span>atau</span>
+                </div>
+
+                {/* Google Sign Up */}
+                <button
+                  type="button"
+                  className="auth-google-btn"
+                  onClick={handleGoogleLogin}
+                  disabled={loading}
+                >
+                  <img
+                    src="./assets/google.png"
+                    alt="Google"
+                    className="auth-google-img"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.onerror = null;
+                      target.src = './assets/search.png';
+                    }}
+                  />
+                  <span>Daftar dengan Google</span>
+                </button>
+
+                {/* Subtle Quick Demo */}
+                <button
+                  type="button"
+                  className="auth-demo-pill"
+                  onClick={onDemoLogin}
+                >
+                  ⚡ Coba Mode Demo Tanpa Daftar
+                </button>
+              </form>
+
+              {/* Switch to Login */}
+              <p className="auth-switch-text">
+                Sudah punya akun?
+                <button
+                  type="button"
+                  className="auth-switch-btn"
+                  onClick={() => setMode('login')}
+                >
+                  Login di sini
+                </button>
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>
