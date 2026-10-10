@@ -498,7 +498,38 @@ async def focus_monitor_loop():
                         continue
                     else:
                         is_allowed = False
-                        detected_distraction_name = active_domain or clean_title[:28] or "Tab Tidak Diizinkan"
+                        # Normalisasi ke domain resmi (bersihkan counter notifikasi seperti (84), dsb)
+                        cleaned_title_pure = re.sub(r'^\(\d+\)\s*', '', clean_title_lower).strip()
+                        if active_domain:
+                            detected_distraction_name = active_domain
+                        elif "whatsapp" in cleaned_title_pure:
+                            detected_distraction_name = "web.whatsapp.com"
+                        elif "youtube" in cleaned_title_pure or "youtu.be" in cleaned_title_pure:
+                            detected_distraction_name = "youtube.com"
+                        elif "instagram" in cleaned_title_pure:
+                            detected_distraction_name = "instagram.com"
+                        elif "tiktok" in cleaned_title_pure:
+                            detected_distraction_name = "tiktok.com"
+                        elif "twitter" in cleaned_title_pure or "x.com" in cleaned_title_pure:
+                            detected_distraction_name = "x.com"
+                        elif "facebook" in cleaned_title_pure or "fb.com" in cleaned_title_pure:
+                            detected_distraction_name = "facebook.com"
+                        elif "discord" in cleaned_title_pure:
+                            detected_distraction_name = "discord.com"
+                        elif "spotify" in cleaned_title_pure:
+                            detected_distraction_name = "spotify.com"
+                        elif "netflix" in cleaned_title_pure:
+                            detected_distraction_name = "netflix.com"
+                        elif "telegram" in cleaned_title_pure:
+                            detected_distraction_name = "web.telegram.org"
+                        elif "reddit" in cleaned_title_pure:
+                            detected_distraction_name = "reddit.com"
+                        else:
+                            dm = re.search(r'([a-zA-Z0-9-]+\.(?:com|org|net|co\.id|id|io|app|ai|me|tv|gg|xyz|edu|ac\.id))', cleaned_title_pure)
+                            if dm:
+                                detected_distraction_name = dm.group(1).lower()
+                            else:
+                                detected_distraction_name = "browser.tab"
 
             else:
                 # Aplikasi desktop di luar BASE_STUDY_APPS (game, discord, spotify, launcher, dll)

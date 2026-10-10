@@ -236,14 +236,72 @@ class FocusSessionStore {
     this.emit();
   }
 
+  /**
+   * Muat daftar whitelist spesifik akun dari database (atau fallback ke storage akun / default).
+   */
+  public async loadUserWhitelist(userId: string) {
+    if (!userId) return;
+
+    // 1. Baca dari cache localStorage akun terlebih dahulu untuk instant load
+    const userStorageKey = `napas_focus_whitelist_${userId}`;
+    const localSaved = localStorage.getItem(userStorageKey);
+    if (localSaved) {
+      try {
+        const parsed = JSON.parse(localSaved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.state.whitelist = parsed;
+          this.emit();
+        }
+      } catch {}
+    }
+
+    // 2. Sinkronkan dengan data database profil di server
+    try {
+      const profile = await api.getProfile(userId);
+      if (profile && Array.isArray(profile.focus_whitelist) && profile.focus_whitelist.length > 0) {
+        const dbDomains: string[] = profile.focus_whitelist;
+        const reconstructed: WhitelistWebsite[] = dbDomains.map((domainStr, idx) => {
+          const matchedDefault = DEFAULT_STUDENT_WHITELIST.find(
+            (def) => def.domain.toLowerCase() === domainStr.toLowerCase()
+          );
+          if (matchedDefault) {
+            return matchedDefault;
+          }
+          return {
+            id: `w-user-${idx}-${domainStr}`,
+            name: domainStr,
+            url: `https://${domainStr}`,
+            domain: domainStr,
+            category: 'other',
+            icon: '🌐',
+          };
+        });
+
+        this.state.whitelist = reconstructed;
+        localStorage.setItem(userStorageKey, JSON.stringify(reconstructed));
+        this.emit();
+      }
+    } catch (e) {
+      console.warn('Gagal memuat focus_whitelist dari server:', e);
+    }
+  }
+
+  public resetForUser() {
+    this.state.whitelist = DEFAULT_STUDENT_WHITELIST;
+    this.emit();
+  }
+
   public saveWhitelist(items: WhitelistWebsite[]) {
     this.state.whitelist = items;
-    localStorage.setItem('napas_focus_whitelist', JSON.stringify(items));
     const userId = getStoredUserId();
     if (userId) {
+      localStorage.setItem(`napas_focus_whitelist_${userId}`, JSON.stringify(items));
+      // Simpan permanen ke database backend akun pengguna
       api.updateProfile(userId, {
         focus_whitelist: items.map((i) => i.domain),
       });
+    } else {
+      localStorage.setItem('napas_focus_whitelist', JSON.stringify(items));
     }
     this.emit();
   }

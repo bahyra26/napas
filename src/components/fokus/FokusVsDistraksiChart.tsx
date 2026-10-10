@@ -3,31 +3,92 @@ import { FocusDailyBar } from '../../types';
 
 interface FokusVsDistraksiChartProps {
   data: FocusDailyBar[];
+  selectedRange?: string;
+  selectedPeriod?: string;
+  onSelectPeriod?: (range: string, period: string) => void;
   onSelectDay?: (bar: FocusDailyBar) => void;
 }
 
 export const FokusVsDistraksiChart: React.FC<FokusVsDistraksiChartProps> = ({
   data,
+  selectedRange = '7 hari terakhir',
+  selectedPeriod = '7days',
+  onSelectPeriod,
   onSelectDay,
 }) => {
   const [hoveredBar, setHoveredBar] = useState<FocusDailyBar | null>(null);
 
+  const getDynamicTitle = () => {
+    if (selectedRange?.toLowerCase().includes('tahun') || selectedPeriod === 'year') {
+      return `Fokus vs Distraksi — Tahun Ini (${new Date().getFullYear()})`;
+    }
+    if (selectedRange?.toLowerCase().includes('bulan') || selectedPeriod === 'month') {
+      const monthName = new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+      return `Fokus vs Distraksi — Bulan Ini (${monthName})`;
+    }
+    if (selectedRange?.includes('14') || selectedPeriod === '14days') {
+      return 'Fokus vs Distraksi — 14 Hari Terakhir';
+    }
+    return 'Fokus vs Distraksi — 7 Hari Terakhir';
+  };
+
+  const periodOptions = [
+    { label: '7 Hari', range: '7 hari terakhir', period: '7days' },
+    { label: '14 Hari', range: '14 hari terakhir', period: '14days' },
+    { label: 'Bulan Ini', range: 'Bulan ini', period: 'month' },
+    { label: 'Tahun Ini', range: 'Tahun ini', period: 'year' },
+  ];
+
   return (
     <div className="fokus-card fokus-card-chart">
-      {/* Chart Top Header & Legend */}
+      {/* Chart Top Header: Judul Dinamis + Tab Switcher + Legend */}
       <div className="chart-header-row">
-        <h2 className="fokus-card-title">
-          Fokus vs Distraksi — 7 Hari Terakhir
-        </h2>
+        <div className="chart-title-group">
+          <h2 className="fokus-card-title">{getDynamicTitle()}</h2>
+          <span className="chart-period-caption">
+            {selectedPeriod === 'year'
+              ? 'Agregasi performa per bulan di tahun ini'
+              : selectedPeriod === 'month'
+              ? 'Performa per minggu sepanjang bulan ini'
+              : 'Perbandingan rasio fokus vs distraksi harian'}
+          </span>
+        </div>
 
-        <div className="fokus-chart-legend">
-          <div className="legend-item">
-            <span className="legend-dot dot-focus"></span>
-            <span className="legend-text">Fokus</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-dot dot-distract"></span>
-            <span className="legend-text">Distraksi</span>
+        <div className="chart-header-controls">
+          {/* Quick Period Buttons on Chart Header */}
+          {onSelectPeriod && (
+            <div className="chart-period-tabs" role="tablist">
+              {periodOptions.map((opt) => {
+                const isActive =
+                  selectedPeriod === opt.period ||
+                  selectedRange === opt.range ||
+                  selectedRange.toLowerCase().includes(opt.label.toLowerCase());
+                return (
+                  <button
+                    key={opt.period}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`chart-period-tab-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => onSelectPeriod(opt.range, opt.period)}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Legend Dot */}
+          <div className="fokus-chart-legend">
+            <div className="legend-item">
+              <span className="legend-dot dot-focus"></span>
+              <span className="legend-text">Fokus</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-dot dot-distract"></span>
+              <span className="legend-text">Distraksi</span>
+            </div>
           </div>
         </div>
       </div>
@@ -44,8 +105,8 @@ export const FokusVsDistraksiChart: React.FC<FokusVsDistraksiChartProps> = ({
       ) : (
         <div className="chart-bars-container">
           {data.map((bar) => {
-            // Calculate proportional bar height (capped at 165px for ~8 hrs max)
-            const barHeightPx = Math.max(12, Math.round((bar.totalHoursNum / 8.0) * 165));
+            // Calculate proportional bar height (capped at 165px for ~8 hrs max or highest relative)
+            const barHeightPx = Math.max(16, Math.min(165, Math.round((bar.totalHoursNum / 8.0) * 165)));
 
             return (
               <div
@@ -96,7 +157,20 @@ export const FokusVsDistraksiChart: React.FC<FokusVsDistraksiChartProps> = ({
                 </div>
 
                 {/* Day Label & Total Duration below bar */}
-                <div className="chart-bar-day">{bar.dayShort}</div>
+                {(() => {
+                  const parts = (bar.dayShort || '').trim().split(' ');
+                  const dayName = parts[0] || '';
+                  const dayDate = parts.slice(1).join(' ');
+                  if (dayDate) {
+                    return (
+                      <div className="chart-bar-day-wrapper">
+                        <span className="chart-bar-day-name">{dayName}</span>
+                        <span className="chart-bar-day-date">{dayDate}</span>
+                      </div>
+                    );
+                  }
+                  return <div className="chart-bar-day">{bar.dayShort}</div>;
+                })()}
                 <div className="chart-bar-duration">{bar.totalDuration}</div>
               </div>
             );

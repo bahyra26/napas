@@ -1,8 +1,30 @@
 from fastapi import APIRouter, HTTPException
-from db import supabase
+from db import supabase, ensure_uuid, ensure_user_in_supabase
 from schemas import UserCreate, UserUpdate, UserResponse
+from local_db import save_or_update_user, get_user_by_id, deterministic_uuid
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+@router.post("/login-or-register")
+def login_or_register(payload: dict):
+    """
+    Login atau register pengguna dengan ID deterministik.
+    Menjamin ID konsisten setiap login dan tersimpan permanen di SQLite lokal serta Supabase.
+    """
+    identifier = payload.get("identifier") or payload.get("email") or payload.get("nama") or "Mahasiswa"
+    nama = payload.get("nama") or identifier.split("@")[0]
+    email = payload.get("email") or (identifier if "@" in identifier else f"{identifier}@napas.local")
+
+    u_id = deterministic_uuid(identifier)
+
+    # 1. Simpan ke SQLite lokal
+    local_user = save_or_update_user(u_id, nama, email)
+
+    # 2. Sinkronkan ke Supabase
+    ensure_user_in_supabase(u_id, nama, email)
+
+    return local_user
+
 
 @router.post("", response_model=UserResponse)
 def create_user(payload: UserCreate):
@@ -131,14 +153,22 @@ def init_demo_user():
 
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(user_id: str):
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Database belum terhubung. Pastikan file .env sudah diisi.")
+    u_uuid = deterministic_uuid(user_id)
+    if supabase:
+        try:
+            res = supabase.table("users").select("*").in_("id", [user_id, u_uuid]).execute()
+            if res.data and len(res.data) > 0:
+                return res.data[0]
+        except Exception:
+            pass
 
-    res = supabase.table("users").select("*").eq("id", user_id).execute()
-    if not res.data:
-        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+    # Fallback ke SQLite lokal
+    local_u = get_user_by_id(u_uuid) or get_user_by_id(user_id)
+    if local_u:
+        return local_u
 
-    return res.data[0]
+    raise HTTPException(status_code=404, detail="User tidak ditemukan")
+
 
 @router.patch("/{user_id}", response_model=UserResponse)
 def update_user(user_id: str, payload: UserUpdate):

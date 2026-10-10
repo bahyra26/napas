@@ -261,6 +261,30 @@ export const api = {
     }
   },
 
+  async loginOrRegister(payload: {
+    identifier: string;
+    nama?: string;
+    email?: string;
+  }): Promise<UserProfile | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/login-or-register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) return null;
+      const user = await res.json();
+      if (user?.id) {
+        setStoredUserId(user.id, user.nama);
+      }
+      return user;
+    } catch (err) {
+      console.warn('loginOrRegister failed, fallback offline:', err);
+      return null;
+    }
+  },
+
+
   async getOrCreateUser(payload: {
     nama: string;
     email: string;
@@ -474,10 +498,11 @@ export const api = {
     }
   },
 
-  async getFocusSummary(userId: string, days: number = 7): Promise<FocusSummaryResponse | null> {
+  async getFocusSummary(userId: string, days: number = 7, period?: string): Promise<FocusSummaryResponse | null> {
     try {
+      const periodParam = period ? `&period=${encodeURIComponent(period)}` : '';
       const res = await fetch(
-        `${API_BASE_URL}/metrics/focus-summary?user_id=${encodeURIComponent(userId)}&days=${days}`
+        `${API_BASE_URL}/metrics/focus-summary?user_id=${encodeURIComponent(userId)}&days=${days}${periodParam}`
       );
       if (!res.ok) return null;
       return await res.json();

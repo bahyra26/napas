@@ -380,11 +380,16 @@ body[data-tab="settings"] .dashboard-container {
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin-top: auto;
-  margin-bottom: auto;
+  margin-top: 0;
+  margin-bottom: 0;
   opacity: 1;
   transform: translateY(0);
   animation: pageFadeIn 0.35s var(--transition-smooth);
+}
+
+#view-home.page-view.active {
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 @keyframes pageFadeIn {
@@ -2147,6 +2152,263 @@ body[data-tab="settings"] .dashboard-container {
   color: #585752;
 }
 
+/* ==========================================================================
+   GOOGLE CALENDAR INTEGRATION BANNER & DEADLINE ENHANCEMENTS
+   ========================================================================== */
+.google-calendar-banner-card {
+  background: linear-gradient(135deg, #0d382c 0%, #154d3d 50%, #103c30 100%);
+  border: 1px solid rgba(110, 231, 183, 0.22);
+  border-radius: 20px;
+  padding: 22px 26px;
+  margin-bottom: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(13, 56, 44, 0.16);
+  position: relative;
+  overflow: hidden;
+}
+
+.google-calendar-banner-card::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(52, 168, 83, 0.22) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.gcal-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1;
+}
+
+.gcal-logo-wrapper {
+  width: 52px;
+  height: 52px;
+  background: #ffffff;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  flex-shrink: 0;
+}
+
+.gcal-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gcal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gcal-heading {
+  font-size: 16.5px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.gcal-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-connected {
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  color: #86efac;
+}
+
+.badge-disconnected {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #cbd5e1;
+}
+
+.gcal-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-online {
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+  animation: pulse 2s infinite;
+}
+
+.dot-offline {
+  background: #94a3b8;
+}
+
+.gcal-subtitle {
+  font-size: 12.5px;
+  color: #cde4dc;
+  margin: 0;
+  line-height: 1.45;
+  max-width: 640px;
+}
+
+.gcal-sync-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #9cd5c4;
+  margin-top: 2px;
+}
+
+.gcal-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.btn-gcal-sync {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 11px;
+  padding: 10px 16px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.btn-gcal-sync:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.btn-gcal-connect {
+  background: #ffffff;
+  color: #1e293b;
+  border: none;
+  border-radius: 11px;
+  padding: 10px 16px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-gcal-connect:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.btn-gcal-add-manual {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 11px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.btn-gcal-add-manual:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.tile-gcal-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  background-color: #1a73e8;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(26, 115, 232, 0.6);
+}
+
+.agenda-task-top-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.agenda-task-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.2px;
+}
+
+.badge-google-cal {
+  background: rgba(26, 115, 232, 0.12);
+  color: #1a73e8;
+  border: 1px solid rgba(26, 115, 232, 0.25);
+}
+
+.badge-kuliah {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.badge-ujian {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.badge-manual-task {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.agenda-task-item.item-google-cal {
+  border-left: 3.5px solid #1a73e8;
+}
+
 /* --------------------------------------------------------------------------
    1. Calendar Tiles Grid (14 Hari ke Depan)
    -------------------------------------------------------------------------- */
@@ -2816,11 +3078,12 @@ body[data-tab="settings"] .dashboard-container {
   margin: 0;
 }
 
-/* Top bar: Date & Filter dropdown */
+/* Top bar: Date & Segmented Filter Tabs */
 .fokus-top-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 .fokus-date-badge {
@@ -2831,6 +3094,10 @@ body[data-tab="settings"] .dashboard-container {
   font-size: 13.5px;
   font-weight: 700;
   letter-spacing: -0.1px;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(11, 132, 93, 0.15);
 }
 
 .fokus-cal-icon {
@@ -2838,86 +3105,110 @@ body[data-tab="settings"] .dashboard-container {
   flex-shrink: 0;
 }
 
-.fokus-filter-dropdown-wrapper {
-  position: relative;
-}
-
-.fokus-filter-btn {
+/* Segmented Control Pill Tabs */
+.fokus-segmented-tabs {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: #ffffff;
-  border: 1.5px solid #d3ddd6;
-  border-radius: 20px;
+  background: #eef4f0;
+  padding: 4px;
+  border-radius: 24px;
+  gap: 4px;
+  border: 1px solid #d3e4da;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.fokus-seg-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
   padding: 6px 14px;
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
-  color: #0284c7;
-  font-family: inherit;
+  color: #55756a;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  white-space: nowrap;
 }
 
-.fokus-filter-btn:hover {
-  border-color: #0284c7;
-  background: #f8fafc;
+.fokus-seg-tab-btn:hover {
+  color: #064e3b;
+  background: rgba(255, 255, 255, 0.5);
 }
 
-.fokus-chevron-icon {
-  stroke: #0284c7;
-  transition: transform 0.2s ease;
+.fokus-seg-tab-btn.active {
+  background: #0d382c;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(13, 56, 44, 0.25);
+  transform: translateY(-0.5px);
 }
 
-.fokus-chevron-icon.open {
-  transform: rotate(180deg);
+.fokus-seg-icon {
+  font-size: 13px;
+  line-height: 1;
 }
 
-.fokus-filter-menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 6px);
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.09);
-  z-index: 50;
-  min-width: 160px;
-  overflow: hidden;
+.fokus-seg-label {
+  letter-spacing: -0.1px;
+}
+
+/* Chart Title Group & Period Tabs */
+.chart-title-group {
   display: flex;
   flex-direction: column;
-  padding: 4px;
-  animation: pageFadeIn 0.2s ease;
+  gap: 3px;
 }
 
-.fokus-filter-option {
+.chart-period-caption {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.chart-header-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: none;
-  border: none;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  font-family: inherit;
-  color: #334155;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  text-align: left;
-  width: 100%;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-.fokus-filter-option:hover {
+.chart-period-tabs {
+  display: inline-flex;
+  align-items: center;
   background: #f1f5f9;
+  padding: 3px;
+  border-radius: 18px;
+  gap: 3px;
+  border: 1px solid #e2e8f0;
+}
+
+.chart-period-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 4px 11px;
+  border-radius: 14px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.chart-period-tab-btn:hover {
   color: #0f172a;
 }
 
-.fokus-filter-option.active {
-  background: #e0f2fe;
-  color: #0284c7;
+.chart-period-tab-btn.active {
+  background: #ffffff;
+  color: #0d382c;
   font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
+
 
 /* --------------------------------------------------------------------------
    Top Grid: 3 Cards side by side
@@ -3353,24 +3644,31 @@ body[data-tab="settings"] .dashboard-container {
 
 .chart-bars-container {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: flex-end;
-  height: 235px;
+  height: 250px;
   position: relative;
-  padding: 0 12px 6px;
-  max-width: 860px;
+  padding: 0 4px 6px;
+  max-width: 100%;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
+  gap: 3px;
 }
 
 .chart-bar-column {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 66px;
+  flex: 1 1 0px;
+  min-width: 26px;
+  max-width: 68px;
+  width: auto;
   cursor: pointer;
   position: relative;
   transition: transform 0.2s ease;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .chart-bar-column:hover {
@@ -3383,15 +3681,18 @@ body[data-tab="settings"] .dashboard-container {
 }
 
 .chart-bar-percent {
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 700;
   color: #0a3d31;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   transition: transform 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
 }
 
 .chart-stacked-bar {
-  width: 58px;
+  width: 100%;
+  max-width: 44px;
+  min-width: 12px;
   display: flex;
   flex-direction: column;
   border-radius: 6px;
@@ -3420,18 +3721,43 @@ body[data-tab="settings"] .dashboard-container {
   border-radius: 0 0 6px 6px;
 }
 
+.chart-bar-day-wrapper {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1.2;
+}
+
+.chart-bar-day-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1e3a30;
+  white-space: nowrap;
+}
+
+.chart-bar-day-date {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #64748b;
+  white-space: nowrap;
+}
+
 .chart-bar-day {
-  margin-top: 10px;
-  font-size: 12px;
+  margin-top: 8px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #354942;
+  white-space: nowrap;
 }
 
 .chart-bar-duration {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #0d382c;
+  white-space: nowrap;
 }
 
 /* Tooltip for chart bar */
@@ -3514,11 +3840,12 @@ body[data-tab="settings"] .dashboard-container {
   }
 
   .chart-stacked-bar {
-    width: 48px;
+    max-width: 40px;
   }
 
   .chart-bar-column {
-    width: 54px;
+    min-width: 24px;
+    max-width: 58px;
   }
 }
 
@@ -3539,21 +3866,21 @@ body[data-tab="settings"] .dashboard-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 8px;
-    gap: 12px;
+    gap: 8px;
     justify-content: flex-start;
   }
 
   .chart-bar-column {
-    width: 46px;
+    min-width: 42px;
     flex-shrink: 0;
   }
 
   .chart-stacked-bar {
-    width: 40px;
+    width: 36px;
   }
 
   .chart-bar-percent {
-    font-size: 11px;
+    font-size: 10.5px;
   }
 
   .chart-bar-day,

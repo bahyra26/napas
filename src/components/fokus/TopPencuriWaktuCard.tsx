@@ -6,6 +6,23 @@ interface TopPencuriWaktuCardProps {
   onItemClick?: (item: FocusTopDistractor) => void;
 }
 
+const getDomainIcon = (name: string): string => {
+  const n = (name || '').toLowerCase();
+  if (n.includes('whatsapp')) return '💬';
+  if (n.includes('instagram')) return '📸';
+  if (n.includes('youtube')) return '▶️';
+  if (n.includes('tiktok')) return '🎵';
+  if (n.includes('x.com') || n.includes('twitter')) return '🐦';
+  if (n.includes('discord')) return '🎮';
+  if (n.includes('spotify')) return '🎧';
+  if (n.includes('netflix')) return '🍿';
+  if (n.includes('telegram')) return '✈️';
+  if (n.includes('reddit')) return '🤖';
+  if (n.includes('shopee') || n.includes('tokopedia')) return '🛍️';
+  if (n.includes('steam')) return '🕹️';
+  return '🌐';
+};
+
 export const TopPencuriWaktuCard: React.FC<TopPencuriWaktuCardProps> = ({
   distractors,
   onItemClick,
@@ -38,7 +55,7 @@ export const TopPencuriWaktuCard: React.FC<TopPencuriWaktuCardProps> = ({
       {distractors.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '24px 12px', color: '#666', fontSize: '12px' }}>
           <span style={{ fontSize: '24px', display: 'block', marginBottom: '6px' }}>✨</span>
-          <span>Belum ada aplikasi/website distraksi tercatat. Bagus! Pertahankan fokus belajarmu.</span>
+          <span>Belum ada website distraksi tercatat. Bagus! Pertahankan fokus belajarmu.</span>
         </div>
       ) : (
         <div className="pencuri-list">
@@ -47,10 +64,13 @@ export const TopPencuriWaktuCard: React.FC<TopPencuriWaktuCardProps> = ({
               key={item.id}
               className="pencuri-item"
               onClick={() => onItemClick?.(item)}
-              title={`${item.name}: ${item.durationLabel}`}
+              title={`Domain ${item.name}: ${item.durationLabel}`}
             >
               <div className="pencuri-item-info">
-                <span className="pencuri-item-name">{item.name}</span>
+                <span className="pencuri-item-name">
+                  <span style={{ marginRight: '6px', fontSize: '13px' }}>{getDomainIcon(item.name)}</span>
+                  {item.name}
+                </span>
                 <span className="pencuri-item-duration">{item.durationLabel}</span>
               </div>
 

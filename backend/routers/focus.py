@@ -1,19 +1,35 @@
 from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from db import supabase, now_wib, ensure_uuid
+import uuid
+import sys
+import os
+import subprocess
+import socket
+
+from db import supabase, now_wib, ensure_uuid, ensure_user_in_supabase
 from schemas import FocusSessionStart, FocusSessionFinish
+from local_db import (
+    deterministic_uuid,
+    local_save_focus_session,
+    local_get_active_session,
+    local_list_focus_sessions,
+    save_or_update_user,
+    get_connection
+)
 
 router = APIRouter(prefix="/focus-sessions", tags=["Focus Sessions"])
 
-_MEM_FOCUS_SESSIONS: dict = {}
-
 @router.post("/start")
 def start_focus_session(payload: FocusSessionStart):
-    import uuid
     now_iso = now_wib().isoformat()
     session_id = payload.session_id or payload.id or str(uuid.uuid4())
-    u_id = ensure_uuid(payload.user_id)
+    u_id = deterministic_uuid(payload.user_id)
+
+    # Pastikan user terdaftar di database lokal dan Supabase
+    save_or_update_user(u_id, "Mahasiswa")
+    ensure_user_in_supabase(u_id)
+
     row = {
         "id": session_id,
         "user_id": u_id,
@@ -29,28 +45,18 @@ def start_focus_session(payload: FocusSessionStart):
         "blocked_apps": {}
     }
 
-    saved = row
+    # 1. Simpan permanen ke SQLite Lokal (Dijamin 100% aman di disk!)
+    saved = local_save_focus_session(row)
+
+    # 2. Coba simpan ke Supabase jika tabelnya ada
     if supabase:
         try:
-            res = supabase.table("focus_sessions").insert(row).execute()
-            if res.data:
-                saved = res.data[0]
+            supabase.table("focus_sessions").upsert(row).execute()
         except Exception:
             pass
 
-    u_id = payload.user_id
-    if u_id not in _MEM_FOCUS_SESSIONS:
-        _MEM_FOCUS_SESSIONS[u_id] = []
-    _MEM_FOCUS_SESSIONS[u_id].append(saved)
-
     return saved
 
-import sys
-import os
-import subprocess
-import socket
-
-_AGENT_PROCESS = None
 
 STUDY_TERMS_FILTER = {
     "github", "gitlab", "ugm", "elearning", "moodle", "canvas", "classroom",
@@ -61,6 +67,8 @@ STUDY_TERMS_FILTER = {
     "zoom", "untitled", "new tab", "tab baru", "loading", "memuat",
     "speed dial", "startpage", "about:blank", "canva", "google dokumen", "google docs"
 }
+
+_AGENT_PROCESS = None
 
 def is_agent_port_active(port=8765) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -122,6 +130,7 @@ def finish_focus_session(session_id: str, payload: FocusSessionFinish):
     blocked_count = sum(clean_blocked_apps.values())
 
     upd = {
+        "id": session_id,
         "selesai": now_iso,
         "focus_seconds": payload.focus_seconds,
         "distraction_seconds": payload.distraction_seconds,
@@ -130,52 +139,72 @@ def finish_focus_session(session_id: str, payload: FocusSessionFinish):
         "completed": payload.completed
     }
 
-    session = None
-    if supabase:
-        try:
-            res = supabase.table("focus_sessions").update(upd).eq("id", session_id).execute()
-            if res.data:
-                session = res.data[0]
-        except Exception:
-            pass
-
-    if not session:
-        for u_id in _MEM_FOCUS_SESSIONS:
-            for s in _MEM_FOCUS_SESSIONS[u_id]:
-                if s.get("id") == session_id:
-                    s.update(upd)
-                    session = s
-                    break
-
-    if not session:
-        session = {"id": session_id, **upd}
-
+    # 1. Update ke SQLite Lokal
+    session = local_save_focus_session(upd)
     user_id = session.get("user_id")
 
-    # Ingest ke sensor_metrics agar terhitung oleh engine & chart analitik
-    if user_id and supabase:
+    # 2. Update ke Supabase focus_sessions jika ada
+    if supabase:
         try:
-            supabase.table("sensor_metrics").insert({
-                "user_id": user_id,
-                "ts": now_iso,
-                "face_visible": True,
+            supabase.table("focus_sessions").update({
+                "selesai": now_iso,
                 "focus_seconds": payload.focus_seconds,
                 "distraction_seconds": payload.distraction_seconds,
-                "app_category": "Focus Session"
-            }).execute()
+                "blocked_count": blocked_count,
+                "blocked_apps": clean_blocked_apps,
+                "completed": payload.completed
+            }).eq("id", session_id).execute()
         except Exception:
             pass
+
+    # 3. Ingest ke sensor_metrics agar terhitung oleh engine & chart analitik
+    if user_id:
+        # Pastikan user terdaftar di tabel users Supabase terlebih dahulu
+        ensure_user_in_supabase(user_id)
+
+        # Simpan ke sensor_metrics SQLite lokal
+        try:
+            conn = get_connection()
+            conn.cursor().execute("""
+                INSERT INTO sensor_metrics (id, user_id, ts, focus_seconds, distraction_seconds, app_category, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (str(uuid.uuid4()), user_id, now_iso, payload.focus_seconds, payload.distraction_seconds, "Focus Session", now_iso))
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+        # Simpan ke sensor_metrics Supabase (dijamin aman dari FK violation!)
+        if supabase:
+            try:
+                supabase.table("sensor_metrics").insert({
+                    "user_id": user_id,
+                    "ts": now_iso,
+                    "face_visible": True,
+                    "focus_seconds": payload.focus_seconds,
+                    "distraction_seconds": payload.distraction_seconds,
+                    "app_category": "Focus Session"
+                }).execute()
+            except Exception as e:
+                print(f"[FOCUS] Error insert sensor_metrics Supabase: {e}")
 
     return session
 
 @router.get("/{user_id}/active")
 def get_active_session(user_id: str):
-    u_uuid = ensure_uuid(user_id)
+    u_uuid = deterministic_uuid(user_id)
+
+    # 1. Cek SQLite Lokal terlebih dahulu
+    active = local_get_active_session(u_uuid) or local_get_active_session(user_id)
+    if active:
+        return active
+
+    # 2. Cek Supabase jika ada
     if supabase:
         try:
             res = supabase.table("focus_sessions") \
                 .select("*") \
-                .eq("user_id", u_uuid) \
+                .in_("user_id", [user_id, u_uuid]) \
                 .eq("completed", False) \
                 .order("mulai", desc=True) \
                 .limit(1) \
@@ -185,25 +214,33 @@ def get_active_session(user_id: str):
         except Exception:
             pass
 
-    mem_list = _MEM_FOCUS_SESSIONS.get(user_id, []) or _MEM_FOCUS_SESSIONS.get(u_uuid, [])
-    active = [s for s in mem_list if not s.get("completed")]
-    return active[-1] if active else None
+    return None
 
 @router.get("/{user_id}")
 def list_focus_sessions(user_id: str, limit: int = Query(default=10, ge=1, le=50)):
-    u_uuid = ensure_uuid(user_id)
+    u_uuid = deterministic_uuid(user_id)
+
+    # 1. Ambil dari SQLite Lokal
+    local_sessions = local_list_focus_sessions(u_uuid, limit)
+    if not local_sessions and user_id != u_uuid:
+        local_sessions = local_list_focus_sessions(user_id, limit)
+
+    known_ids = {s.get("id") for s in local_sessions}
+
+    # 2. Gabungkan dengan Supabase jika ada
     if supabase:
         try:
             res = supabase.table("focus_sessions") \
                 .select("*") \
-                .eq("user_id", u_uuid) \
+                .in_("user_id", [user_id, u_uuid]) \
                 .order("mulai", desc=True) \
                 .limit(limit) \
                 .execute()
             if res.data:
-                return res.data
+                for row in res.data:
+                    if row.get("id") not in known_ids:
+                        local_sessions.append(row)
         except Exception:
             pass
 
-    mem_list = _MEM_FOCUS_SESSIONS.get(user_id, []) or _MEM_FOCUS_SESSIONS.get(u_uuid, [])
-    return list(reversed(mem_list))[:limit]
+    return local_sessions[:limit]

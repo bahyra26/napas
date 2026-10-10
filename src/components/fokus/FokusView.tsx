@@ -9,7 +9,6 @@ import { FocusSessionCard } from './FocusSessionCard';
 import { api, getStoredUserId } from '../../services/api';
 
 interface FokusViewProps {
-
   onNotify: (message: string, icon?: string) => void;
 }
 
@@ -39,16 +38,26 @@ const EMPTY_STREAK = {
 
 export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
   const [selectedRange, setSelectedRange] = useState('7 hari terakhir');
+  const [selectedPeriod, setSelectedPeriod] = useState<'7days' | '14days' | 'month' | 'year'>('7days');
   const [overview, setOverview] = useState<FocusOverviewData>(EMPTY_OVERVIEW);
   const [distractors, setDistractors] = useState<FocusTopDistractor[]>([]);
   const [streakInfo, setStreakInfo] = useState(EMPTY_STREAK);
   const [weeklyBars, setWeeklyBars] = useState<FocusDailyBar[]>([]);
 
-  const fetchFocusData = async (days = 7) => {
+  const fetchFocusData = async (rangeStr = '7 hari terakhir', periodStr = '7days') => {
     const userId = getStoredUserId();
     if (!userId) return;
 
-    const data = await api.getFocusSummary(userId, days);
+    let days = 7;
+    if (periodStr === 'year' || rangeStr.toLowerCase().includes('tahun')) {
+      days = 365;
+    } else if (periodStr === 'month' || rangeStr.toLowerCase().includes('bulan')) {
+      days = 30;
+    } else if (periodStr === '14days' || rangeStr.includes('14')) {
+      days = 14;
+    }
+
+    const data = await api.getFocusSummary(userId, days, periodStr);
     if (data) {
       if (data.overview) setOverview(data.overview as FocusOverviewData);
       setDistractors(data.top_distractors || []);
@@ -58,14 +67,15 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
   };
 
   useEffect(() => {
-    fetchFocusData(7);
+    fetchFocusData(selectedRange, selectedPeriod);
   }, []);
 
-  const handleRangeChange = (range: string) => {
+  const handleRangeChange = (range: string, period?: string) => {
+    const normPeriod = (period || (range.includes('tahun') ? 'year' : range.includes('bulan') ? 'month' : range.includes('14') ? '14days' : '7days')) as any;
     setSelectedRange(range);
-    onNotify(`Rentang waktu diganti ke: ${range}`, '📅');
-    const days = range.includes('14') ? 14 : range.includes('30') ? 30 : 7;
-    fetchFocusData(days);
+    setSelectedPeriod(normPeriod);
+    onNotify(`Periode diganti ke: ${range}`, '📅');
+    fetchFocusData(range, normPeriod);
   };
 
   const handleDistractorClick = (item: FocusTopDistractor) => {
@@ -87,7 +97,7 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
   };
 
   const handleRefreshOverview = async () => {
-    await fetchFocusData(7);
+    await fetchFocusData(selectedRange, selectedPeriod);
     onNotify('Data fokus hari ini berhasil diperbarui!', '✨');
   };
 
@@ -96,8 +106,7 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
       {/* 1. Ruang Belajar & Guard Website Fokus (Action Hub) */}
       <FocusSessionCard
         onSessionCompleted={() => {
-          const days = selectedRange.includes('14') ? 14 : selectedRange.includes('30') ? 30 : 7;
-          fetchFocusData(days);
+          fetchFocusData(selectedRange, selectedPeriod);
         }}
         onNotify={onNotify}
       />
@@ -115,7 +124,7 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
           </p>
         </div>
 
-        {/* Filter Rentang Waktu (7 hari / 14 hari / 30 hari / Bulan ini) */}
+        {/* Tab Filter Rentang Waktu (7 Hari, 14 Hari, Bulan Ini, Tahun Ini) */}
         <FokusTopFilter
           currentDate={overview.date}
           selectedRange={selectedRange}
@@ -147,6 +156,9 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
       <div className="fokus-bottom-grid">
         <FokusVsDistraksiChart
           data={weeklyBars}
+          selectedRange={selectedRange}
+          selectedPeriod={selectedPeriod}
+          onSelectPeriod={handleRangeChange}
           onSelectDay={handleBarSelect}
         />
       </div>

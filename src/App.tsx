@@ -19,6 +19,7 @@ import { KesimpulanCard } from './components/tren/KesimpulanCard';
 import { CalendarGrid } from './components/deadline/CalendarGrid';
 import { RingkasanBeban } from './components/deadline/RingkasanBeban';
 import { AgendaDetail } from './components/deadline/AgendaDetail';
+import { GoogleCalendarBanner } from './components/deadline/GoogleCalendarBanner';
 import { FokusView } from './components/fokus/FokusView';
 import { LaporanView } from './components/laporan/LaporanView';
 import { SettingsView } from './components/settings/SettingsView';
@@ -27,6 +28,7 @@ import { OnboardingModal } from './components/onboarding/OnboardingModal';
 import { api, getStoredUserId, setStoredUserId, StudentProfile } from './services/api';
 import { authService } from './services/supabase';
 import { googleCalendarService } from './services/googleCalendar';
+import { focusStore } from './services/focusSessionStore';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -191,6 +193,7 @@ export const App: React.FC = () => {
       loadWorkloads(uid),
       loadRadar(uid),
       loadProfileAndSchedule(uid),
+      focusStore.loadUserWhitelist(uid),
       api.getTodayCheckIn(uid).then((ci) => {
         if (ci) setTodayCheckinScore(ci.skor);
       }),
@@ -259,16 +262,37 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleCustomLogin = async (name: string, campus: string, major: string) => {
-    const customId =
-      typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : 'c0000000-0000-4000-8000-' + Date.now().toString(16).padStart(12, '0');
-    setStoredUserId(customId, name);
+  const handleCustomLogin = async (
+    identifier: string,
+    name: string,
+    campus: string,
+    major: string
+  ) => {
+    let uid = '';
+    const regRes = await api.loginOrRegister({
+      identifier: identifier || name,
+      nama: name,
+      email: identifier.includes('@') ? identifier : undefined,
+    });
+
+    if (regRes?.id) {
+      uid = regRes.id;
+    } else {
+      // Deterministic fallback offline jika backend mati
+      const clean = (identifier || name).trim().toLowerCase();
+      let hash = 0;
+      for (let i = 0; i < clean.length; i++) {
+        hash = (hash << 5) - hash + clean.charCodeAt(i);
+        hash |= 0;
+      }
+      uid = 'c0000000-0000-4000-8000-' + Math.abs(hash).toString(16).padStart(12, '0').slice(-12);
+    }
+
+    setStoredUserId(uid, name);
     localStorage.removeItem('napas_demo_mode');
 
-    // Buat profil di backend / memory
-    await api.updateProfile(customId, {
+    // Buat profil di backend
+    await api.updateProfile(uid, {
       panggilan: name.split(' ')[0],
       kampus: campus,
       jurusan: major,
@@ -276,19 +300,36 @@ export const App: React.FC = () => {
       onboarded: true,
     });
 
-    await initUserSession(customId);
-    showToast(`Selamat datang, ${name}! Profil berhasil dipersonalisasi.`, '🎓');
+    await initUserSession(uid);
+    showToast(`Selamat datang kembali, ${name}! Profil berhasil disinkronkan.`, '🎓');
   };
 
   const handleLogout = async () => {
     await authService.signOut();
+    localStorage.removeItem('napas_user_id');
+    localStorage.removeItem('napas_user_name');
+    localStorage.removeItem('napas_demo_mode');
+    localStorage.removeItem('napas_active_focus_session');
+    focusStore.resetForUser();
     setUserId(null);
     setStudentProfile(null);
     showToast('Berhasil keluar.', '👋');
   };
 
+  const handleConnectGoogle = async () => {
+    showToast('Mengarahkan ke login Google Calendar...', '🔗');
+    const res = await authService.signInWithGoogle();
+    if (res?.error) {
+      showToast(res.error, '⚠️');
+    }
+  };
+
   const handleSyncGoogleCalendar = async () => {
     if (!userId) return;
+    if (!googleCalendarService.isGoogleConnected()) {
+      await handleConnectGoogle();
+      return;
+    }
     setIsSyncingCalendar(true);
     const result = await googleCalendarService.fetchAndSyncEvents(userId);
     setIsSyncingCalendar(false);
@@ -525,6 +566,16 @@ export const App: React.FC = () => {
           {activeTab === 'deadline' && (
             <section id="view-deadline" className="page-view active">
               <div className="deadline-container">
+                <GoogleCalendarBanner
+                  isConnected={googleCalendarService.isGoogleConnected()}
+                  isSyncing={isSyncingCalendar}
+                  lastSyncText={googleCalendarService.getLastSyncInfo(userId || '').lastSyncText}
+                  syncedCount={googleCalendarService.getLastSyncInfo(userId || '').syncedCount}
+                  onSync={handleSyncGoogleCalendar}
+                  onConnectGoogle={handleConnectGoogle}
+                  onAddManualDeadline={() => setIsAddTaskOpen(true)}
+                />
+
                 <div className="deadline-grid">
                   <div className="deadline-col-left">
                     <CalendarGrid

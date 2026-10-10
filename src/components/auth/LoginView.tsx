@@ -4,7 +4,7 @@ import { setStoredUserId } from '../../services/api';
 
 interface LoginViewProps {
   onDemoLogin: () => void;
-  onCustomLogin?: (name: string, campus: string, major: string) => void;
+  onCustomLogin?: (identifier: string, name: string, campus: string, major: string) => void;
   onNotify: (message: string, icon?: string) => void;
 }
 
@@ -84,11 +84,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
     const formattedName = resolvedName.charAt(0).toUpperCase() + resolvedName.slice(1);
 
     if (onCustomLogin) {
-      onCustomLogin(formattedName, 'Universitas Indonesia', 'Teknik Informatika');
-    } else {
-      const id = `user-${Date.now()}`;
-      setStoredUserId(id, formattedName);
-      window.location.reload();
+      onCustomLogin(loginEmailOrUser.trim(), formattedName, 'Universitas Gadjah Mada', 'Teknik Informatika');
     }
     onNotify(`Selamat datang kembali, ${formattedName}!`, '🌱');
   };
@@ -135,12 +131,9 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
     setLoading(false);
     const cleanName = regFullName.trim();
+    const ident = regEmail.trim() || regUsername.trim() || cleanName;
     if (onCustomLogin) {
-      onCustomLogin(cleanName, 'Universitas Indonesia', 'Mahasiswa');
-    } else {
-      const id = `user-${Date.now()}`;
-      setStoredUserId(id, cleanName);
-      window.location.reload();
+      onCustomLogin(ident, cleanName, 'Universitas Gadjah Mada', 'Mahasiswa');
     }
     onNotify(`Akun berhasil dibuat! Selamat datang di NAPAS, ${cleanName}!`, '🎉');
   };

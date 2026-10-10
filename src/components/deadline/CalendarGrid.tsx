@@ -48,6 +48,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
               className={`day-tile ${tileClass} ${isSelected ? 'selected' : ''}`}
               onClick={() => onSelectDay(day)}
             >
+              {day.tasks.some((t) => t.is_google || t.source === 'google' || t.title.includes('📅')) && (
+                <span className="tile-gcal-dot" title="Ada agenda dari Google Calendar" />
+              )}
               <span className="tile-day">{day.dayName}</span>
               <span className="tile-date">{day.dayNum}</span>
               <span className={`tile-pill ${pillClass}`}>{day.pillText}</span>

@@ -10,13 +10,41 @@ export interface GoogleCalendarEventItem {
 }
 
 export const googleCalendarService = {
+  isGoogleConnected(): boolean {
+    const token = authService.getStoredProviderToken();
+    return Boolean(token && token.trim().length > 0);
+  },
+
+  getLastSyncInfo(userId: string): { lastSyncText: string | null; syncedCount: number } {
+    try {
+      const lastSyncIso = localStorage.getItem(`napas_calendar_last_sync_${userId}`);
+      const countStr = localStorage.getItem(`napas_calendar_synced_count_${userId}`);
+      const count = countStr ? parseInt(countStr, 10) : 0;
+      if (!lastSyncIso) return { lastSyncText: null, syncedCount: count };
+
+      const syncDate = new Date(lastSyncIso);
+      const now = new Date();
+      const isToday = syncDate.toDateString() === now.toDateString();
+
+      const timeStr = syncDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+      const dateStr = syncDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+
+      return {
+        lastSyncText: isToday ? `Hari ini, ${timeStr} WIB` : `${dateStr}, ${timeStr} WIB`,
+        syncedCount: count,
+      };
+    } catch {
+      return { lastSyncText: null, syncedCount: 0 };
+    }
+  },
+
   async fetchAndSyncEvents(userId: string): Promise<{ success: boolean; count: number; message: string }> {
     const token = authService.getStoredProviderToken();
     if (!token) {
       return {
         success: false,
         count: 0,
-        message: 'Akses Google Calendar tidak ditemukan. Silakan login ulang dengan Google.',
+        message: 'Akun Google belum terhubung. Silakan klik "Hubungkan Akun Google".',
       };
     }
 
@@ -38,10 +66,11 @@ export const googleCalendarService = {
 
       if (!res.ok) {
         if (res.status === 401) {
+          localStorage.removeItem('napas_provider_token');
           return {
             success: false,
             count: 0,
-            message: 'Sesi Google telah kedaluwarsa. Silakan login ulang untuk menyinkronkan kalender.',
+            message: 'Sesi Google telah kedaluwarsa. Silakan hubungkan ulang akun Google Anda.',
           };
         }
         return {
@@ -55,10 +84,12 @@ export const googleCalendarService = {
       const rawEvents: GoogleCalendarEventItem[] = data.items || [];
 
       if (rawEvents.length === 0) {
+        localStorage.setItem(`napas_calendar_last_sync_${userId}`, new Date().toISOString());
+        localStorage.setItem(`napas_calendar_synced_count_${userId}`, '0');
         return {
           success: true,
           count: 0,
-          message: 'Tidak ada agenda terjadwal di Google Calendar dalam 14 hari ke depan.',
+          message: 'Kalender Google aktif, namun belum ada agenda dalam 14 hari ke depan.',
         };
       }
 
@@ -77,6 +108,9 @@ export const googleCalendarService = {
 
       const syncRes = await api.syncGoogleCalendar(userId, formattedEvents);
       const syncedCount = syncRes?.synced ?? formattedEvents.length;
+
+      localStorage.setItem(`napas_calendar_last_sync_${userId}`, new Date().toISOString());
+      localStorage.setItem(`napas_calendar_synced_count_${userId}`, String(syncedCount));
 
       return {
         success: true,

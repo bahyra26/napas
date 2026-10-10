@@ -69,14 +69,42 @@ export const AgendaDetail: React.FC<AgendaDetailProps> = ({
               </span>
             </div>
           ) : (
-            selectedDay.tasks.map((task, idx) => (
-              <div className="agenda-task-item" key={idx}>
-                <div className="agenda-task-info">
-                  <span className="agenda-task-name">{task.title}</span>
-                  <span className="agenda-task-time">{task.time}</span>
+            selectedDay.tasks.map((task, idx) => {
+              const isGoogle = Boolean(task.is_google || task.source === 'google' || task.title.includes('📅'));
+              const isClass = Boolean(task.jenis === 'kuliah' || task.title.toLowerCase().startsWith('kuliah:'));
+              const isExam = Boolean(task.jenis === 'ujian' || /uts|uas|kuis|ujian/i.test(task.title));
+
+              return (
+                <div className={`agenda-task-item ${isGoogle ? 'item-google-cal' : ''}`} key={idx}>
+                  <div className="agenda-task-info">
+                    <div className="agenda-task-top-meta">
+                      {isGoogle && (
+                        <span className="agenda-task-badge badge-google-cal" title="Tersinkronkan dari Google Calendar">
+                          📅 Google Calendar
+                        </span>
+                      )}
+                      {isClass && (
+                        <span className="agenda-task-badge badge-kuliah" title="Jadwal Perkuliahan Kampus">
+                          🎓 Kuliah
+                        </span>
+                      )}
+                      {isExam && (
+                        <span className="agenda-task-badge badge-ujian" title="Evaluasi / Ujian">
+                          🎯 Ujian
+                        </span>
+                      )}
+                      {!isGoogle && !isClass && !isExam && (
+                        <span className="agenda-task-badge badge-manual-task" title="Deadline Tugas Mahasiswa">
+                          📝 Tugas
+                        </span>
+                      )}
+                      <span className="agenda-task-time">{task.time}</span>
+                    </div>
+                    <span className="agenda-task-name">{task.title.replace(/^📅\s*/, '')}</span>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

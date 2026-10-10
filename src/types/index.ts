@@ -11,6 +11,14 @@ export interface TaskItem {
 
 export type MoodType = 'Bahagia / Senang' | 'Netral' | 'Sedih';
 
+export interface CalendarTaskItem {
+  title: string;
+  time: string;
+  is_google?: boolean;
+  source?: string;
+  jenis?: string;
+}
+
 export interface CalendarDay {
   date: string;
   dayName: string;
@@ -20,7 +28,7 @@ export interface CalendarDay {
   status: 'Ringan' | 'Sedang' | 'Berat';
   load: number;
   pillText: string;
-  tasks: Array<{ title: string; time: string }>;
+  tasks: CalendarTaskItem[];
 }
 
 export interface TrendPoint {

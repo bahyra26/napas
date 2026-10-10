@@ -51,3 +51,26 @@ def ensure_uuid(user_id: str) -> str:
     if UUID_REGEX.match(user_id):
         return user_id
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, user_id))
+
+def ensure_user_in_supabase(user_id: str, nama: str = "Mahasiswa", email: str = None) -> bool:
+    """Memastikan record user_id ada di tabel users Supabase agar tidak melanggar foreign key constraint."""
+    if not supabase:
+        return False
+    u_uuid = ensure_uuid(user_id)
+    try:
+        chk = supabase.table("users").select("id").eq("id", u_uuid).execute()
+        if chk.data and len(chk.data) > 0:
+            return True
+        supabase.table("users").insert({
+            "id": u_uuid,
+            "nama": nama or "Mahasiswa",
+            "email": email or f"{u_uuid[:8]}@napas.local",
+            "consent_camera": True,
+            "consent_window": True,
+            "baseline_blink_rate": 15.0
+        }).execute()
+        return True
+    except Exception as e:
+        print(f"[DB] Gagal memastikan user di Supabase ({u_uuid}): {e}")
+        return False
+

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Optional
-from db import supabase, now_wib
+from db import supabase, now_wib, ensure_uuid
+from local_db import local_save_profile, local_get_profile, deterministic_uuid, get_user_by_id
 from schemas import (
     ProfileUpsert,
     ClassScheduleCreate,
@@ -11,32 +12,46 @@ from schemas import (
 
 router = APIRouter(tags=["Profile & Schedule"])
 
-DEFAULT_WHITELIST = ["Code.exe", "notion", "docs.google", "Word", "Figma", "Cursor"]
+DEFAULT_WHITELIST = [
+    "elearning.ugm.ac.id",
+    "docs.google.com",
+    "notion.so",
+    "github.com",
+    "journal.ugm.ac.id",
+    "wikipedia.org",
+    "chatgpt.com",
+    "canva.com"
+]
 DEFAULT_BLACKLIST = ["Discord", "YouTube", "Instagram", "TikTok", "Steam", "Mobile Legends", "Netflix", "Twitter", "X.com"]
 
-_MEM_PROFILES: dict = {}
 _MEM_SCHEDULES: dict = {}
 
 @router.get("/profile/{user_id}")
 def get_user_profile(user_id: str):
+    u_uuid = deterministic_uuid(user_id)
     user = {}
     if supabase:
         try:
-            u_res = supabase.table("users").select("*").eq("id", user_id).execute()
+            u_res = supabase.table("users").select("*").in_("id", [user_id, u_uuid]).execute()
             if u_res.data:
                 user = u_res.data[0]
         except Exception:
             pass
 
+    if not user:
+        user = get_user_by_id(u_uuid) or get_user_by_id(user_id) or {}
+
     profile = None
     if supabase:
         try:
-            p_res = supabase.table("user_profiles").select("*").eq("user_id", user_id).execute()
-            profile = p_res.data[0] if (p_res.data and len(p_res.data) > 0) else None
+            p_res = supabase.table("user_profiles").select("*").in_("user_id", [user_id, u_uuid]).execute()
+            if p_res.data and len(p_res.data) > 0:
+                profile = p_res.data[0]
         except Exception:
-            profile = _MEM_PROFILES.get(user_id)
-    else:
-        profile = _MEM_PROFILES.get(user_id)
+            pass
+
+    if not profile:
+        profile = local_get_profile(u_uuid) or local_get_profile(user_id)
 
     if not profile:
         profile = {
@@ -53,6 +68,11 @@ def get_user_profile(user_id: str):
             "focus_blacklist": DEFAULT_BLACKLIST,
             "agent_action": "warn_then_close"
         }
+
+    # Pastikan focus_whitelist valid list
+    wl = profile.get("focus_whitelist")
+    if not wl or isinstance(wl, dict) or len(wl) == 0:
+        profile["focus_whitelist"] = DEFAULT_WHITELIST
 
     return {
         **profile,
@@ -81,7 +101,13 @@ def upsert_user_profile(user_id: str, payload: ProfileUpsert):
     if payload.agent_action is not None: data["agent_action"] = payload.agent_action
     if payload.onboarded is not None: data["onboarded"] = payload.onboarded
 
-    saved = data
+    u_uuid = deterministic_uuid(user_id)
+    data["user_id"] = u_uuid
+
+    # 1. Simpan permanen ke SQLite Lokal
+    saved = local_save_profile(data)
+
+    # 2. Coba upsert ke Supabase jika tabel ada
     if supabase:
         try:
             res = supabase.table("user_profiles").upsert(data, on_conflict="user_id").execute()
@@ -92,12 +118,12 @@ def upsert_user_profile(user_id: str, payload: ProfileUpsert):
 
         if payload.onboarded is not None:
             try:
-                supabase.table("users").update({"onboarded": payload.onboarded}).eq("id", user_id).execute()
+                supabase.table("users").update({"onboarded": payload.onboarded}).in_("id", [user_id, u_uuid]).execute()
             except Exception:
                 pass
 
-    _MEM_PROFILES[user_id] = saved
     return saved
+
 
 @router.get("/schedule/{user_id}")
 def get_class_schedule(user_id: str):
@@ -175,53 +201,70 @@ def delete_class_schedule(schedule_id: str):
 @router.post("/calendar/sync")
 def sync_google_calendar_events(payload: CalendarSyncRequest):
     """
-    Sinkronisasi event dari Google Calendar ke tabel workload_items.
+    Sinkronisasi event dari Google Calendar ke tabel workload_items (SQLite Lokal & Supabase).
     Event otomatis terklasifikasi sebagai kuliah / tugas / rapat dan tidak duplikat.
     """
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Database belum terhubung.")
+    from local_db import local_bulk_sync_google_events, deterministic_uuid
 
-    synced_count = 0
+    raw_events = []
     for ev in payload.events:
-        summary_lower = ev.summary.lower()
-        if any(k in summary_lower for k in ["kuliah", "praktikum", "asistensi", "kelas", "lab"]):
-            jenis = "kuliah"
-        elif any(k in summary_lower for k in ["rapat", "meeting", "diskusi", "tm "]):
-            jenis = "rapat"
-        elif any(k in summary_lower for k in ["uas", "uts", "kuis", "ujian"]):
-            jenis = "ujian"
-        else:
-            jenis = "tugas"
+        raw_events.append({
+            "id": ev.id,
+            "summary": ev.summary,
+            "start": ev.start.isoformat() if ev.start else None,
+            "end": ev.end.isoformat() if ev.end else None,
+            "all_day": ev.all_day,
+            "description": ev.description
+        })
 
-        est_jam = 1.5
-        if ev.end:
-            dur = (ev.end - ev.start).total_seconds() / 3600.0
-            if dur > 0:
-                est_jam = round(dur, 1)
+    # 1. Simpan ke SQLite Lokal
+    synced_local = local_bulk_sync_google_events(payload.user_id, raw_events)
 
-        row = {
-            "user_id": payload.user_id,
-            "judul": ev.summary,
-            "jenis": jenis,
-            "deadline": (ev.end or ev.start).isoformat(),
-            "est_jam": min(12.0, max(0.5, est_jam)),
-            "effort": 4 if jenis in ["ujian"] else (3 if jenis in ["tugas"] else 2),
-            "status": "belum",
-            "source": "google",
-            "google_event_id": ev.id
-        }
+    # 2. Simpan juga ke Supabase jika tersedia
+    synced_supabase = 0
+    if supabase:
+        try:
+            for ev in payload.events:
+                summary_lower = ev.summary.lower()
+                if any(k in summary_lower for k in ["kuliah", "praktikum", "asistensi", "kelas", "lab"]):
+                    jenis = "kuliah"
+                elif any(k in summary_lower for k in ["rapat", "meeting", "diskusi", "tm "]):
+                    jenis = "rapat"
+                elif any(k in summary_lower for k in ["uas", "uts", "kuis", "ujian", "evaluasi"]):
+                    jenis = "ujian"
+                else:
+                    jenis = "tugas"
 
-        # Cek apakah sudah pernah disinkronkan
-        existing = supabase.table("workload_items") \
-            .select("id") \
-            .eq("user_id", payload.user_id) \
-            .eq("google_event_id", ev.id) \
-            .execute()
+                est_jam = 1.5
+                if ev.end and ev.start:
+                    dur = (ev.end - ev.start).total_seconds() / 3600.0
+                    if dur > 0:
+                        est_jam = round(dur, 1)
 
-        if existing.data and len(existing.data) > 0:
-            supabase.table("workload_items").update(row).eq("id", existing.data[0]["id"]).execute()
-        else:
-            supabase.table("workload_items").insert(row).execute()
-        synced_count += 1
+                row = {
+                    "user_id": payload.user_id,
+                    "judul": ev.summary,
+                    "jenis": jenis,
+                    "deadline": (ev.end or ev.start).isoformat(),
+                    "est_jam": min(12.0, max(0.5, est_jam)),
+                    "effort": 4 if jenis in ["ujian"] else (3 if jenis in ["tugas"] else 2),
+                    "status": "belum",
+                    "source": "google",
+                    "google_event_id": ev.id
+                }
 
-    return {"status": "ok", "synced": synced_count}
+                existing = supabase.table("workload_items") \
+                    .select("id") \
+                    .eq("user_id", payload.user_id) \
+                    .eq("google_event_id", ev.id) \
+                    .execute()
+
+                if existing.data and len(existing.data) > 0:
+                    supabase.table("workload_items").update(row).eq("id", existing.data[0]["id"]).execute()
+                else:
+                    supabase.table("workload_items").insert(row).execute()
+                synced_supabase += 1
+        except Exception as e:
+            print("Supabase calendar sync warning:", e)
+
+    return {"status": "ok", "synced": max(synced_local, synced_supabase, len(payload.events))}

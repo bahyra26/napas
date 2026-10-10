@@ -85,3 +85,116 @@ tokens=['127.0.0.1', 'canva', 'chatgpt', 'docs', 'elearning', 'github', 'google'
 15:32:46 | BLOCK           | url=https://drive.google.com/drive/home | domain=drive.google.com | title=Beranda - Google Drive - Opera
 15:32:48 | ALLOW-TITLE     | url=- | domain=- | title=Library | Notion - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
 15:32:49 | BLOCK           | url=- | domain=- | title=HENN - How (Not) To Make Your Own AmbaCar - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-08 11:25:17 SESI ses-1791433517043 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+11:25:47 | BLOCK           | url=- | domain=- | title=(84) WhatsApp - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+11:25:50 | BLOCK           | url=- | domain=- | title=(85) WhatsApp - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+11:25:51 | BLOCK           | url=- | domain=- | title=(86) WhatsApp - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+11:25:55 | BLOCK           | url=- | domain=- | title=Online C++ Compiler (Editor) - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-08 11:26:11 SESI ses-1791433571963 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+11:26:32 | BLOCK           | url=- | domain=- | title=(24) Feed | LinkedIn - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+11:26:38 | BLOCK           | url=- | domain=- | title=Online C++ Compiler (Editor) - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+11:26:40 | BLOCK           | url=- | domain=- | title=Executive Summary TDC Academy 2026 (1).docx - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+11:26:48 | BLOCK           | url=- | domain=- | title=A Renewal Agent ITS - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-08 11:27:38 SESI ses-1791433658296 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+11:27:43 | BLOCK           | url=- | domain=- | title=Online C++ Compiler (Editor) - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+11:27:49 | BLOCK           | url=- | domain=- | title=C++ Arrays - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-08 12:00:33 SESI ses-1791435632989 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+12:00:36 | BLOCK           | url=- | domain=- | title=(1) Instagram - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-08 12:20:33 SESI ses-1791436833552 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+12:20:45 | BLOCK           | url=- | domain=- | title=C++ Arrays - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-08 13:11:39 SESI ses-1791439899506 =====
+domains=['chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org']
+tokens=['127.0.0.1', 'chatgpt', 'docs', 'elearning', 'github', 'google', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia']
+
+===== 2026-10-08 13:11:47 SESI ses-1791439907374 =====
+domains=['chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org']
+tokens=['127.0.0.1', 'chatgpt', 'docs', 'elearning', 'github', 'google', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia']
+13:11:53 | ALLOW-TITLE     | url=- | domain=- | title=New Tab - Google Chrome | uia=docs:8 edits:1 nodes:221 docval=['<kosong>', '<kosong>']
+13:11:56 | BLOCK           | url=https://www.google.com/search?gs_ssp=eJzj4tTP1TewzEouKzZg9GKvzC8tKU1KBQA_-AaN&q=youtube&oq=you&gs_lcrp=EgZjaHJvbWUqDQgBEC4YgwEYsQMYgAQyEAgAEAAYgwEY4wIYsQMYgAQyDQgBEC4YgwEYsQMYgAQyCggCEC4YsQMYgAQyCggDEAAYsQMYgAQyDQgEEAAYgwEYsQMYgAQyBwgFEAAYgAQyDQgGEAAYgwEYsQMYgAQyBggHEAUYQNIBCDI1MjhqMGo3qAIAsAIA&sourceid=chrome&source=chrome.ob&ie=UTF-8 | domain=google.com | title=youtube - Google Search - Google Chrome
+13:12:00 | BLOCK           | url=http://localhost:3000/ | domain=localhost:3000 | title=YouTube - Google Chrome
+13:12:09 | BLOCK           | url=- | domain=- | title=www.youtube.com wants to | uia=docs:0 edits:0 nodes:16 docval=[]
+13:12:12 | ALLOW-TITLE     | url=- | domain=- | title=History - Google Chrome | uia=docs:6 edits:1 nodes:215 docval=['<kosong>', '<kosong>']
+13:12:13 | BLOCK           | url=http://localhost:3000/ | domain=localhost:3000 | title=History - Google Chrome
+
+===== 2026-10-08 13:12:13 SESI ses-1791439907374 =====
+domains=['chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org']
+tokens=['127.0.0.1', 'chatgpt', 'docs', 'elearning', 'github', 'google', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia']
+
+===== 2026-10-08 13:12:13 SESI ses-1791439907374 =====
+domains=['chatgpt.com', 'docs.google.com', 'elearning.ugm.ac.id', 'github.com', 'journal.ugm.ac.id', 'notion.so', 'wikipedia.org']
+tokens=['127.0.0.1', 'chatgpt', 'docs', 'elearning', 'github', 'google', 'journal', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'notion', 'ruang belajar', 'ugm', 'wikipedia']
+
+===== 2026-10-08 13:21:37 SESI ses-1791440497547 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+13:22:22 | BLOCK           | url=- | domain=- | title=Instagram - Opera | uia=docs:0 edits:0 nodes:11 docval=[]
+
+===== 2026-10-08 13:22:27 SESI 19de7d58-7b1e-4815-bfac-8551a9592f91 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+
+===== 2026-10-08 13:22:28 SESI 19de7d58-7b1e-4815-bfac-8551a9592f91 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+
+===== 2026-10-08 13:22:43 SESI 19de7d58-7b1e-4815-bfac-8551a9592f91 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+
+===== 2026-10-08 13:22:44 SESI 19de7d58-7b1e-4815-bfac-8551a9592f91 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+
+===== 2026-10-08 13:23:09 SESI ses-1791440589795 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+13:23:12 | BLOCK           | url=- | domain=- | title=(84) WhatsApp - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+13:23:14 | BLOCK           | url=- | domain=- | title=The Agent Skills Directory - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+13:23:17 | BLOCK           | url=- | domain=- | title=Cara Cek Skill dengan Skill.sh - Google Gemini - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-08 13:25:23 SESI ses-1791440723682 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+13:25:27 | BLOCK           | url=- | domain=- | title=(84) WhatsApp - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+13:25:30 | BLOCK           | url=- | domain=- | title=Cara Cek Skill dengan Skill.sh - Google Gemini - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+13:25:35 | BLOCK           | url=- | domain=- | title=A Renewal Agent ITS - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-08 13:30:11 SESI ses-1791441011617 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+13:30:20 | BLOCK           | url=- | domain=- | title=Salinan dari BMC TDC Academy 2026 - Presentasi - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+13:30:21 | BLOCK           | url=- | domain=- | title=Salinan dari BMC TDC Academy 2026 - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+13:30:46 | BLOCK           | url=- | domain=- | title=(84) WhatsApp - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+13:30:53 | BLOCK           | url=- | domain=- | title=Beranda - Canva - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+13:30:56 | BLOCK           | url=- | domain=- | title=canva.com - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+13:30:57 | BLOCK           | url=- | domain=- | title=Beranda - Canva - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+13:31:01 | BLOCK           | url=- | domain=- | title=RD DinamIT 2026 - Google Spreadsheet - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+
+===== 2026-10-08 14:45:45 SESI ses-1791445545443 =====
+domains=['youtube.com']
+tokens=['127.0.0.1', 'kesehatan mental', 'localhost:3000', 'localhost:5173', 'napas', 'ruang belajar', 'youtube']
+14:46:02 | BLOCK           | url=- | domain=- | title=(86) WhatsApp - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+14:46:06 | BLOCK           | url=- | domain=- | title=(87) WhatsApp - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+14:46:12 | BLOCK           | url=- | domain=- | title=mikaillauranaotwsukses (Muhammad Mikail Laurana) - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+14:46:33 | ALLOW-TITLE     | url=- | domain=- | title=(886) YouTube - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+14:46:35 | BLOCK           | url=- | domain=- | title=mikaillauranaotwsukses (Muhammad Mikail Laurana) - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+14:48:09 | ALLOW-TITLE     | url=- | domain=- | title=(886) 발자국 On The Snow - YouTube - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+14:48:19 | ALLOW-TITLE     | url=- | domain=- | title=(886) Histori tontonan - YouTube - Opera | uia=docs:0 edits:0 nodes:7 docval=[]
+14:48:23 | ALLOW-TITLE     | url=- | domain=- | title=(886) 발자국 On The Snow - YouTube - Opera | uia=docs:0 edits:0 nodes:11 docval=[]
+14:48:24 | ALLOW-TITLE     | url=- | domain=- | title=(886) 공부할 때 듣기 좋은 방탄소년단 수록곡 모음✨ | BTS Playlist - YouTube - Opera | uia=docs:0 edits:0 nodes:11 docval=[]

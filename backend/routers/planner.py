@@ -22,16 +22,25 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
     current_wib = now_wib()
     today_date = current_wib.date()
 
-    # 1. Ambil workload aktif
-    workloads = []
+    # 1. Ambil workload aktif (SQLite Lokal & Supabase)
+    from local_db import local_list_workload_items, deterministic_uuid
+    u_uuid = deterministic_uuid(user_id)
+    workloads = local_list_workload_items(u_uuid, status="belum")
+    if not workloads and user_id != u_uuid:
+        workloads = local_list_workload_items(user_id, status="belum")
+
+    known_ids = {w.get("id") for w in workloads}
     if supabase:
         try:
             wl_res = supabase.table("workload_items") \
                 .select("*") \
-                .eq("user_id", user_id) \
+                .in_("user_id", [user_id, u_uuid]) \
                 .eq("status", "belum") \
                 .execute()
-            workloads = wl_res.data or []
+            if wl_res.data:
+                for w in wl_res.data:
+                    if w.get("id") not in known_ids:
+                        workloads.append(w)
         except Exception:
             pass
 
@@ -78,12 +87,16 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
             if d_str not in workload_by_date:
                 workload_by_date[d_str] = []
             time_str = f"Deadline {dl_dt.strftime('%H.%M')}" if dl_dt.hour != 0 or dl_dt.minute != 0 else "Deadline 23.59"
+            is_google = (w.get("source") == "google" or bool(w.get("google_event_id")))
             workload_by_date[d_str].append({
                 "id": w["id"],
                 "title": w["judul"],
                 "time": time_str,
                 "effort": w.get("effort", 3),
-                "est_jam": float(w.get("est_jam") or 2.0)
+                "est_jam": float(w.get("est_jam") or 2.0),
+                "source": w.get("source", "local"),
+                "is_google": is_google,
+                "jenis": w.get("jenis", "tugas")
             })
         except Exception:
             continue
@@ -135,7 +148,10 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
             for w in workload_by_date[d_str]:
                 day_tasks.append({
                     "title": w["title"],
-                    "time": w["time"]
+                    "time": w["time"],
+                    "source": w.get("source", "local"),
+                    "is_google": w.get("is_google", False),
+                    "jenis": w.get("jenis", "tugas")
                 })
                 total_effort_points += int(w["effort"]) * 2
                 total_est_hours += w["est_jam"]
