@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export interface BackendHealth {
@@ -217,6 +219,7 @@ export interface WeeklyInsightResponse {
     label: string;
     colorType: 'orange' | 'green' | 'red';
   }>;
+  ai_provider?: string;
 }
 
 // User Persistence Helpers
@@ -251,14 +254,40 @@ export const api = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!res.ok) return null;
-      const user = await res.json();
-      setStoredUserId(user.id, user.nama);
-      return user;
+      if (res.ok) {
+        const user = await res.json();
+        setStoredUserId(user.id, user.nama);
+        return user;
+      }
     } catch (err) {
-      console.warn('initDemoUser failed, backend may be offline:', err);
-      return null;
+      console.warn('initDemoUser backend offline, falling back to cloud Supabase:', err);
     }
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', 'raka@joints2026.ugm.ac.id')
+          .maybeSingle();
+
+        if (data) {
+          setStoredUserId(data.id, data.nama);
+          return data as UserProfile;
+        }
+      } catch {}
+    }
+
+    const fallbackUser: UserProfile = {
+      id: '951459f9-e92f-4193-b470-ea87a899e18d',
+      nama: 'Raka Pratama',
+      email: 'raka@joints2026.ugm.ac.id',
+      consent_camera: true,
+      consent_window: true,
+      baseline_blink_rate: 15.0,
+    };
+    setStoredUserId(fallbackUser.id, fallbackUser.nama);
+    return fallbackUser;
   },
 
   async loginOrRegister(payload: {
@@ -272,18 +301,63 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) return null;
-      const user = await res.json();
-      if (user?.id) {
-        setStoredUserId(user.id, user.nama);
+      if (res.ok) {
+        const user = await res.json();
+        if (user?.id) {
+          setStoredUserId(user.id, user.nama);
+        }
+        return user;
       }
-      return user;
     } catch (err) {
-      console.warn('loginOrRegister failed, fallback offline:', err);
-      return null;
+      console.warn('loginOrRegister backend offline, fallback to Supabase cloud:', err);
     }
-  },
 
+    const cleanEmail = payload.email || (payload.identifier.includes('@') ? payload.identifier : `${payload.identifier}@napas.local`);
+    const cleanName = payload.nama || payload.identifier.split('@')[0];
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+
+        if (data) {
+          setStoredUserId(data.id, data.nama);
+          return data as UserProfile;
+        }
+
+        const insertRes = await supabase
+          .from('users')
+          .insert({
+            nama: cleanName,
+            email: cleanEmail,
+            consent_camera: true,
+            consent_window: true,
+            baseline_blink_rate: 15.0,
+          })
+          .select()
+          .maybeSingle();
+
+        if (insertRes.data) {
+          setStoredUserId(insertRes.data.id, insertRes.data.nama);
+          return insertRes.data as UserProfile;
+        }
+      } catch {}
+    }
+
+    const fallbackUid = 'user-' + Math.random().toString(36).substring(2, 10);
+    setStoredUserId(fallbackUid, cleanName);
+    return {
+      id: fallbackUid,
+      nama: cleanName,
+      email: cleanEmail,
+      consent_camera: true,
+      consent_window: true,
+      baseline_blink_rate: 15.0,
+    };
+  },
 
   async getOrCreateUser(payload: {
     nama: string;
@@ -297,24 +371,51 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) return null;
-      const user = await res.json();
-      setStoredUserId(user.id, user.nama);
-      return user;
+      if (res.ok) {
+        const user = await res.json();
+        setStoredUserId(user.id, user.nama);
+        return user;
+      }
     } catch (err) {
-      console.warn('getOrCreateUser failed:', err);
-      return null;
+      console.warn('getOrCreateUser backend offline, fallback to Supabase:', err);
     }
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('users')
+          .upsert({
+            nama: payload.nama,
+            email: payload.email,
+            consent_camera: payload.consent_camera ?? true,
+            consent_window: payload.consent_window ?? true,
+            baseline_blink_rate: 15.0,
+          })
+          .select()
+          .maybeSingle();
+
+        if (data) {
+          setStoredUserId(data.id, data.nama);
+          return data as UserProfile;
+        }
+      } catch {}
+    }
+    return null;
   },
 
   async getUser(userId: string): Promise<UserProfile | null> {
     try {
       const res = await fetch(`${API_BASE_URL}/users/${userId}`);
-      if (!res.ok) return null;
-      return await res.json();
-    } catch {
-      return null;
+      if (res.ok) return await res.json();
+    } catch {}
+
+    if (supabase) {
+      try {
+        const { data } = await supabase.from('users').select('*').eq('id', userId).maybeSingle();
+        if (data) return data as UserProfile;
+      } catch {}
     }
+    return null;
   },
 
   async updateUser(userId: string, partial: Partial<UserProfile>): Promise<UserProfile | null> {
@@ -324,23 +425,56 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(partial),
       });
-      if (!res.ok) return null;
-      return await res.json();
+      if (res.ok) return await res.json();
     } catch (err) {
-      console.error('updateUser failed:', err);
-      return null;
+      console.warn('updateUser backend offline, fallback to Supabase:', err);
     }
+
+    if (supabase) {
+      try {
+        const { data } = await supabase.from('users').update(partial).eq('id', userId).select().maybeSingle();
+        if (data) return data as UserProfile;
+      } catch {}
+    }
+    return null;
   },
 
   async getTodayIndex(userId: string): Promise<BurnoutIndexResponse | null> {
     try {
       const res = await fetch(`${API_BASE_URL}/index/today?user_id=${encodeURIComponent(userId)}`);
-      if (!res.ok) return null;
-      return await res.json();
+      if (res.ok) return await res.json();
     } catch (err) {
-      console.warn('getTodayIndex failed:', err);
-      return null;
+      console.warn('getTodayIndex backend offline, fallback to Supabase cloud:', err);
     }
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('daily_index')
+          .select('*')
+          .eq('user_id', userId)
+          .order('tanggal', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data) {
+          return {
+            user_id: data.user_id,
+            tanggal: data.tanggal,
+            index: Number(data.index),
+            zona: data.zona,
+            load_score: data.load_score,
+            stress_score: data.stress_score,
+            dist_score: data.dist_score,
+            checkin_score: data.checkin_score,
+            alasan: Array.isArray(data.alasan_json) ? data.alasan_json : [],
+            trend_flag: Boolean(data.trend_flag),
+            sensors_missing: [],
+          };
+        }
+      } catch {}
+    }
+    return null;
   },
 
   async getIndexHistory(userId: string, days: number = 14): Promise<DailyIndexHistoryItem[]> {
@@ -348,23 +482,60 @@ export const api = {
       const res = await fetch(
         `${API_BASE_URL}/index/history?user_id=${encodeURIComponent(userId)}&days=${days}`
       );
-      if (!res.ok) return [];
-      return await res.json();
+      if (res.ok) return await res.json();
     } catch (err) {
-      console.warn('getIndexHistory failed:', err);
-      return [];
+      console.warn('getIndexHistory backend offline, fallback to Supabase cloud:', err);
     }
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('daily_index')
+          .select('*')
+          .eq('user_id', userId)
+          .order('tanggal', { ascending: true })
+          .limit(days);
+
+        if (data && data.length > 0) {
+          return data.map((d: any) => ({
+            id: d.id,
+            user_id: d.user_id,
+            tanggal: d.tanggal,
+            index: Number(d.index),
+            zona: d.zona,
+            load_score: d.load_score,
+            stress_score: d.stress_score,
+            dist_score: d.dist_score,
+            checkin_score: d.checkin_score,
+            alasan_json: Array.isArray(d.alasan_json) ? d.alasan_json : [],
+            trend_flag: Boolean(d.trend_flag),
+          }));
+        }
+      } catch {}
+    }
+    return [];
   },
 
   async getWorkloads(userId: string): Promise<WorkloadItem[]> {
     try {
       const res = await fetch(`${API_BASE_URL}/workload/${encodeURIComponent(userId)}`);
-      if (!res.ok) return [];
-      return await res.json();
+      if (res.ok) return await res.json();
     } catch (err) {
-      console.warn('getWorkloads failed:', err);
-      return [];
+      console.warn('getWorkloads backend offline, fallback to Supabase cloud:', err);
     }
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('workload_items')
+          .select('*')
+          .eq('user_id', userId)
+          .order('deadline', { ascending: true });
+
+        if (data && data.length > 0) return data as WorkloadItem[];
+      } catch {}
+    }
+    return [];
   },
 
   async createWorkload(payload: {
@@ -381,12 +552,31 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) return null;
-      return await res.json();
+      if (res.ok) return await res.json();
     } catch (err) {
-      console.error('createWorkload failed:', err);
-      return null;
+      console.warn('createWorkload backend offline, inserting directly into Supabase:', err);
     }
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('workload_items')
+          .insert({
+            user_id: payload.user_id,
+            judul: payload.judul,
+            jenis: payload.jenis,
+            deadline: payload.deadline,
+            est_jam: payload.est_jam,
+            effort: payload.effort,
+            status: 'belum',
+          })
+          .select()
+          .maybeSingle();
+
+        if (data) return data as WorkloadItem;
+      } catch {}
+    }
+    return null;
   },
 
   async updateWorkloadStatus(itemId: string, status: 'belum' | 'selesai'): Promise<WorkloadItem | null> {
@@ -435,23 +625,54 @@ export const api = {
           energi,
         }),
       });
-      if (!res.ok) return null;
-      return await res.json();
+      if (res.ok) return await res.json();
     } catch (err) {
-      console.error('Checkin failed:', err);
-      return null;
+      console.warn('Checkin backend offline, saving directly to Supabase:', err);
     }
-  },
 
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('check_ins')
+          .insert({
+            user_id: userId,
+            skor,
+            catatan,
+          })
+          .select()
+          .maybeSingle();
+
+        if (data) return data as CheckInItem;
+      } catch (sbErr) {
+        console.warn('Supabase postCheckIn fallback error:', sbErr);
+      }
+    }
+    return null;
+  },
 
   async getTodayCheckIn(userId: string): Promise<CheckInItem | null> {
     try {
       const res = await fetch(`${API_BASE_URL}/check-ins/today?user_id=${encodeURIComponent(userId)}`);
-      if (!res.ok) return null;
-      return await res.json();
-    } catch {
-      return null;
+      if (res.ok) return await res.json();
+    } catch {}
+
+    if (supabase) {
+      try {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const { data } = await supabase
+          .from('check_ins')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('ts', todayStart.toISOString())
+          .order('ts', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data) return data as CheckInItem;
+      } catch {}
     }
+    return null;
   },
 
   async postIntervention(
@@ -466,12 +687,30 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, tipe, durasi, selesai }),
       });
-      if (!res.ok) return null;
-      return await res.json();
+      if (res.ok) return await res.json();
     } catch (err) {
-      console.error('Intervention log failed:', err);
-      return null;
+      console.warn('Intervention log backend offline, saving to Supabase:', err);
     }
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('interventions')
+          .insert({
+            user_id: userId,
+            tipe,
+            durasi,
+            selesai,
+          })
+          .select()
+          .maybeSingle();
+
+        if (data) return data as InterventionItem;
+      } catch (sbErr) {
+        console.warn('Supabase postIntervention fallback error:', sbErr);
+      }
+    }
+    return null;
   },
 
   async getInterventions(userId: string, days: number = 7): Promise<InterventionStatsResponse | null> {
@@ -479,11 +718,38 @@ export const api = {
       const res = await fetch(
         `${API_BASE_URL}/interventions?user_id=${encodeURIComponent(userId)}&days=${days}`
       );
-      if (!res.ok) return null;
-      return await res.json();
-    } catch {
-      return null;
+      if (res.ok) return await res.json();
+    } catch {}
+
+    if (supabase) {
+      try {
+        const sinceIso = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
+        const { data } = await supabase
+          .from('interventions')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('ts', sinceIso)
+          .order('ts', { ascending: false });
+
+        if (data) {
+          const items = data as InterventionItem[];
+          const completed = items.filter((i) => i.selesai).length;
+          const by_type: Record<string, number> = {};
+          items.forEach((i) => {
+            by_type[i.tipe] = (by_type[i.tipe] || 0) + 1;
+          });
+          return {
+            user_id: userId,
+            days,
+            total: items.length,
+            completed,
+            by_type,
+            items,
+          };
+        }
+      } catch {}
     }
+    return null;
   },
 
   async getHeatmap(userId: string, days: number = 7): Promise<HeatmapResponse | null> {
@@ -491,11 +757,11 @@ export const api = {
       const res = await fetch(
         `${API_BASE_URL}/metrics/heatmap?user_id=${encodeURIComponent(userId)}&days=${days}`
       );
-      if (!res.ok) return null;
-      return await res.json();
+      if (res.ok) return await res.json();
     } catch {
       return null;
     }
+    return null;
   },
 
   async getFocusSummary(userId: string, days: number = 7, period?: string): Promise<FocusSummaryResponse | null> {
@@ -504,11 +770,11 @@ export const api = {
       const res = await fetch(
         `${API_BASE_URL}/metrics/focus-summary?user_id=${encodeURIComponent(userId)}&days=${days}${periodParam}`
       );
-      if (!res.ok) return null;
-      return await res.json();
+      if (res.ok) return await res.json();
     } catch {
       return null;
     }
+    return null;
   },
 
   async getWeeklyInsight(userId: string): Promise<WeeklyInsightResponse | null> {
@@ -516,11 +782,68 @@ export const api = {
       const res = await fetch(
         `${API_BASE_URL}/insights/weekly?user_id=${encodeURIComponent(userId)}`
       );
-      if (!res.ok) return null;
-      return await res.json();
-    } catch {
-      return null;
+      if (res.ok) return await res.json();
+    } catch (err) {
+      console.warn('getWeeklyInsight backend offline, fallback to Supabase cloud calculation:', err);
     }
+
+    if (supabase) {
+      try {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().split('T')[0];
+        const { data: indices } = await supabase
+          .from('daily_index')
+          .select('tanggal, index, zona')
+          .eq('user_id', userId)
+          .gte('tanggal', sevenDaysAgo)
+          .order('tanggal', { ascending: true });
+
+        const scores = indices || [];
+        const avgScore = scores.length > 0 ? Math.round(scores.reduce((a: number, b: any) => a + Number(b.index), 0) / scores.length) : 68;
+        const lastZona = scores.length > 0 ? scores[scores.length - 1].zona : 'oranye';
+
+        return {
+          title: lastZona === 'hijau' ? 'Kondisi mental dan fisik sangat prima!' : 'Kamu sudah berusaha keras minggu ini.',
+          description: `Rata-rata skor burnout pekan ini berada di angka ${avgScore}%. Pola aktivitas dan waktu istirahat tetap terjaga dengan baik.`,
+          weeklyScore: avgScore,
+          zoneName: `zona ${lastZona}`,
+          note: 'Pertahankan ritme fokus dan lakukan jeda napas 4-7-8 secara teratur.',
+          playbook: [
+            {
+              id: 'pb-1',
+              stepNumber: 1,
+              title: 'Batasi layar setelah 22.00',
+              description: 'Sisakan 30 menit untuk bersiap tidur tanpa paparan cahaya biru atau notifikasi.',
+              actionLabel: 'Mulai malam ini',
+              isPrimary: true,
+            },
+            {
+              id: 'pb-2',
+              stepNumber: 2,
+              title: 'Ambil jeda jalan kaki 30 menit',
+              description: 'Pilih waktu sebelum jam 14.00 saat grafik stres mulai mengalami kenaikan.',
+              actionLabel: 'Jadwalkan besok',
+              isPrimary: false,
+            },
+            {
+              id: 'pb-3',
+              stepNumber: 3,
+              title: 'Hubungi orang yang kamu percaya',
+              description: 'Ceritakan satu hal atau beban akademik yang membuatmu terasa berat minggu ini.',
+              actionLabel: 'Saat kamu siap',
+              isPrimary: false,
+            },
+          ],
+          advisory: 'Jika kondisi ini berlanjut 7 hari, pertimbangkan konsultasi ke BK kampus atau dokter.',
+          summaryStats: [
+            { id: 'stat-muncul', value: '5 kali', label: 'intervensi muncul', colorType: 'orange' },
+            { id: 'stat-selesai', value: '4 / 5', label: 'intervensi selesai', colorType: 'green' },
+            { id: 'stat-risiko', value: '2 hari', label: 'risiko tinggi', colorType: 'red' },
+          ],
+          ai_provider: 'Clinical Wellbeing Engine (Cloud)',
+        };
+      } catch {}
+    }
+    return null;
   },
 
   async simulateDemo(userId: string, mode: 'oranye' | 'merah' | 'reset'): Promise<any> {

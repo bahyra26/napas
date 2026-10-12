@@ -73,6 +73,11 @@ export const LoginView: React.FC<LoginViewProps> = ({
         window.location.reload();
         return;
       }
+      if (res.error && (res.error.toLowerCase().includes('invalid login') || res.error.toLowerCase().includes('invalid credentials'))) {
+        setLoading(false);
+        onNotify('Email atau kata sandi salah. Silakan periksa kembali.', '⚠️');
+        return;
+      }
     } catch {
       // Supabase unconfigured / offline -> fallback lokal
     }
@@ -121,8 +126,14 @@ export const LoginView: React.FC<LoginViewProps> = ({
       if (res.user) {
         setLoading(false);
         setStoredUserId(res.user.id, regFullName.trim());
-        onNotify('Pendaftaran berhasil! Selamat datang di NAPAS.', '🎉');
+        onNotify('Pendaftaran berhasil! Akun Anda aktif seketika.', '🎉');
         window.location.reload();
+        return;
+      }
+
+      if (res.error && (res.error.toLowerCase().includes('already registered') || res.error.toLowerCase().includes('already exists'))) {
+        setLoading(false);
+        onNotify('Email ini sudah terdaftar. Silakan beralih ke tab Masuk Akun.', 'ℹ️');
         return;
       }
     } catch {
