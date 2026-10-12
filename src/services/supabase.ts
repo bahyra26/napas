@@ -38,7 +38,38 @@ export const authService = {
       return { error: 'Supabase client belum terkonfigurasi' };
     }
     try {
-      const email = emailOrUsername.includes('@') ? emailOrUsername.trim() : `${emailOrUsername.trim()}@napas.app`;
+      let email = emailOrUsername.trim();
+      if (!email.includes('@')) {
+        const knownUsernames: Record<string, string> = {
+          maikotampan: 'h4trayyan@gmail.com',
+          miko1908: 'mikailcoding64@gmail.com',
+          mikailcoding64: 'mikailcoding64@gmail.com',
+          mikail: 'mikail@napas.local',
+          hiqanz: 'haqqinazili9@gmail.com',
+          'haq!': 'haqqinazili@gmail.com',
+          nyapo: '5027261073@student.its.ac.id',
+        };
+        const lower = email.toLowerCase();
+        if (knownUsernames[lower]) {
+          email = knownUsernames[lower];
+        } else {
+          try {
+            const { data: userMatch } = await supabaseClient
+              .from('users')
+              .select('email')
+              .ilike('nama', email)
+              .maybeSingle();
+            if (userMatch?.email) {
+              email = userMatch.email;
+            } else {
+              email = `${email}@napas.app`;
+            }
+          } catch {
+            email = `${email}@napas.app`;
+          }
+        }
+      }
+
       let { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password,
@@ -69,8 +100,9 @@ export const authService = {
 
               // Retry sign in setelah konfirmasi
               const retryRes = await supabaseClient.auth.signInWithPassword({ email, password });
-              if (!retryRes.error) {
-                return { user: retryRes.data.user };
+              if (!retryRes.error && retryRes.data.user) {
+                data = retryRes.data;
+                error = null;
               }
             }
           }
@@ -80,7 +112,30 @@ export const authService = {
       }
 
       if (error) return { error: error.message };
-      return { user: data.user };
+
+      if (data?.user) {
+        let finalUser = data.user;
+        try {
+          const { data: pubUser } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('email', data.user.email)
+            .maybeSingle();
+          if (pubUser) {
+            finalUser = {
+              ...data.user,
+              id: pubUser.id,
+              user_metadata: {
+                ...data.user.user_metadata,
+                full_name: pubUser.nama || data.user.user_metadata?.full_name,
+              },
+            };
+          }
+        } catch {}
+        return { user: finalUser };
+      }
+
+      return { error: 'Gagal mendapatkan data sesi pengguna' };
     } catch (err: any) {
       return { error: err?.message || 'Gagal masuk akun' };
     }

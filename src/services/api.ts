@@ -312,16 +312,39 @@ export const api = {
       console.warn('loginOrRegister backend offline, fallback to Supabase cloud:', err);
     }
 
-    const cleanEmail = payload.email || (payload.identifier.includes('@') ? payload.identifier : `${payload.identifier}@napas.local`);
+    const knownUsernames: Record<string, string> = {
+      maikotampan: 'h4trayyan@gmail.com',
+      miko1908: 'mikailcoding64@gmail.com',
+      mikailcoding64: 'mikailcoding64@gmail.com',
+      mikail: 'mikail@napas.local',
+      hiqanz: 'haqqinazili9@gmail.com',
+      'haq!': 'haqqinazili@gmail.com',
+      nyapo: '5027261073@student.its.ac.id',
+    };
+
+    let targetEmail = payload.email || (payload.identifier.includes('@') ? payload.identifier.trim() : '');
+    if (!targetEmail && knownUsernames[payload.identifier.toLowerCase().trim()]) {
+      targetEmail = knownUsernames[payload.identifier.toLowerCase().trim()];
+    }
+    const cleanEmail = targetEmail || `${payload.identifier.trim()}@napas.local`;
     const cleanName = payload.nama || payload.identifier.split('@')[0];
 
     if (supabase) {
       try {
-        const { data } = await supabase
+        let { data } = await supabase
           .from('users')
           .select('*')
           .eq('email', cleanEmail)
           .maybeSingle();
+
+        if (!data) {
+          const { data: byName } = await supabase
+            .from('users')
+            .select('*')
+            .ilike('nama', cleanName)
+            .maybeSingle();
+          if (byName) data = byName;
+        }
 
         if (data) {
           setStoredUserId(data.id, data.nama);
@@ -874,14 +897,77 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) return null;
-      const user = await res.json();
-      setStoredUserId(user.id, user.nama);
-      return user;
+      if (res.ok) {
+        const user = await res.json();
+        setStoredUserId(user.id, user.nama);
+        return user;
+      }
     } catch (err) {
-      console.warn('syncAuth failed:', err);
-      return null;
+      console.warn('syncAuth backend offline, falling back to cloud Supabase:', err);
     }
+
+    if (supabase) {
+      try {
+        if (payload.email) {
+          const { data: byEmail } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', payload.email)
+            .maybeSingle();
+          if (byEmail) {
+            setStoredUserId(byEmail.id, byEmail.nama);
+            return byEmail as UserProfile;
+          }
+        }
+
+        if (payload.auth_id) {
+          const { data: byId } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', payload.auth_id)
+            .maybeSingle();
+          if (byId) {
+            setStoredUserId(byId.id, byId.nama);
+            return byId as UserProfile;
+          }
+        }
+
+        const cleanName = payload.nama || (payload.email ? payload.email.split('@')[0] : 'Mahasiswa');
+        const insertUser = {
+          id: payload.auth_id,
+          nama: cleanName,
+          email: payload.email || `${payload.auth_id}@auth.local`,
+          consent_camera: true,
+          consent_window: true,
+          baseline_blink_rate: 15.0,
+        };
+        const { data: created } = await supabase
+          .from('users')
+          .upsert(insertUser)
+          .select()
+          .maybeSingle();
+        if (created) {
+          setStoredUserId(created.id, created.nama);
+          return created as UserProfile;
+        }
+      } catch (e) {
+        console.warn('syncAuth Supabase fallback error:', e);
+      }
+    }
+
+    if (payload.auth_id) {
+      const fallback: UserProfile = {
+        id: payload.auth_id,
+        nama: payload.nama || 'Mahasiswa',
+        email: payload.email || '',
+        consent_camera: true,
+        consent_window: true,
+        baseline_blink_rate: 15.0,
+      };
+      setStoredUserId(fallback.id, fallback.nama);
+      return fallback;
+    }
+    return null;
   },
 
   async getProfile(userId: string): Promise<StudentProfile | null> {
