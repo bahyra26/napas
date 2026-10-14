@@ -4,7 +4,7 @@ import { setStoredUserId } from '../../services/api';
 
 interface LoginViewProps {
   onDemoLogin: () => void;
-  onCustomLogin?: (identifier: string, name: string, campus: string, major: string) => void;
+  onCustomLogin?: (identifier: string, name: string, campus: string, major: string) => void | Promise<void>;
   onNotify: (message: string, icon?: string) => void;
 }
 
@@ -84,7 +84,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
     const formattedName = resolvedName.charAt(0).toUpperCase() + resolvedName.slice(1);
 
     if (onCustomLogin) {
-      onCustomLogin(loginEmailOrUser.trim(), formattedName, 'Universitas Gadjah Mada', 'Teknik Informatika');
+      await onCustomLogin(loginEmailOrUser.trim(), formattedName, 'Universitas Gadjah Mada', 'Teknik Informatika');
     }
     onNotify(`Selamat datang kembali, ${formattedName}!`, '🌱');
   };
@@ -121,8 +121,14 @@ export const LoginView: React.FC<LoginViewProps> = ({
       if (res.user) {
         setLoading(false);
         setStoredUserId(res.user.id, regFullName.trim());
-        onNotify('Pendaftaran berhasil! Selamat datang di NAPAS.', '🎉');
+        onNotify('Pendaftaran berhasil! Akun Anda aktif seketika.', '🎉');
         window.location.reload();
+        return;
+      }
+
+      if (res.error && (res.error.toLowerCase().includes('already registered') || res.error.toLowerCase().includes('already exists'))) {
+        setLoading(false);
+        onNotify('Email ini sudah terdaftar. Silakan beralih ke tab Masuk Akun.', 'ℹ️');
         return;
       }
     } catch {
@@ -133,7 +139,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
     const cleanName = regFullName.trim();
     const ident = regEmail.trim() || regUsername.trim() || cleanName;
     if (onCustomLogin) {
-      onCustomLogin(ident, cleanName, 'Universitas Gadjah Mada', 'Mahasiswa');
+      await onCustomLogin(ident, cleanName, 'Universitas Gadjah Mada', 'Mahasiswa');
     }
     onNotify(`Akun berhasil dibuat! Selamat datang di NAPAS, ${cleanName}!`, '🎉');
   };

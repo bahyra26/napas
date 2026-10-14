@@ -224,6 +224,7 @@ class WeeklyInsightResponse(BaseModel):
     playbook: List[WellnessPlaybookItem]
     advisory: str
     summaryStats: List[WeeklySummaryStat]
+    ai_provider: Optional[str] = "Clinical AI Template"
 
 
 # --- DEMO SIMULATION ---

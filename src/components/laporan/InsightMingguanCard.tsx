@@ -15,7 +15,11 @@ export const InsightMingguanCard: React.FC<InsightMingguanCardProps> = ({
       {/* Top Header Badge */}
       <div className="insight-badge">
         <span className="insight-diamond">✦</span>
-        <span className="insight-badge-text">INSIGHT MINGGUAN</span>
+        <span className="insight-badge-text">
+          {data.ai_provider?.includes('Gemini')
+            ? 'INSIGHT GOOGLE GEMINI AI'
+            : 'INSIGHT MINGGUAN'}
+        </span>
       </div>
 
       {/* Main Content Area */}

@@ -47,6 +47,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({ onNotify }) => {
         weeklyScore: insightData.weeklyScore,
         zoneName: insightData.zoneName,
         note: insightData.note,
+        ai_provider: insightData.ai_provider,
       });
       if (insightData.playbook && insightData.playbook.length > 0) {
         setPlaybook(insightData.playbook);

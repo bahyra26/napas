@@ -99,6 +99,7 @@ export interface WeeklyInsightData {
   weeklyScore: number;
   zoneName: string;
   note: string;
+  ai_provider?: string;
 }
 
 export interface WellnessPlaybookItem {
