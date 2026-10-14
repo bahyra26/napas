@@ -277,6 +277,10 @@ class CalendarSyncRequest(BaseModel):
     user_id: str
     events: List[CalendarEvent]
 
+class CalendarIcalSyncRequest(BaseModel):
+    user_id: str
+    ical_url: str
+
 
 # --- PLANNER ---
 class AutoPlanRequest(BaseModel):

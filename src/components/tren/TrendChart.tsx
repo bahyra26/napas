@@ -14,8 +14,8 @@ const Y_AXIS_LEVELS = [
 
 export const TrendChart: React.FC = () => {
   const [points, setPoints] = useState<TrendPoint[]>(FALLBACK_POINTS);
-  const [isTrendAlert, setIsTrendAlert] = useState<boolean>(true);
-  const [trendAlertText, setTrendAlertText] = useState<string>('4 hari beruntun naik — tren memburuk');
+  const [isTrendAlert, setIsTrendAlert] = useState<boolean>(false);
+  const [trendAlertText, setTrendAlertText] = useState<string>('Fluktuasi harian dalam ambang kendali');
 
   const [tooltip, setTooltip] = useState<{
     show: boolean;
@@ -53,7 +53,7 @@ export const TrendChart: React.FC = () => {
           percentNum: valNum,
           cx: Number(cx.toFixed(1)),
           cy: Number(cy.toFixed(1)),
-          isIntervention: idx === total - 3,
+          isIntervention: false,
         };
       });
       setPoints(mappedPoints);
@@ -66,6 +66,22 @@ export const TrendChart: React.FC = () => {
         setIsTrendAlert(false);
         setTrendAlertText('Fluktuasi harian dalam ambang kendali');
       }
+    } else {
+      // Dapatkan skor riil hari ini untuk baseline datar
+      const today = await api.getTodayIndex(userId);
+      const valNum = today ? Math.round(today.index) : 0;
+      const cy = 230.0 - (Math.min(100, Math.max(0, valNum)) / 100.0) * 200.0;
+      const baseline: TrendPoint[] = Array.from({ length: days }, (_, idx) => ({
+        day: idx + 1,
+        val: `${valNum}%`,
+        percentNum: valNum,
+        cx: Number((66.0 + (idx / (days - 1)) * (730.0 - 66.0)).toFixed(1)),
+        cy: Number(cy.toFixed(1)),
+        isIntervention: false,
+      }));
+      setPoints(baseline);
+      setIsTrendAlert(false);
+      setTrendAlertText('Fluktuasi harian dalam ambang kendali');
     }
   };
 
@@ -105,8 +121,7 @@ export const TrendChart: React.FC = () => {
     (p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.cx.toFixed(1)} ${p.cy.toFixed(1)}`
   ).join(' ');
 
-  const interventionPoint =
-    points.find((p) => p.isIntervention) || points[Math.max(0, points.length - 3)];
+  const interventionPoint = points.find((p) => p.isIntervention);
 
   return (
     <div className="tren-card card-chart-14d">

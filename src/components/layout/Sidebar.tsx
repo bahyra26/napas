@@ -16,10 +16,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const navItems: { id: TabType; label: string }[] = [
     { id: 'home', label: 'Home' },
-    { id: 'tren', label: 'Tren' },
+    { id: 'tren', label: 'Tren & Laporan' },
     { id: 'deadline', label: 'Deadline' },
     { id: 'fokus', label: 'Fokus' },
-    { id: 'laporan', label: 'Laporan' },
     { id: 'settings', label: 'Settings' },
   ];
 

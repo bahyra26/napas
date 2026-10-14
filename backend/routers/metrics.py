@@ -116,18 +116,6 @@ def get_stress_heatmap(user_id: str, days: int = Query(default=7, ge=1, le=30)):
             cell_scores[key] = []
         cell_scores[key].append(tension_score)
 
-    # Pola default yang realistis jika data masih baru / sparse
-    # (Sen-Jum siang-sore cenderung lebih padat)
-    default_levels = {
-        (0, "14"): "peach", (0, "16"): "red", (0, "18"): "peach", (0, "20"): "peach",
-        (1, "14"): "peach", (1, "18"): "red", (1, "20"): "red",
-        (2, "10"): "peach", (2, "12"): "peach", (2, "14"): "peach", (2, "18"): "peach",
-        (3, "14"): "red", (3, "18"): "red", (3, "20"): "red",
-        (4, "14"): "red", (4, "16"): "red", (4, "18"): "red", (4, "20"): "red", (4, "22"): "peach",
-        (5, "08"): "peach", (5, "22"): "peach",
-        (6, "14"): "peach", (6, "16"): "peach", (6, "20"): "peach", (6, "22"): "peach"
-    }
-
     rows: List[HeatmapRow] = []
     red_count_by_day = {i: 0 for i in range(7)}
     red_count_by_hour = {h: 0 for h in HEATMAP_HOURS}
@@ -151,8 +139,8 @@ def get_stress_heatmap(user_id: str, days: int = Query(default=7, ge=1, le=30)):
                     lvl = "green"
                     lvl_label = "Ringan"
             else:
-                lvl = default_levels.get(key, "green")
-                lvl_label = "Berat" if lvl == "red" else ("Sedang" if lvl == "peach" else "Ringan")
+                lvl = "green"
+                lvl_label = "Ringan"
 
             if lvl == "red":
                 red_count_by_day[day_idx] += 1
@@ -166,19 +154,27 @@ def get_stress_heatmap(user_id: str, days: int = Query(default=7, ge=1, le=30)):
 
         rows.append(HeatmapRow(dayName=d_name, cells=cells))
 
-    # Tentukan heaviest day & peak stress hours
+    # Tentukan heaviest day & peak stress hours secara riil
     max_day_idx = max(red_count_by_day, key=red_count_by_day.get)
-    heaviest_day_name = f"Hari {DAY_FULL_NAMES[max_day_idx]}" if red_count_by_day[max_day_idx] > 0 else "Hari Selasa dan Jumat"
+    has_heavy = red_count_by_day[max_day_idx] > 0
+
+    heaviest_day_name = f"Hari {DAY_FULL_NAMES[max_day_idx]}" if has_heavy else "Tidak ada"
 
     peak_hr = max(red_count_by_hour, key=red_count_by_hour.get)
-    peak_stress_str = f"pukul {peak_hr}:00 - {int(peak_hr)+2:02d}:00" if red_count_by_hour[peak_hr] > 0 else "pukul 14:00 - 18:00"
+    peak_stress_str = f"pukul {peak_hr}:00 - {int(peak_hr)+2:02d}:00" if red_count_by_hour[peak_hr] > 0 else "Belum terdeteksi waktu puncak stres"
+
+    heaviest_day_text = (
+        f"{heaviest_day_name} adalah hari dengan akumulasi stres tertinggi."
+        if has_heavy
+        else "Seluruh hari dalam sepekan terpantau di ambang beban normal & terkendali."
+    )
 
     return HeatmapResponse(
         hours=HEATMAP_HOURS,
         rows=rows,
         peak_stress_hours=peak_stress_str,
-        heaviest_day=f"{heaviest_day_name} adalah hari dengan akumulasi stres tertinggi.",
-        advice="Pertimbangkan untuk menjadwalkan jeda istirahat pendek atau breathing 4-7-8 sebelum jam 14.00."
+        heaviest_day=heaviest_day_text,
+        advice="Pertahankan pola belajar bertahap dan aktifkan sesi fokus saat mulai belajar."
     )
 
 

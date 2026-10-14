@@ -691,6 +691,27 @@ export const api = {
     }
   },
 
+  async syncGoogleCalendarIcalUrl(
+    userId: string,
+    icalUrl: string
+  ): Promise<{ status: string; synced: number; message: string } | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/calendar/sync-ical-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, ical_url: icalUrl }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.detail || `HTTP ${res.status}`);
+      }
+      return await res.json();
+    } catch (err: any) {
+      console.error('syncGoogleCalendarIcalUrl failed:', err);
+      throw err;
+    }
+  },
+
   async startFocusSession(payload: {
     user_id: string;
     workload_id?: string;

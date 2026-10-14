@@ -21,6 +21,7 @@ export const RingkasanMingguIniCard: React.FC<RingkasanMingguIniCardProps> = ({
               className="summary-stat-row"
               onClick={() => onStatClick?.(stat)}
               title={`${stat.value}: ${stat.label}`}
+              style={{ cursor: onStatClick ? 'pointer' : 'default' }}
             >
               <span className={`summary-stat-val color-${stat.colorType}`}>
                 {stat.value}

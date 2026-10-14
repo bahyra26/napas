@@ -2410,6 +2410,268 @@ body[data-tab="settings"] .dashboard-container {
 }
 
 /* --------------------------------------------------------------------------
+   Google Calendar Connection Modal & Controls
+   -------------------------------------------------------------------------- */
+.btn-gcal-settings-icon {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-gcal-settings-icon:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: rotate(30deg);
+}
+
+.gcal-modal-card {
+  max-width: 580px !important;
+  width: 92%;
+  background: #0f241d !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 20px !important;
+  padding: 24px !important;
+}
+
+.gcal-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 14px;
+}
+
+.gcal-modal-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gcal-modal-header-brand h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.gcal-modal-subtext {
+  margin: 3px 0 0 0;
+  font-size: 12px;
+  color: #9cd5c4;
+}
+
+.gcal-modal-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+}
+
+.status-label-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.btn-gcal-disconnect-sm {
+  background: transparent;
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-gcal-disconnect-sm:hover {
+  background: rgba(248, 113, 113, 0.15);
+}
+
+.gcal-modal-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+
+.gcal-tab-btn {
+  flex: 1;
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.gcal-tab-btn.active {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.gcal-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gcal-feature-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.gcal-feature-box h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.gcal-feature-box p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+.gcal-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #a7f3d0;
+}
+
+.gcal-warning-banner {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+  color: #fde68a;
+}
+
+.gcal-warning-banner strong {
+  display: block;
+  font-size: 12px;
+  color: #f59e0b;
+  margin-bottom: 4px;
+}
+
+.gcal-file-input {
+  width: 100%;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.gcal-textarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #ffffff;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 11.5px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.gcal-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-gcal-primary {
+  width: 100%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  text-align: center;
+}
+
+.btn-gcal-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
+}
+
+.btn-gcal-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-gcal-google-oauth {
+  width: 100%;
+  background: #ffffff;
+  color: #1e293b;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.btn-gcal-google-oauth:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
    1. Calendar Tiles Grid (14 Hari ke Depan)
    -------------------------------------------------------------------------- */
 .calendar-header-row {
@@ -7459,3 +7721,44 @@ body[data-tab="settings"] .dashboard-container {
   background: #08694a;
   transform: translateY(-1px);
 }
+
+/* ==========================================================================
+   PAGE: TREN & LAPORAN (UNIFIED HIGH-EFFICIENCY VIEW)
+   ========================================================================== */
+.tren-laporan-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  animation: pageFadeIn 0.35s var(--transition-smooth);
+}
+
+.tren-laporan-top-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.tren-laporan-middle-grid {
+  display: grid;
+  grid-template-columns: 1fr 310px;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.tren-laporan-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+@media (max-width: 1024px) {
+  .tren-laporan-top-grid,
+  .tren-laporan-middle-grid,
+  .tren-laporan-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

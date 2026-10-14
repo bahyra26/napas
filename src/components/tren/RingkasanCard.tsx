@@ -2,19 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { api, getStoredUserId } from '../../services/api';
 
 export const RingkasanCard: React.FC = () => {
-  const [avgScore, setAvgScore] = useState<number>(33);
-  const [greenDays, setGreenDays] = useState<number>(6);
-  const [orangeRedDays, setOrangeRedDays] = useState<number>(3);
-  const [interventionCount, setInterventionCount] = useState<number>(5);
+  const [avgScore, setAvgScore] = useState<number>(0);
+  const [greenDays, setGreenDays] = useState<number>(0);
+  const [orangeRedDays, setOrangeRedDays] = useState<number>(0);
+  const [checkInCount, setCheckInCount] = useState<number>(0);
 
   useEffect(() => {
     async function loadStats() {
       const userId = getStoredUserId();
       if (!userId) return;
 
-      const [history, interStats] = await Promise.all([
+      const [history, checkIns] = await Promise.all([
         api.getIndexHistory(userId, 14),
-        api.getInterventions(userId, 14),
+        fetch(`http://localhost:8000/check-ins?user_id=${encodeURIComponent(userId)}&days=14`)
+          .then((r) => (r.ok ? r.json() : []))
+          .catch(() => []),
       ]);
 
       if (history && history.length > 0) {
@@ -26,10 +28,14 @@ export const RingkasanCard: React.FC = () => {
         const orangeRed = history.filter((h) => h.zona === 'oranye' || h.zona === 'merah').length;
         setGreenDays(green);
         setOrangeRedDays(orangeRed);
+      } else {
+        setAvgScore(0);
+        setGreenDays(0);
+        setOrangeRedDays(0);
       }
 
-      if (interStats) {
-        setInterventionCount(interStats.total);
+      if (checkIns && Array.isArray(checkIns)) {
+        setCheckInCount(checkIns.length);
       }
     }
 
@@ -38,7 +44,7 @@ export const RingkasanCard: React.FC = () => {
 
   return (
     <div className="tren-card card-ringkasan">
-      <h2 className="tren-card-title">Ringkasan</h2>
+      <h2 className="tren-card-title">Ringkasan Evaluasi</h2>
       <div className="ringkasan-items">
         <div className="ringkasan-stat">
           <span className="stat-value color-amber" id="statAvgScore">
@@ -48,15 +54,15 @@ export const RingkasanCard: React.FC = () => {
         </div>
         <div className="ringkasan-stat">
           <span className="stat-value color-green">{greenDays} hari</span>
-          <span className="stat-label">Hari zona hijau</span>
+          <span className="stat-label">Hari zona hijau (prima)</span>
         </div>
         <div className="ringkasan-stat">
           <span className="stat-value color-orange">{orangeRedDays} hari</span>
-          <span className="stat-label">Hari zona oranye/merah</span>
+          <span className="stat-label">Hari zona beban tinggi</span>
         </div>
         <div className="ringkasan-stat">
-          <span className="stat-value color-dark">{interventionCount} kali</span>
-          <span className="stat-label">Intervensi terpicu</span>
+          <span className="stat-value color-dark">{checkInCount} hari</span>
+          <span className="stat-label">Check-in harian aktif</span>
         </div>
       </div>
     </div>

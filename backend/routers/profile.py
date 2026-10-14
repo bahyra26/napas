@@ -7,6 +7,7 @@ from schemas import (
     ClassScheduleCreate,
     ClassScheduleBulk,
     CalendarSyncRequest,
+    CalendarIcalSyncRequest,
     WorkloadResponse
 )
 
@@ -268,3 +269,115 @@ def sync_google_calendar_events(payload: CalendarSyncRequest):
             print("Supabase calendar sync warning:", e)
 
     return {"status": "ok", "synced": max(synced_local, synced_supabase, len(payload.events))}
+
+@router.post("/calendar/sync-ical-url")
+def sync_google_calendar_ical_url(payload: CalendarIcalSyncRequest):
+    """
+    Mengunduh dan menyinkronkan agenda Google Calendar asli mahasiswa
+    melalui link iCal (.ics) Google Calendar pribadi tanpa terhalang CORS browser.
+    """
+    import urllib.request
+    from local_db import local_bulk_sync_google_events
+
+    url = payload.ical_url.strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="URL iCal tidak boleh kosong")
+
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) NAPAS/2.0"}
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            content = resp.read().decode("utf-8", errors="ignore")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Gagal mengambil kalender dari URL Google: {str(e)}")
+
+    events = []
+    lines = content.splitlines()
+    in_event = False
+    cur = {}
+
+    def parse_dt(dt_str):
+        clean = dt_str.split(":")[-1].strip()
+        if len(clean) == 8:
+            y, m, d = clean[:4], clean[4:6], clean[6:8]
+            return f"{y}-{m}-{d}T23:59:00+07:00"
+        if "T" in clean:
+            date_p, time_p = clean.split("T")
+            time_p = time_p.rstrip("Z")
+            y, m, d = date_p[:4], date_p[4:6], date_p[6:8]
+            hh = time_p[:2] if len(time_p) >= 2 else "00"
+            mm = time_p[2:4] if len(time_p) >= 4 else "00"
+            ss = time_p[4:6] if len(time_p) >= 6 else "00"
+            tz = "+00:00" if clean.endswith("Z") else "+07:00"
+            return f"{y}-{m}-{d}T{hh}:{mm}:{ss}{tz}"
+        return None
+
+    for line in lines:
+        if line.startswith("BEGIN:VEVENT"):
+            in_event = True
+            cur = {"id": f"gcal-ics-{len(events)+1}"}
+        elif line.startswith("END:VEVENT"):
+            if in_event and cur.get("summary") and cur.get("start"):
+                events.append(cur)
+            in_event = False
+            cur = {}
+        elif in_event:
+            if line.startswith("SUMMARY:"):
+                cur["summary"] = line[8:].strip()
+            elif line.startswith("UID:"):
+                cur["id"] = line[4:].strip()
+            elif line.startswith("DTSTART"):
+                parsed = parse_dt(line)
+                if parsed:
+                    cur["start"] = parsed
+            elif line.startswith("DTEND"):
+                parsed = parse_dt(line)
+                if parsed:
+                    cur["end"] = parsed
+            elif line.startswith("DESCRIPTION:"):
+                cur["description"] = line[12:].strip()
+
+    if not events:
+        return {"status": "ok", "synced": 0, "message": "Tidak ada agenda valid dalam tautan kalender iCal."}
+
+    formatted_events = []
+    for ev in events:
+        formatted_events.append({
+            "id": ev["id"],
+            "summary": ev["summary"],
+            "start": ev["start"],
+            "end": ev.get("end") or ev["start"],
+            "all_day": False,
+            "description": ev.get("description", "")
+        })
+
+    synced_local = local_bulk_sync_google_events(payload.user_id, formatted_events)
+
+    if supabase:
+        try:
+            for ev in formatted_events:
+                summary_lower = ev["summary"].lower()
+                jenis = "kuliah" if any(k in summary_lower for k in ["kuliah", "praktikum", "kelas"]) else ("ujian" if any(k in summary_lower for k in ["uts", "uas", "ujian"]) else "tugas")
+                row = {
+                    "user_id": payload.user_id,
+                    "judul": ev["summary"],
+                    "jenis": jenis,
+                    "deadline": ev["end"] or ev["start"],
+                    "est_jam": 2.0,
+                    "effort": 3,
+                    "status": "belum",
+                    "source": "google",
+                    "google_event_id": ev["id"]
+                }
+                existing = supabase.table("workload_items").select("id").eq("user_id", payload.user_id).eq("google_event_id", ev["id"]).execute()
+                if existing.data and len(existing.data) > 0:
+                    supabase.table("workload_items").update(row).eq("id", existing.data[0]["id"]).execute()
+                else:
+                    supabase.table("workload_items").insert(row).execute()
+        except Exception as e:
+            print("Supabase iCal sync warning:", e)
+
+    return {"status": "ok", "synced": synced_local, "message": f"Berhasil menyinkronkan {synced_local} agenda asli dari Google Calendar mahasiswa!"}
+

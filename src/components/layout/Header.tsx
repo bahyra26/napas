@@ -32,10 +32,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   const titles: Record<TabType, string> = {
     home: `Profil ${studentName}`,
-    tren: 'Tren Kesejahteraan',
+    tren: 'Tren & Laporan Kesejahteraan',
     deadline: 'Deadline Radar',
     fokus: 'Fokus & Distraksi',
-    laporan: 'Laporan & Rekomendasi',
+    laporan: 'Tren & Laporan Kesejahteraan',
     settings: 'Settings & Profil',
   };
 

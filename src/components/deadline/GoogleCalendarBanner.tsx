@@ -6,7 +6,7 @@ interface GoogleCalendarBannerProps {
   lastSyncText: string | null;
   syncedCount: number;
   onSync: () => void;
-  onConnectGoogle: () => void;
+  onOpenModal: () => void;
   onAddManualDeadline: () => void;
 }
 
@@ -16,14 +16,14 @@ export const GoogleCalendarBanner: React.FC<GoogleCalendarBannerProps> = ({
   lastSyncText,
   syncedCount,
   onSync,
-  onConnectGoogle,
+  onOpenModal,
   onAddManualDeadline,
 }) => {
   return (
     <div className="google-calendar-banner-card">
       <div className="gcal-banner-left">
         {/* Google Calendar Brand Icon */}
-        <div className="gcal-logo-wrapper">
+        <div className="gcal-logo-wrapper" onClick={onOpenModal} style={{ cursor: 'pointer' }} title="Buka Pengaturan Google Calendar">
           <svg className="gcal-svg-icon" viewBox="0 0 48 48" width="38" height="38">
             <rect width="40" height="40" x="4" y="4" fill="#FFFFFF" rx="8" />
             <path fill="#1A73E8" d="M36 4H12C7.58 4 4 7.58 4 12v24c0 4.42 3.58 8 8 8h24c4.42 0 8-3.58 8-8V12c0-4.42-3.58-8-8-8z" />
@@ -50,12 +50,12 @@ export const GoogleCalendarBanner: React.FC<GoogleCalendarBannerProps> = ({
           <div className="gcal-title-row">
             <h2 className="gcal-heading">Integrasi Google Calendar</h2>
             {isConnected ? (
-              <span className="gcal-status-badge badge-connected" title="Akun Google aktif tersinkronisasi">
+              <span className="gcal-status-badge badge-connected" onClick={onOpenModal} style={{ cursor: 'pointer' }} title="Klik untuk membuka pengaturan koneksi">
                 <span className="gcal-pulse-dot dot-online"></span>
                 <span>Terhubung</span>
               </span>
             ) : (
-              <span className="gcal-status-badge badge-disconnected" title="Hubungkan akun Google untuk impor kalender otomatis">
+              <span className="gcal-status-badge badge-disconnected" onClick={onOpenModal} style={{ cursor: 'pointer' }} title="Klik untuk menghubungkan">
                 <span className="gcal-pulse-dot dot-offline"></span>
                 <span>Belum Terhubung</span>
               </span>
@@ -81,36 +81,46 @@ export const GoogleCalendarBanner: React.FC<GoogleCalendarBannerProps> = ({
       {/* Action Buttons */}
       <div className="gcal-banner-actions">
         {isConnected ? (
-          <button
-            type="button"
-            className={`btn-gcal-sync ${isSyncing ? 'loading' : ''}`}
-            onClick={onSync}
-            disabled={isSyncing}
-            title="Tarik event terbaru dari Google Calendar"
-          >
-            <svg
-              className={`btn-icon-spin ${isSyncing ? 'spinning' : ''}`}
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <>
+            <button
+              type="button"
+              className={`btn-gcal-sync ${isSyncing ? 'loading' : ''}`}
+              onClick={onSync}
+              disabled={isSyncing}
+              title="Tarik agenda terbaru dari Google Calendar"
             >
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <polyline points="1 20 1 14 7 14"></polyline>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-            </svg>
-            <span>{isSyncing ? 'Menyinkronkan...' : 'Sinkronkan Kalender'}</span>
-          </button>
+              <svg
+                className={`btn-icon-spin ${isSyncing ? 'spinning' : ''}`}
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span>{isSyncing ? 'Menyinkronkan...' : 'Sinkronkan Kalender'}</span>
+            </button>
+            <button
+              type="button"
+              className="btn-gcal-settings-icon"
+              onClick={onOpenModal}
+              title="Pengaturan & Kelola Google Calendar"
+            >
+              ⚙️
+            </button>
+          </>
         ) : (
           <button
             type="button"
             className="btn-gcal-connect"
-            onClick={onConnectGoogle}
-            title="Masuk dengan akun Google untuk mengimpor kalender"
+            onClick={onOpenModal}
+            title="Buka opsi koneksi Google Calendar"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

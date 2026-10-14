@@ -4,19 +4,20 @@ import { HeatmapRow } from '../../types';
 import { api, getStoredUserId } from '../../services/api';
 
 interface HeatmapStresProps {
-  onCellInteract: (info: string) => void;
+  onCellInteract?: (info: string) => void;
 }
 
 export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) => {
   const [hours, setHours] = useState<string[]>(FALLBACK_HOURS);
   const [rows, setRows] = useState<HeatmapRow[]>(FALLBACK_DATA);
-  const [peakHours, setPeakHours] = useState<string>('pukul 14:00 - 18:00');
+  const [peakHours, setPeakHours] = useState<string>('Belum terdeteksi waktu puncak stres');
   const [heaviestDay, setHeaviestDay] = useState<string>(
-    'Hari Selasa dan Jumat adalah hari dengan akumulasi stres tertinggi minggu ini.'
+    'Seluruh hari dalam sepekan terpantau di ambang beban normal & terkendali.'
   );
   const [advice, setAdvice] = useState<string>(
-    'Pertimbangkan untuk menjadwalkan jeda istirahat pendek atau latihan napas sebelum jam 2 siang.'
+    'Pertahankan pola belajar bertahap dan aktifkan sesi fokus saat mulai belajar.'
   );
+  const [selectedCell, setSelectedCell] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadHeatmap() {
@@ -42,6 +43,13 @@ export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) =>
     loadHeatmap();
   }, []);
 
+  const handleCellClick = (info: string) => {
+    setSelectedCell(info);
+    if (onCellInteract) {
+      onCellInteract(info);
+    }
+  };
+
   return (
     <div className="tren-card card-heatmap-wrap">
       <div className="heatmap-col">
@@ -66,11 +74,10 @@ export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) =>
                   {row.cells.map((cell, idx) => (
                     <span
                       key={idx}
-                      className={`hm-cell cell-${cell.level}`}
+                      className={`hm-cell cell-${cell.level} ${selectedCell === cell.info ? 'cell-selected' : ''}`}
                       data-info={cell.info}
                       title={cell.info}
-                      onMouseEnter={() => onCellInteract(cell.info)}
-                      onClick={() => onCellInteract(cell.info)}
+                      onClick={() => handleCellClick(cell.info)}
                     />
                   ))}
                 </div>
@@ -78,6 +85,23 @@ export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) =>
             ))}
           </div>
         </div>
+
+        {selectedCell && (
+          <div
+            style={{
+              marginTop: '10px',
+              padding: '6px 10px',
+              background: '#f4fbf7',
+              borderRadius: '6px',
+              border: '1px solid #d1fae5',
+              fontSize: '11.5px',
+              color: '#065f46',
+              fontWeight: 500,
+            }}
+          >
+            📌 Slot Terpilih: <strong>{selectedCell}</strong>
+          </div>
+        )}
       </div>
 
       {/* Keterangan Column */}
@@ -87,9 +111,9 @@ export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) =>
           <div className="ket-point">
             <span className="ket-bullet">•</span>
             <div className="ket-text-block">
-              <span className="ket-title">Waktu Puncak Stress</span>
+              <span className="ket-title">Waktu Puncak Stres</span>
               <p className="ket-desc">
-                Tingkat stres Anda paling tinggi sering terpantau pada {peakHours}.
+                {peakHours}
               </p>
             </div>
           </div>

@@ -5,23 +5,17 @@ interface RescheduleModalProps {
   onClose: () => void;
   onConfirmReschedule: (targetDay: string) => void;
   availableDays?: Array<{ day: string; badge: string }>;
+  currentLoadScore?: number;
 }
 
 export const RescheduleModal: React.FC<RescheduleModalProps> = ({
   isOpen,
   onClose,
   onConfirmReschedule,
-  availableDays,
+  availableDays = [],
+  currentLoadScore = 0,
 }) => {
   if (!isOpen) return null;
-
-  const recommendations = availableDays && availableDays.length > 0
-    ? availableDays
-    : [
-        { day: 'Rabu, 18 September', badge: 'Bebas Tugas · Optimal' },
-        { day: 'Sabtu, 21 September', badge: 'Bebas Tugas · Akhir Pekan' },
-        { day: 'Kamis, 26 September', badge: 'Bebas Tugas' },
-      ];
 
   return (
     <div
@@ -43,26 +37,51 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
             &times;
           </button>
         </div>
+
         <p style={{ fontSize: '12px', color: '#585752', lineHeight: '1.5', marginBottom: '16px' }}>
-          Hari ini memiliki beban tinggi (<strong>Load Score 78/100</strong>). Pindahkan salah satu agenda ke hari yang masih berstatus <strong>Bebas</strong> untuk menurunkan tingkat stres:
+          {currentLoadScore > 0 ? (
+            <>
+              Hari ini memiliki <strong>Load Score {currentLoadScore}/100</strong>. Pindahkan salah satu tugas ke hari yang masih berstatus <strong>Bebas</strong>:
+            </>
+          ) : (
+            <>Pindahkan deadline tugas ke hari alternatif yang masih memiliki slot waktu luang:</>
+          )}
         </p>
-        <div className="reschedule-recommendations">
-          {recommendations.map((rec) => (
-            <div
-              key={rec.day}
-              className="reschedule-item"
-              onClick={() => onConfirmReschedule(rec.day)}
-            >
-              <div className="reschedule-item-info">
-                <span className="reschedule-item-day">{rec.day}</span>
-                <span className="reschedule-item-badge">{rec.badge}</span>
+
+        {availableDays.length === 0 ? (
+          <div
+            style={{
+              padding: '20px 12px',
+              textAlign: 'center',
+              color: '#6b7280',
+              fontSize: '12px',
+              background: '#f9fafb',
+              borderRadius: '8px',
+            }}
+          >
+            <span style={{ fontSize: '20px', display: 'block', marginBottom: '6px' }}>📅</span>
+            <span>Tidak ditemukan hari bebas lain dalam rentang 14 hari kalender.</span>
+          </div>
+        ) : (
+          <div className="reschedule-recommendations">
+            {availableDays.map((rec) => (
+              <div
+                key={rec.day}
+                className="reschedule-item"
+                onClick={() => onConfirmReschedule(rec.day)}
+              >
+                <div className="reschedule-item-info">
+                  <span className="reschedule-item-day">{rec.day}</span>
+                  <span className="reschedule-item-badge">{rec.badge}</span>
+                </div>
+                <button type="button" className="btn-pilih-reschedule">
+                  Pindahkan
+                </button>
               </div>
-              <button type="button" className="btn-pilih-reschedule">
-                Pindahkan
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
         <div className="modal-actions" style={{ marginTop: '18px' }}>
           <button
             type="button"

@@ -18,6 +18,8 @@ import { DataAccountCard } from './DataAccountCard';
 import { AddAppModal } from '../modals/AddAppModal';
 import { ThresholdModal } from '../modals/ThresholdModal';
 import { ProfileModal } from '../modals/ProfileModal';
+import { ManageDataModal } from '../modals/ManageDataModal';
+import { PrivacyModal } from '../modals/PrivacyModal';
 import { api, getStoredUserId } from '../../services/api';
 
 interface SettingsViewProps {
@@ -35,6 +37,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify }) => {
   const [isAddAppOpen, setIsAddAppOpen] = useState(false);
   const [isThresholdOpen, setIsThresholdOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isManageDataOpen, setIsManageDataOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadUserData() {
@@ -145,8 +149,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify }) => {
     onNotify('Data berhasil diekspor ke format JSON!', '📥');
   };
 
-  const handleManageData = () => {
-    onNotify('Fitur manajemen penghapusan data aman siap digunakan.', '🛡️');
+  const handleClearLocalData = () => {
+    localStorage.removeItem('napas_focus_sessions');
+    localStorage.removeItem('napas_focus_whitelist');
+    localStorage.removeItem('napas_whitelist_apps');
+    sessionStorage.clear();
+    onNotify('Cache dan riwayat sesi lokal berhasil dibersihkan.', '🧹');
+    setTimeout(() => {
+      window.location.reload();
+    }, 800);
+  };
+
+  const handleResetPreferences = () => {
+    setSensors(INITIAL_SENSOR_PERMISSIONS);
+    setInterventions(INITIAL_INTERVENTION_SETTINGS);
+    setWhitelistApps(INITIAL_WHITELIST_APPS);
+    onNotify('Pengaturan sensor dan preferensi berhasil di-reset.', '🔄');
   };
 
   const handleSaveProfile = async (updated: UserProfileInfo) => {
@@ -166,17 +184,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify }) => {
     <div className="settings-container">
       {/* Subtitle */}
       <p className="settings-page-intro">
-        Kelola privasi, intervensi, dan pengalaman NAPAS-mu.
+        Kelola privasi, intervensi, dan preferensi aplikasi NAPAS-mu.
       </p>
 
       {/* Full-width Privacy Banner */}
       <PrivacyBanner
-        onLearnMore={() =>
-          onNotify(
-            'Semua komputasi sensor wajah & aplikasi dijalankan lokal di browser Anda (On-Device).',
-            '🛡️'
-          )
-        }
+        onLearnMore={() => setIsPrivacyModalOpen(true)}
       />
 
       {/* Middle Row: Izin Sensor (Left) & Intervensi (Right) */}
@@ -199,15 +212,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify }) => {
           apps={whitelistApps}
           onAddApp={() => setIsAddAppOpen(true)}
           onRemoveApp={handleRemoveApp}
-          onManageWhitelist={() =>
-            onNotify(`Terdapat ${whitelistApps.length} aplikasi dalam whitelist produktivitas.`, '📋')
-          }
+          onManageWhitelist={() => setIsAddAppOpen(true)}
         />
         <DataAccountCard
           user={userProfile}
-          lastUpdated="hari ini, 09.22"
+          lastUpdated="hari ini"
           onExportData={handleExportData}
-          onManageData={handleManageData}
+          onManageData={() => setIsManageDataOpen(true)}
           onManageProfile={() => setIsProfileOpen(true)}
         />
       </div>
@@ -231,6 +242,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify }) => {
         user={userProfile}
         onClose={() => setIsProfileOpen(false)}
         onSaveProfile={handleSaveProfile}
+      />
+
+      <ManageDataModal
+        isOpen={isManageDataOpen}
+        onClose={() => setIsManageDataOpen(false)}
+        onClearLocalData={handleClearLocalData}
+        onResetPreferences={handleResetPreferences}
+      />
+
+      <PrivacyModal
+        isOpen={isPrivacyModalOpen}
+        onClose={() => setIsPrivacyModalOpen(false)}
       />
     </div>
   );

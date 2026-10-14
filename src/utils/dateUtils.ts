@@ -66,113 +66,6 @@ export function getTodayTimeString(d = new Date()): string {
  * Generate 14-day calendar grid relative to today (Day 0 to Day 13).
  */
 export function generateRealtimeCalendarDays(baseDate = new Date()): CalendarDay[] {
-  // Preset task patterns across the 14 days (retaining the hackathon demo agenda)
-  const templates: Array<{
-    status: 'Ringan' | 'Sedang' | 'Berat';
-    load: number;
-    pillText: string;
-    tasks: Array<{ title: string; time: string }>;
-  }> = [
-    {
-      status: 'Ringan',
-      load: 0,
-      pillText: 'Bebas',
-      tasks: [],
-    },
-    {
-      status: 'Sedang',
-      load: 35,
-      pillText: '1 tugas',
-      tasks: [{ title: 'Kuis Probabilitas & Statistika', time: '10.00 - 11.30' }],
-    },
-    {
-      status: 'Ringan',
-      load: 0,
-      pillText: 'Bebas',
-      tasks: [],
-    },
-    {
-      status: 'Berat',
-      load: 78,
-      pillText: '2 tugas',
-      tasks: [
-        { title: 'Technical Meeting JOINTS', time: '13.00 - 14.00' },
-        { title: 'UAS Kalkulus Fisika', time: 'Deadline 23.59' },
-      ],
-    },
-    {
-      status: 'Sedang',
-      load: 55,
-      pillText: '2 tugas',
-      tasks: [
-        { title: 'Laporan Praktikum Jaringan', time: 'Deadline 17.00' },
-        { title: 'Submit Review Paper', time: '21.00' },
-      ],
-    },
-    {
-      status: 'Ringan',
-      load: 0,
-      pillText: 'Bebas',
-      tasks: [],
-    },
-    {
-      status: 'Sedang',
-      load: 30,
-      pillText: '1 tugas',
-      tasks: [{ title: 'Cicil Bab 3 Skripsi', time: '20.00' }],
-    },
-    {
-      status: 'Sedang',
-      load: 40,
-      pillText: '1 tugas',
-      tasks: [{ title: 'Tugas Algoritma Pemrograman', time: 'Deadline 23.59' }],
-    },
-    {
-      // Day index 8: Hari Terpadat!
-      status: 'Berat',
-      load: 95,
-      pillText: '3 tugas',
-      tasks: [
-        { title: 'Presentasi Proyek Akhir', time: '09.00 - 11.30' },
-        { title: 'Laporan Besar Basis Data', time: 'Deadline 18.00' },
-        { title: 'Kuis Desain UI/UX', time: 'Deadline 23.59' },
-      ],
-    },
-    {
-      status: 'Sedang',
-      load: 35,
-      pillText: '1 tugas',
-      tasks: [{ title: 'Diskusi Kelompok Riset', time: '16.00 - 17.30' }],
-    },
-    {
-      status: 'Ringan',
-      load: 0,
-      pillText: 'Bebas',
-      tasks: [],
-    },
-    {
-      status: 'Sedang',
-      load: 60,
-      pillText: '2 tugas',
-      tasks: [
-        { title: 'Asistensi Modul 4', time: '14.00 - 16.00' },
-        { title: 'Submit Revisi Bab 2', time: 'Deadline 23.59' },
-      ],
-    },
-    {
-      status: 'Ringan',
-      load: 0,
-      pillText: 'Bebas',
-      tasks: [],
-    },
-    {
-      status: 'Sedang',
-      load: 30,
-      pillText: '1 tugas',
-      tasks: [{ title: 'Persiapan Mingguan & Jadwal', time: '19.00' }],
-    },
-  ];
-
   const days: CalendarDay[] = [];
 
   for (let i = 0; i < 14; i++) {
@@ -186,23 +79,16 @@ export function generateRealtimeCalendarDays(baseDate = new Date()): CalendarDay
     const monthFull = INDO_MONTHS_LONG[cur.getMonth()];
     const dateStr = `${dayFull}, ${dayNum} ${monthFull}`;
 
-    const tpl = templates[i] || {
-      status: 'Ringan',
-      load: 0,
-      pillText: 'Bebas',
-      tasks: [],
-    };
-
     days.push({
       date: dateStr,
       dayName,
       dayNum,
       monthShort,
       monthFull,
-      status: tpl.status,
-      load: tpl.load,
-      pillText: tpl.pillText,
-      tasks: [...tpl.tasks],
+      status: 'Ringan',
+      load: 0,
+      pillText: 'Bebas',
+      tasks: [],
     });
   }
 

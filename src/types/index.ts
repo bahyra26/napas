@@ -12,6 +12,7 @@ export interface TaskItem {
 export type MoodType = 'Bahagia / Senang' | 'Netral' | 'Sedih';
 
 export interface CalendarTaskItem {
+  id?: string;
   title: string;
   time: string;
   is_google?: boolean;

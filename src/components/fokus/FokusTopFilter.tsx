@@ -18,12 +18,14 @@ export const FILTER_OPTIONS: FilterOption[] = [
 interface FokusTopFilterProps {
   currentDate?: string;
   selectedRange: string;
+  selectedPeriod?: string;
   onRangeChange: (range: string, period?: string) => void;
 }
 
 export const FokusTopFilter: React.FC<FokusTopFilterProps> = ({
   currentDate = getTodayDateString(),
   selectedRange,
+  selectedPeriod,
   onRangeChange,
 }) => {
   return (
@@ -52,6 +54,7 @@ export const FokusTopFilter: React.FC<FokusTopFilterProps> = ({
       <div className="fokus-segmented-tabs" role="tablist" aria-label="Filter rentang statistik">
         {FILTER_OPTIONS.map((opt) => {
           const isActive =
+            (selectedPeriod && selectedPeriod === opt.period) ||
             selectedRange === opt.value ||
             selectedRange.toLowerCase().includes(opt.label.toLowerCase());
           return (

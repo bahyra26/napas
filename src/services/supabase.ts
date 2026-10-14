@@ -141,6 +141,9 @@ export const authService = {
     if (!supabaseClient) return null;
     try {
       const { data } = await supabaseClient.auth.getSession();
+      if (data?.session?.provider_token) {
+        localStorage.setItem('napas_provider_token', data.session.provider_token);
+      }
       return data.session;
     } catch {
       return null;

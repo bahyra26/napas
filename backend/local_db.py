@@ -131,6 +131,19 @@ def init_db():
     )
     """)
 
+    # 7. Tabel interventions
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS interventions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        tipe TEXT NOT NULL,
+        durasi INTEGER DEFAULT 60,
+        selesai INTEGER DEFAULT 1,
+        ts TEXT,
+        created_at TEXT
+    )
+    """)
+
     # Migrasi kolom google_event_id & source di workload_items
     try:
         c.execute("ALTER TABLE workload_items ADD COLUMN google_event_id TEXT")
@@ -607,3 +620,43 @@ def local_bulk_sync_google_events(user_id: str, events: List[Dict[str, Any]]) ->
     conn.commit()
     conn.close()
     return synced_count
+
+def local_save_intervention(user_id: str, tipe: str, durasi: int = 60, selesai: bool = True) -> Dict[str, Any]:
+    conn = get_connection()
+    c = conn.cursor()
+    u_uuid = deterministic_uuid(user_id)
+    new_id = str(uuid.uuid4())
+    now_iso = datetime.now(WIB).isoformat()
+    selesai_val = 1 if selesai else 0
+
+    c.execute("""
+        INSERT INTO interventions (id, user_id, tipe, durasi, selesai, ts, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (new_id, u_uuid, tipe, durasi, selesai_val, now_iso, now_iso))
+    conn.commit()
+
+    c.execute("SELECT * FROM interventions WHERE id = ?", (new_id,))
+    row = dict(c.fetchone())
+    row["selesai"] = bool(row["selesai"])
+    conn.close()
+    return row
+
+def local_list_interventions(user_id: str, days: int = 7) -> List[Dict[str, Any]]:
+    conn = get_connection()
+    c = conn.cursor()
+    u_uuid = deterministic_uuid(user_id)
+    start_time = (datetime.now(WIB) - timedelta(days=days)).isoformat()
+
+    c.execute("""
+        SELECT * FROM interventions
+        WHERE (user_id = ? OR user_id = ?) AND ts >= ?
+        ORDER BY ts DESC
+    """, (user_id, u_uuid, start_time))
+
+    rows = []
+    for r in c.fetchall():
+        d = dict(r)
+        d["selesai"] = bool(d["selesai"])
+        rows.append(d)
+    conn.close()
+    return rows

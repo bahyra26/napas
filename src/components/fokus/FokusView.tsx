@@ -78,27 +78,9 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
     fetchFocusData(range, normPeriod);
   };
 
-  const handleDistractorClick = (item: FocusTopDistractor) => {
-    onNotify(`${item.name} menyita ${item.durationLabel} waktu belajarmu hari ini.`, '⏱️');
-  };
-
-  const handleStreakClick = () => {
-    onNotify(
-      `Streak ${streakInfo.currentStreak} hari aktif! Pertahankan rekor terbaik ${streakInfo.bestRecord} hari.`,
-      '🔥'
-    );
-  };
-
-  const handleBarSelect = (bar: FocusDailyBar) => {
-    onNotify(
-      `${bar.dayFull}: Fokus ${bar.focusDuration} (${bar.focusPercent}%) vs Distraksi ${bar.distractDuration} (${bar.distractPercent}%)`,
-      '📊'
-    );
-  };
-
   const handleRefreshOverview = async () => {
     await fetchFocusData(selectedRange, selectedPeriod);
-    onNotify('Data fokus hari ini berhasil diperbarui!', '✨');
+    onNotify('Data fokus berhasil diperbarui!', '✨');
   };
 
   return (
@@ -141,14 +123,12 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
         />
         <TopPencuriWaktuCard
           distractors={distractors}
-          onItemClick={handleDistractorClick}
         />
         <FocusStreakCard
           currentStreak={streakInfo.currentStreak}
           targetRule={streakInfo.targetRule}
           bestRecord={streakInfo.bestRecord}
           days={streakInfo.days}
-          onStreakClick={handleStreakClick}
         />
       </div>
 
@@ -159,7 +139,6 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
           selectedRange={selectedRange}
           selectedPeriod={selectedPeriod}
           onSelectPeriod={handleRangeChange}
-          onSelectDay={handleBarSelect}
         />
       </div>
     </div>

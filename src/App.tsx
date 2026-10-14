@@ -12,16 +12,13 @@ import { BreathingSection } from './components/home/BreathingSection';
 import { QuickTasks } from './components/home/QuickTasks';
 import { AddTaskModal, NewTaskPayload } from './components/modals/AddTaskModal';
 import { RescheduleModal } from './components/modals/RescheduleModal';
-import { TrendChart } from './components/tren/TrendChart';
-import { RingkasanCard } from './components/tren/RingkasanCard';
-import { HeatmapStres } from './components/tren/HeatmapStres';
-import { KesimpulanCard } from './components/tren/KesimpulanCard';
+import { GoogleCalendarModal } from './components/modals/GoogleCalendarModal';
+import { TrenLaporanView } from './components/tren/TrenLaporanView';
 import { CalendarGrid } from './components/deadline/CalendarGrid';
 import { RingkasanBeban } from './components/deadline/RingkasanBeban';
 import { AgendaDetail } from './components/deadline/AgendaDetail';
 import { GoogleCalendarBanner } from './components/deadline/GoogleCalendarBanner';
 import { FokusView } from './components/fokus/FokusView';
-import { LaporanView } from './components/laporan/LaporanView';
 import { SettingsView } from './components/settings/SettingsView';
 import { LoginView } from './components/auth/LoginView';
 import { OnboardingModal } from './components/onboarding/OnboardingModal';
@@ -59,6 +56,7 @@ export const App: React.FC = () => {
   // Modal states
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
   // Toast state
   const [toast, setToast] = useState<ToastState>({
@@ -84,10 +82,10 @@ export const App: React.FC = () => {
     document.body.setAttribute('data-tab', activeTab);
     const titles: Record<TabType, string> = {
       home: `Profil ${studentName}`,
-      tren: 'Tren Kesejahteraan',
+      tren: 'Tren & Laporan Kesejahteraan',
       deadline: 'Deadline Radar',
       fokus: 'Fokus & Distraksi',
-      laporan: 'Laporan & Rekomendasi',
+      laporan: 'Tren & Laporan Kesejahteraan',
       settings: 'Settings',
     };
     document.title = `NAPAS · ${titles[activeTab] || 'Dashboard'}`;
@@ -138,8 +136,10 @@ export const App: React.FC = () => {
           };
         });
         setTasks(mapped);
+        return;
       }
     }
+    setTasks([]);
   }, []);
 
   // Load Deadline Radar from backend
@@ -206,6 +206,9 @@ export const App: React.FC = () => {
       // 1. Cek sesi Supabase jika user baru kembali dari Google OAuth redirect
       const session = await authService.getSession();
       if (session?.user) {
+        if (session.provider_token) {
+          authService.setStoredProviderToken(session.provider_token);
+        }
         const synced = await api.syncAuth({
           access_token: session.access_token,
           auth_id: session.user.id,
@@ -215,6 +218,15 @@ export const App: React.FC = () => {
         });
         if (synced) {
           await initUserSession(synced.id);
+          if (session.provider_token) {
+            googleCalendarService.fetchAndSyncEvents(synced.id).then((res) => {
+              if (res.success) {
+                loadRadar(synced.id);
+                loadWorkloads(synced.id);
+                showToast('Google Calendar asli berhasil disinkronkan!', '📅');
+              }
+            });
+          }
           return;
         }
       }
@@ -316,18 +328,10 @@ export const App: React.FC = () => {
     showToast('Berhasil keluar.', '👋');
   };
 
-  const handleConnectGoogle = async () => {
-    showToast('Mengarahkan ke login Google Calendar...', '🔗');
-    const res = await authService.signInWithGoogle();
-    if (res?.error) {
-      showToast(res.error, '⚠️');
-    }
-  };
-
   const handleSyncGoogleCalendar = async () => {
     if (!userId) return;
-    if (!googleCalendarService.isGoogleConnected()) {
-      await handleConnectGoogle();
+    if (!googleCalendarService.isGoogleConnected(userId)) {
+      setIsGoogleModalOpen(true);
       return;
     }
     setIsSyncingCalendar(true);
@@ -424,36 +428,22 @@ export const App: React.FC = () => {
 
   const handleConfirmReschedule = async (targetDay: string) => {
     setIsRescheduleOpen(false);
-    showToast(`Tugas berhasil dipindahkan ke ${targetDay}! Beban diperbarui.`, '✅');
 
-    // Update state kalender lokal
-    setCalendarDays((prev) =>
-      prev.map((day) => {
-        if (day.date === selectedDate) {
-          return {
-            ...day,
-            status: 'Sedang',
-            load: Math.max(30, day.load - 33),
-            pillText: `${Math.max(1, day.tasks.length - 1)} agenda`,
-            tasks: day.tasks.slice(1),
-          };
-        }
-        if (day.date === targetDay) {
-          return {
-            ...day,
-            status: 'Sedang',
-            load: Math.min(60, day.load + 30),
-            pillText: `${day.tasks.length + 1} agenda`,
-            tasks: [...day.tasks, { title: 'Jadwal Pindahan', time: '14.00' }],
-          };
-        }
-        return day;
-      })
-    );
+    const targetDayObj = calendarDays.find((d) => d.date === targetDay);
+    const dayWithTasks = calendarDays.find((d) => d.date === selectedDate);
+    const movableTask = dayWithTasks?.tasks?.find((t: any) => t.id);
 
-    if (userId) {
-      await loadRadar(userId);
-      await loadIndexToday(userId);
+    if (userId && movableTask && movableTask.id && targetDayObj && (targetDayObj as any).raw_date) {
+      await api.updateWorkload(movableTask.id, {
+        deadline: `${(targetDayObj as any).raw_date}T23:59:00+07:00`,
+      });
+      showToast(`Tugas "${movableTask.title}" berhasil dipindahkan ke ${targetDay}!`, '✅');
+      await Promise.all([loadRadar(userId), loadWorkloads(userId), loadIndexToday(userId)]);
+    } else {
+      showToast(`Jadwal dialihkan ke ${targetDay}.`, '✅');
+      if (userId) {
+        await Promise.all([loadRadar(userId), loadIndexToday(userId)]);
+      }
     }
   };
 
@@ -548,17 +538,10 @@ export const App: React.FC = () => {
             </section>
           )}
 
-          {/* Tab 2: Tren */}
-          {activeTab === 'tren' && (
+          {/* Tab 2: Tren & Laporan (Unified) */}
+          {(activeTab === 'tren' || activeTab === 'laporan') && (
             <section id="view-tren" className="page-view active">
-              <div className="tren-container">
-                <div className="tren-grid">
-                  <TrendChart />
-                  <RingkasanCard />
-                  <HeatmapStres onCellInteract={(info) => showToast(info, '📊')} />
-                  <KesimpulanCard />
-                </div>
-              </div>
+              <TrenLaporanView onNotify={showToast} />
             </section>
           )}
 
@@ -567,12 +550,12 @@ export const App: React.FC = () => {
             <section id="view-deadline" className="page-view active">
               <div className="deadline-container">
                 <GoogleCalendarBanner
-                  isConnected={googleCalendarService.isGoogleConnected()}
+                  isConnected={googleCalendarService.isGoogleConnected(userId || undefined)}
                   isSyncing={isSyncingCalendar}
                   lastSyncText={googleCalendarService.getLastSyncInfo(userId || '').lastSyncText}
                   syncedCount={googleCalendarService.getLastSyncInfo(userId || '').syncedCount}
                   onSync={handleSyncGoogleCalendar}
-                  onConnectGoogle={handleConnectGoogle}
+                  onOpenModal={() => setIsGoogleModalOpen(true)}
                   onAddManualDeadline={() => setIsAddTaskOpen(true)}
                 />
 
@@ -604,13 +587,6 @@ export const App: React.FC = () => {
             </section>
           )}
 
-          {/* Tab 5: Laporan */}
-          {activeTab === 'laporan' && (
-            <section id="view-laporan" className="page-view active">
-              <LaporanView onNotify={showToast} />
-            </section>
-          )}
-
           {/* Tab 6: Settings */}
           {activeTab === 'settings' && (
             <section id="view-settings" className="page-view active">
@@ -632,6 +608,19 @@ export const App: React.FC = () => {
         onClose={() => setIsRescheduleOpen(false)}
         onConfirmReschedule={handleConfirmReschedule}
         availableDays={availableRescheduleDays}
+        currentLoadScore={selectedDay?.load}
+      />
+
+      <GoogleCalendarModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        userId={userId}
+        onSyncComplete={async () => {
+          if (userId) {
+            await Promise.all([loadWorkloads(userId), loadRadar(userId), loadIndexToday(userId)]);
+          }
+        }}
+        showToast={showToast}
       />
 
       {isOnboardingOpen && (

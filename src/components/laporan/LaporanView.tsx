@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  INTERVENTION_HISTORY,
   PLAYBOOK_ADVISORY,
   WEEKLY_INSIGHT,
   WEEKLY_SUMMARY_STATS,
@@ -31,7 +30,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({ onNotify }) => {
   const [playbook, setPlaybook] = useState<WellnessPlaybookItem[]>(WELLNESS_PLAYBOOK);
   const [advisory, setAdvisory] = useState<string>(PLAYBOOK_ADVISORY);
   const [summaryStats, setSummaryStats] = useState<WeeklySummaryStat[]>(WEEKLY_SUMMARY_STATS);
-  const [history, setHistory] = useState<InterventionHistoryItem[]>(INTERVENTION_HISTORY);
+  const [history, setHistory] = useState<InterventionHistoryItem[]>([]);
+  const [savedReflection, setSavedReflection] = useState<string>('');
   const [isReflectionOpen, setIsReflectionOpen] = useState(false);
 
   const fetchLaporanData = async (days = 7) => {
@@ -61,7 +61,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({ onNotify }) => {
 
     // 2. Fetch Interventions History
     const interData = await api.getInterventions(userId, days);
-    if (interData && interData.items && interData.items.length > 0) {
+    if (interData && interData.items) {
       const mappedHistory: InterventionHistoryItem[] = interData.items.map((item, idx) => {
         const typeLabels: Record<string, string> = {
           breathing: 'Breathing 4-7-8',
@@ -87,7 +87,16 @@ export const LaporanView: React.FC<LaporanViewProps> = ({ onNotify }) => {
         };
       });
       setHistory(mappedHistory);
+    } else {
+      setHistory([]);
     }
+
+    // 3. Fetch today's check-in reflection
+    api.getTodayCheckIn(userId).then((ci) => {
+      if (ci && ci.catatan) {
+        setSavedReflection(ci.catatan);
+      }
+    });
   };
 
   useEffect(() => {
@@ -101,20 +110,31 @@ export const LaporanView: React.FC<LaporanViewProps> = ({ onNotify }) => {
     fetchLaporanData(days);
   };
 
-  const handlePlaybookAction = (item: WellnessPlaybookItem) => {
-    onNotify(`Aktivitas dimulai: "${item.title}"`, '✨');
+  const handlePlaybookAction = async (item: WellnessPlaybookItem) => {
+    const userId = getStoredUserId();
+    if (!userId) return;
+
+    onNotify(`Memulai aktivitas "${item.title}"...`, '✨');
+    const res = await api.postIntervention(userId, 'playbook', 180, true);
+    if (res) {
+      onNotify(`Aktivitas "${item.title}" selesai dan tercatat ke riwayat!`, '🌿');
+      const days = selectedRange.includes('14') ? 14 : selectedRange.includes('30') ? 30 : 7;
+      fetchLaporanData(days);
+    }
   };
 
-  const handleStatClick = (stat: WeeklySummaryStat) => {
-    onNotify(`${stat.label}: ${stat.value} dalam 7 hari terakhir.`, '📊');
-  };
+  const handleSaveReflection = async (text: string) => {
+    const userId = getStoredUserId();
+    if (!userId) return;
 
-  const handleHistoryItemClick = (item: InterventionHistoryItem) => {
-    onNotify(`Intervensi: ${item.title} (${item.status}) pada ${item.time}`, '🧘‍♂️');
-  };
-
-  const handleSaveReflection = (text: string) => {
-    onNotify(`Refleksi harian tersimpan: "${text.substring(0, 32)}..."`, '💚');
+    const res = await api.postCheckIn(userId, 4, text);
+    if (res) {
+      setSavedReflection(text);
+      onNotify('Refleksi harian berhasil disimpan ke database!', '💚');
+    } else {
+      setSavedReflection(text);
+      onNotify(`Refleksi harian tersimpan: "${text.substring(0, 32)}..."`, '💚');
+    }
   };
 
   return (
@@ -131,9 +151,6 @@ export const LaporanView: React.FC<LaporanViewProps> = ({ onNotify }) => {
         <div className="laporan-col-left">
           <InsightMingguanCard
             data={insight}
-            onScoreClick={() =>
-              onNotify(`Skor ${insight.weeklyScore}: ${insight.zoneName}, disarankan intervensi teratur.`, 'ℹ️')
-            }
           />
           <WellnessPlaybookCard
             items={playbook}
@@ -146,13 +163,12 @@ export const LaporanView: React.FC<LaporanViewProps> = ({ onNotify }) => {
         <div className="laporan-col-right">
           <RingkasanMingguIniCard
             stats={summaryStats}
-            onStatClick={handleStatClick}
           />
           <RiwayatIntervensiCard
             history={history}
-            onItemClick={handleHistoryItemClick}
           />
           <RefleksiHariIniCard
+            savedText={savedReflection}
             onOpenReflection={() => setIsReflectionOpen(true)}
           />
         </div>
