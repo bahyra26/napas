@@ -83,11 +83,6 @@ export const BreathingSection: React.FC<BreathingSectionProps> = ({
             className="lungs-img"
             id="lungsImg"
           />
-          {isActive && (
-            <div className="breathing-countdown-badge">
-              {secondsLeft}s
-            </div>
-          )}
         </div>
       </div>
       <p className="breathing-prompt" id="breathingPrompt">
