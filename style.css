@@ -528,6 +528,64 @@ body[data-tab="settings"] .dashboard-container {
 .status-val {
   color: #4caf50;
   font-weight: 700;
+  transition: color 0.3s ease;
+}
+
+/* Dynamic Gauge Zone Colors */
+.gauge-circle.zone-green {
+  background-color: #388e3c;
+  box-shadow: 0 0 0 9px #a5d6a7, 0 8px 24px rgba(56, 142, 60, 0.3);
+}
+.gauge-circle.zone-green:hover {
+  box-shadow: 0 0 0 11px #a5d6a7, 0 12px 30px rgba(56, 142, 60, 0.42);
+}
+.gauge-circle.zone-green .gauge-trend {
+  color: #e8f5e9;
+}
+.status-val.zone-green {
+  color: #2e7d32;
+}
+
+.gauge-circle.zone-yellow {
+  background-color: #d97706;
+  box-shadow: 0 0 0 9px #fde68a, 0 8px 24px rgba(217, 119, 6, 0.32);
+}
+.gauge-circle.zone-yellow:hover {
+  box-shadow: 0 0 0 11px #fde68a, 0 12px 30px rgba(217, 119, 6, 0.45);
+}
+.gauge-circle.zone-yellow .gauge-trend {
+  color: #fffbeb;
+}
+.status-val.zone-yellow {
+  color: #b45309;
+}
+
+.gauge-circle.zone-orange {
+  background-color: #ea580c;
+  box-shadow: 0 0 0 9px #fed7aa, 0 8px 26px rgba(234, 88, 12, 0.38);
+}
+.gauge-circle.zone-orange:hover {
+  box-shadow: 0 0 0 11px #fed7aa, 0 12px 32px rgba(234, 88, 12, 0.5);
+}
+.gauge-circle.zone-orange .gauge-trend {
+  color: #fff7ed;
+}
+.status-val.zone-orange {
+  color: #c2410c;
+}
+
+.gauge-circle.zone-red {
+  background-color: #dc2626;
+  box-shadow: 0 0 0 9px #fecaca, 0 8px 28px rgba(220, 38, 38, 0.42);
+}
+.gauge-circle.zone-red:hover {
+  box-shadow: 0 0 0 11px #fecaca, 0 12px 34px rgba(220, 38, 38, 0.55);
+}
+.gauge-circle.zone-red .gauge-trend {
+  color: #fef2f2;
+}
+.status-val.zone-red {
+  color: #b91c1c;
 }
 
 /* Card: Kenapa skor ini? */
@@ -862,22 +920,72 @@ body[data-tab="settings"] .dashboard-container {
   height: auto;
   object-fit: contain;
   display: block;
-  transition: transform 0.4s var(--transition-smooth);
+  transition: transform 0.6s var(--transition-smooth);
 }
 
-/* Dynamic Breathing Classes */
-.breathing-section.active .lungs-img {
-  animation: lungsBreathe 8s infinite ease-in-out;
+/* Floating Real-time Countdown Badge inside Breathing Circle */
+.breathing-countdown-badge {
+  position: absolute;
+  bottom: 18px;
+  background: rgba(10, 84, 69, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  padding: 3px 14px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 14px rgba(10, 84, 69, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: badgePop 0.25s var(--transition-bounce);
+  pointer-events: none;
 }
 
-@keyframes lungsBreathe {
-  /* Inhale: 4s */
-  0% { transform: scale(1); }
-  40% { transform: scale(1.22); }
-  /* Hold: 2s */
-  60% { transform: scale(1.22); }
-  /* Exhale: 2s */
-  100% { transform: scale(1); }
+@keyframes badgePop {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Phase-Synchronized 4-7-8 Breathing Motion */
+.breathing-section.active.phase-tarik .lungs-img {
+  transform: scale(1.26);
+  transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.breathing-section.active.phase-tarik .breathing-pulse-aura {
+  opacity: 0.65;
+  transform: scale(1.35);
+  transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1), opacity 4s ease;
+}
+
+.breathing-section.active.phase-tahan .lungs-img {
+  transform: scale(1.24);
+  animation: lungsHoldPulse 2s infinite ease-in-out;
+}
+
+.breathing-section.active.phase-tahan .breathing-pulse-aura {
+  opacity: 0.5;
+  transform: scale(1.32);
+}
+
+.breathing-section.active.phase-hembuskan .lungs-img {
+  transform: scale(1);
+  transition: transform 8s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.breathing-section.active.phase-hembuskan .breathing-pulse-aura {
+  opacity: 0.2;
+  transform: scale(1);
+  transition: transform 8s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 8s ease;
+}
+
+@keyframes lungsHoldPulse {
+  0%, 100% { transform: scale(1.24); }
+  50% { transform: scale(1.27); }
 }
 
 .breathing-prompt {

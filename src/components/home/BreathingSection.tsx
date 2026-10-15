@@ -5,10 +5,16 @@ interface BreathingSectionProps {
   onInterventionComplete?: (tipe: 'breathing', durasi: number) => void;
 }
 
-const PHASES = [
-  { text: 'Tarik Napas (4s)', duration: 4000 },
-  { text: 'Tahan Napas (7s)', duration: 7000 },
-  { text: 'Hembuskan (8s)', duration: 8000 },
+interface BreathingPhase {
+  name: string;
+  totalSeconds: number;
+  type: 'tarik' | 'tahan' | 'hembuskan';
+}
+
+const PHASES: BreathingPhase[] = [
+  { name: 'Tarik Napas', totalSeconds: 4, type: 'tarik' },
+  { name: 'Tahan Napas', totalSeconds: 7, type: 'tahan' },
+  { name: 'Hembuskan', totalSeconds: 8, type: 'hembuskan' },
 ];
 
 export const BreathingSection: React.FC<BreathingSectionProps> = ({
@@ -16,47 +22,42 @@ export const BreathingSection: React.FC<BreathingSectionProps> = ({
   onInterventionComplete,
 }) => {
   const [isActive, setIsActive] = useState(false);
-  const [promptText, setPromptText] = useState('Tekan Untuk Mulai');
-  const phaseIndexRef = useRef(0);
-  const timeoutRef = useRef<number | null>(null);
+  const [phaseIndex, setPhaseIndex] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(4);
   const startTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (!isActive) {
-      setPromptText('Tekan Untuk Mulai');
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      phaseIndexRef.current = 0;
+      setPhaseIndex(0);
+      setSecondsLeft(4);
       return;
     }
 
     startTimeRef.current = Date.now();
+    let currentIdx = 0;
+    let sec = PHASES[0].totalSeconds;
+    setPhaseIndex(0);
+    setSecondsLeft(sec);
 
-    const step = () => {
-      const currentPhase = PHASES[phaseIndexRef.current];
-      setPromptText(currentPhase.text);
-
-      timeoutRef.current = window.setTimeout(() => {
-        phaseIndexRef.current = (phaseIndexRef.current + 1) % PHASES.length;
-        step();
-      }, currentPhase.duration);
-    };
-
-    step();
+    const timer = window.setInterval(() => {
+      sec -= 1;
+      if (sec <= 0) {
+        currentIdx = (currentIdx + 1) % PHASES.length;
+        sec = PHASES[currentIdx].totalSeconds;
+        setPhaseIndex(currentIdx);
+      }
+      setSecondsLeft(sec);
+    }, 1000);
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      clearInterval(timer);
     };
   }, [isActive]);
 
   const toggleBreathing = () => {
     if (!isActive) {
       setIsActive(true);
-      onNotify?.('Latihan napas dimulai. Tarik napas secara perlahan...', '🌿');
+      onNotify?.('Latihan napas 4-7-8 dimulai. Tarik napas secara perlahan...', '🌿');
     } else {
       setIsActive(false);
       const elapsedSec = Math.max(15, Math.round((Date.now() - startTimeRef.current) / 1000));
@@ -65,8 +66,13 @@ export const BreathingSection: React.FC<BreathingSectionProps> = ({
     }
   };
 
+  const currentPhase = PHASES[phaseIndex];
+
   return (
-    <div className={`breathing-section ${isActive ? 'active' : ''}`} id="breathingSection">
+    <div
+      className={`breathing-section ${isActive ? `active phase-${currentPhase.type}` : ''}`}
+      id="breathingSection"
+    >
       <h2 className="breathing-title">Breathing</h2>
       <div className="breathing-circle-wrapper">
         <div className="breathing-pulse-aura"></div>
@@ -77,10 +83,15 @@ export const BreathingSection: React.FC<BreathingSectionProps> = ({
             className="lungs-img"
             id="lungsImg"
           />
+          {isActive && (
+            <div className="breathing-countdown-badge">
+              {secondsLeft}s
+            </div>
+          )}
         </div>
       </div>
       <p className="breathing-prompt" id="breathingPrompt">
-        {promptText}
+        {isActive ? `${currentPhase.name} (${secondsLeft}s)` : 'Tekan Untuk Mulai'}
       </p>
       <button
         type="button"

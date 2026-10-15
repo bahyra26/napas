@@ -668,6 +668,8 @@ export const api = {
             user_id: userId,
             skor,
             catatan,
+            ...(jamTidur !== undefined ? { jam_tidur: jamTidur } : {}),
+            ...(energi !== undefined ? { energi: energi } : {}),
           })
           .select()
           .maybeSingle();

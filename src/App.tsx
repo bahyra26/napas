@@ -386,6 +386,18 @@ export const App: React.FC = () => {
     showToast(`Mood dicatat: ${mood}`, icon);
     setTodayCheckinScore(score);
 
+    // Optimistically update score & zona immediately for instant reactive feedback
+    if (score === 5) {
+      setBurnoutScore((prev) => Math.max(16, Math.min(prev, Math.round(prev * 0.72))));
+      setZonaLabel('Hijau (Prima)');
+    } else if (score === 3) {
+      setBurnoutScore((prev) => Math.min(55, Math.max(38, prev)));
+      setZonaLabel('Kuning (Waspada)');
+    } else if (score <= 2) {
+      setBurnoutScore((prev) => Math.min(79, Math.max(68, prev + 12)));
+      setZonaLabel('Oranye (Beban Tinggi)');
+    }
+
     if (userId) {
       await api.postCheckIn(userId, score, `Mood: ${mood}`, jamTidur, energi);
       await loadIndexToday(userId);
