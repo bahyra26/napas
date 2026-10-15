@@ -181,6 +181,8 @@ export const App: React.FC = () => {
       if (prof.onboarded === false) {
         setIsOnboardingOpen(true);
       }
+    } else {
+      setIsOnboardingOpen(true);
     }
 
     if (sched && sched.length > 0) {
@@ -686,6 +688,7 @@ export const App: React.FC = () => {
         <OnboardingModal
           isOpen={isOnboardingOpen}
           userId={userId}
+          initialName={studentName}
           onComplete={async (prof) => {
             setStudentProfile(prof);
             setIsOnboardingOpen(false);
