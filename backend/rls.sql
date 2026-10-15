@@ -15,13 +15,15 @@ ALTER TABLE interventions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE check_ins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_index ENABLE ROW LEVEL SECURITY;
 ALTER TABLE focus_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 
 -- 2. KEBIJAKAN AKSES ROW LEVEL SECURITY (RLS POLICIES)
 -- Kunci service_role FastAPI membypass RLS secara default.
--- Kebijakan di bawah ini mengizinkan pengguna terotentikasi mengelola data sesi fokus mereka sendiri:
+-- Kebijakan di bawah ini mengizinkan pengguna terotentikasi mengelola data mereka sendiri:
 
 DO $$ 
 BEGIN
+  -- Kebijakan focus_sessions
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE tablename = 'focus_sessions' AND policyname = 'Users can view their own focus sessions'
   ) THEN
@@ -52,6 +54,40 @@ BEGIN
   ) THEN
     CREATE POLICY "Users can delete their own focus sessions"
     ON public.focus_sessions FOR DELETE TO authenticated
+    USING (auth.uid() = user_id);
+  END IF;
+
+  -- Kebijakan user_profiles
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'user_profiles' AND policyname = 'Users can view their own profile'
+  ) THEN
+    CREATE POLICY "Users can view their own profile"
+    ON public.user_profiles FOR SELECT TO authenticated
+    USING (auth.uid() = user_id);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'user_profiles' AND policyname = 'Users can insert their own profile'
+  ) THEN
+    CREATE POLICY "Users can insert their own profile"
+    ON public.user_profiles FOR INSERT TO authenticated
+    WITH CHECK (auth.uid() = user_id);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'user_profiles' AND policyname = 'Users can update their own profile'
+  ) THEN
+    CREATE POLICY "Users can update their own profile"
+    ON public.user_profiles FOR UPDATE TO authenticated
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'user_profiles' AND policyname = 'Users can delete their own profile'
+  ) THEN
+    CREATE POLICY "Users can delete their own profile"
+    ON public.user_profiles FOR DELETE TO authenticated
     USING (auth.uid() = user_id);
   END IF;
 END $$;
