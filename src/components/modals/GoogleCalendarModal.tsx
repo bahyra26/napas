@@ -18,7 +18,7 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
   onSyncComplete,
   showToast,
 }) => {
-  const [activeTab, setActiveTab] = useState<'oauth' | 'ical'>('oauth');
+  const [activeTab, setActiveTab] = useState<'demo' | 'oauth' | 'ical'>('demo');
   const [isLoading, setIsLoading] = useState(false);
   const [icalContent, setIcalContent] = useState('');
   const [icalUrl, setIcalUrl] = useState('');
@@ -36,7 +36,30 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
     onClose();
   };
 
-  // 2. Impor File / Link iCal
+  // 2. Uji Coba Instan (1-Klik Demo Akademik)
+  const handleSampleSync = async () => {
+    if (!userId) {
+      showToast('ID pengguna tidak ditemukan. Silakan login terlebih dahulu.', '⚠️');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const res = await googleCalendarService.syncSampleEvents(userId);
+      setIsLoading(false);
+      if (res.success) {
+        showToast(res.message, '🎉');
+        await onSyncComplete();
+        onClose();
+      } else {
+        showToast(res.message, '⚠️');
+      }
+    } catch {
+      setIsLoading(false);
+      showToast('Gagal memuat agenda kalender uji coba.', '❌');
+    }
+  };
+
+  // 3. Impor File / Link iCal
   const handleIcalSync = async () => {
     if (!userId) return;
     if (!icalContent.trim() && !icalUrl.trim()) {
@@ -96,7 +119,7 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
     reader.readAsText(file);
   };
 
-  // 3. Login Akun Google Asli (OAuth)
+  // 4. Login Akun Google Asli (OAuth)
   const handleOAuthLogin = async () => {
     showToast('Mengarahkan ke otorisasi Google...', '🔗');
     const res = await authService.signInWithGoogle();
@@ -129,7 +152,7 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
               </text>
             </svg>
             <div>
-              <h3>Integrasi Google Calendar Asli</h3>
+              <h3>Integrasi Google Calendar</h3>
               <p className="gcal-modal-subtext">Sinkronkan jadwal perkuliahan, deadline tugas, & evaluasi mahasiswa</p>
             </div>
           </div>
@@ -165,19 +188,57 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
         <div className="gcal-modal-tabs">
           <button
             type="button"
+            className={`gcal-tab-btn ${activeTab === 'demo' ? 'active' : ''}`}
+            onClick={() => setActiveTab('demo')}
+          >
+            ⚡ Uji Coba Instan (1-Klik)
+          </button>
+          <button
+            type="button"
             className={`gcal-tab-btn ${activeTab === 'oauth' ? 'active' : ''}`}
             onClick={() => setActiveTab('oauth')}
           >
-            🔗 Login Akun Google (Otomatis)
+            🔗 Login Google (OAuth)
           </button>
           <button
             type="button"
             className={`gcal-tab-btn ${activeTab === 'ical' ? 'active' : ''}`}
             onClick={() => setActiveTab('ical')}
           >
-            📋 Impor Link / File iCal (.ics)
+            📋 Impor Link / File (.ics)
           </button>
         </div>
+
+        {/* Tab 1: Uji Coba Instan (Demo Akademik) */}
+        {activeTab === 'demo' && (
+          <div className="gcal-tab-panel">
+            <div className="gcal-feature-box">
+              <h4>⚡ Uji Coba Kalender Instan (Demo Akademik)</h4>
+              <p>
+                Fitur ini memuat <strong>5 agenda perkuliahan, praktikum, tugas, dan ujian semester</strong> secara otomatis ke dalam sistem NAPAS tanpa perlu konfigurasi Google Cloud Console.
+              </p>
+              <ul style={{ margin: '8px 0 0 16px', fontSize: '12px', color: '#374151' }}>
+                <li>Praktikum Jaringan Komputer (Lab 3) — Besok</li>
+                <li>Tugas Laporan Analisis Algoritma — 3 Hari Lagi</li>
+                <li>Rapat Diskusi Proyek Capstone — 4 Hari Lagi</li>
+                <li>UTS Metodologi Penelitian — 6 Hari Lagi</li>
+                <li>Workshop AI & Deep Learning Mahasiswa — 8 Hari Lagi</li>
+              </ul>
+            </div>
+
+            <div className="gcal-modal-actions" style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                className={`btn-gcal-primary ${isLoading ? 'loading' : ''}`}
+                onClick={handleSampleSync}
+                disabled={isLoading}
+                style={{ width: '100%', padding: '12px', fontSize: '13.5px', fontWeight: 600 }}
+              >
+                {isLoading ? 'Menyinkronkan Agenda...' : '🚀 Muat 5 Agenda Kalender Uji Coba'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Tab 2: Impor iCal / .ics */}
         {activeTab === 'ical' && (
