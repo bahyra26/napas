@@ -43,7 +43,20 @@ export const App: React.FC = () => {
   const [zonaLabel, setZonaLabel] = useState<string>('Hijau (Prima)');
   const [trendText, setTrendText] = useState<string>('Kondisi stabil');
   const [alasanChips, setAlasanChips] = useState<string[]>([]);
-  const [todayCheckinScore, setTodayCheckinScore] = useState<number | undefined>(undefined);
+  const [todayCheckinScore, setTodayCheckinScore] = useState<number | undefined>(() => {
+    try {
+      const storedUid = typeof window !== 'undefined' ? localStorage.getItem('napas_user_id') : null;
+      if (storedUid) {
+        const cached = localStorage.getItem(`napas_checkin_score_${storedUid}`);
+        if (cached) return Number(cached);
+      }
+      const mood = typeof window !== 'undefined' ? localStorage.getItem('napas_checkin_mood') : null;
+      if (mood === 'Bahagia / Senang') return 5;
+      if (mood === 'Netral') return 3;
+      if (mood === 'Sedih') return 1;
+    } catch {}
+    return undefined;
+  });
 
   // Task & Schedule data states
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
@@ -378,9 +391,11 @@ export const App: React.FC = () => {
     localStorage.removeItem('napas_user_name');
     localStorage.removeItem('napas_demo_mode');
     localStorage.removeItem('napas_active_focus_session');
+    localStorage.removeItem('napas_checkin_mood');
     focusStore.resetForUser();
     setUserId(null);
     setStudentProfile(null);
+    setTodayCheckinScore(undefined);
     showToast('Berhasil keluar.', '👋');
   };
 
@@ -434,14 +449,14 @@ export const App: React.FC = () => {
     setTodayCheckinScore(score);
 
     // Optimistically update score & zona immediately for instant reactive feedback
-    if (score === 5) {
-      setBurnoutScore((prev) => Math.max(16, Math.min(prev, Math.round(prev * 0.72))));
+    if (score === 5 || score === 4) {
+      setBurnoutScore(16);
       setZonaLabel('Hijau (Prima)');
     } else if (score === 3) {
-      setBurnoutScore((prev) => Math.min(55, Math.max(38, prev)));
+      setBurnoutScore(45);
       setZonaLabel('Kuning (Waspada)');
     } else if (score <= 2) {
-      setBurnoutScore((prev) => Math.min(79, Math.max(68, prev + 12)));
+      setBurnoutScore(72);
       setZonaLabel('Oranye (Beban Tinggi)');
     }
 

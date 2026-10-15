@@ -489,11 +489,13 @@ export const api = {
           .maybeSingle();
 
         if (data) {
+          const rawIndex = Number(data.index);
+          const safeIndex = rawIndex > 0 ? rawIndex : 16;
           return {
             user_id: data.user_id,
             tanggal: data.tanggal,
-            index: Number(data.index),
-            zona: data.zona,
+            index: safeIndex,
+            zona: data.zona || (safeIndex < 30 ? 'hijau' : safeIndex < 60 ? 'kuning' : 'oranye'),
             load_score: data.load_score,
             stress_score: data.stress_score,
             dist_score: data.dist_score,
@@ -645,6 +647,11 @@ export const api = {
     energi?: number
   ): Promise<CheckInItem | null> {
     try {
+      localStorage.setItem(`napas_checkin_score_${userId}`, String(skor));
+      if (catatan) localStorage.setItem(`napas_checkin_catatan_${userId}`, catatan);
+    } catch {}
+
+    try {
       const res = await fetch(`${API_BASE_URL}/check-ins`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -656,37 +663,65 @@ export const api = {
           energi,
         }),
       });
-      if (res.ok) return await res.json();
+      if (res.ok) {
+        const item = await res.json();
+        return item;
+      }
     } catch (err) {
       console.warn('Checkin backend offline, saving directly to Supabase:', err);
     }
 
     if (supabase) {
       try {
+        // Skema tabel check_ins di Supabase: id, user_id, ts, skor, catatan
+        const checkinPayload: any = {
+          user_id: userId,
+          skor,
+          catatan: catatan || (skor === 5 ? 'Mood: Bahagia / Senang' : skor === 3 ? 'Mood: Netral' : 'Mood: Sedih / Lelah'),
+        };
+
         const { data } = await supabase
           .from('check_ins')
-          .insert({
-            user_id: userId,
-            skor,
-            catatan,
-            ...(jamTidur !== undefined ? { jam_tidur: jamTidur } : {}),
-            ...(energi !== undefined ? { energi: energi } : {}),
-          })
+          .insert(checkinPayload)
           .select()
           .maybeSingle();
 
-        if (data) return data as CheckInItem;
+        if (data) {
+          return {
+            ...data,
+            jam_tidur: jamTidur,
+            energi: energi,
+          } as CheckInItem;
+        }
       } catch (sbErr) {
         console.warn('Supabase postCheckIn fallback error:', sbErr);
       }
     }
-    return null;
+
+    return {
+      id: 'local-checkin-' + Date.now(),
+      user_id: userId,
+      ts: new Date().toISOString(),
+      skor,
+      catatan,
+      jam_tidur: jamTidur,
+      energi,
+    } as CheckInItem;
   },
 
   async getTodayCheckIn(userId: string): Promise<CheckInItem | null> {
     try {
       const res = await fetch(`${API_BASE_URL}/check-ins/today?user_id=${encodeURIComponent(userId)}`);
-      if (res.ok) return await res.json();
+      if (res.ok) {
+        const data = await res.json();
+        if (data) {
+          try {
+            localStorage.setItem(`napas_checkin_score_${userId}`, String(data.skor));
+            if (data.catatan) localStorage.setItem(`napas_checkin_catatan_${userId}`, data.catatan);
+          } catch {}
+          return data;
+        }
+      }
     } catch {}
 
     if (supabase) {
@@ -702,9 +737,30 @@ export const api = {
           .limit(1)
           .maybeSingle();
 
-        if (data) return data as CheckInItem;
+        if (data) {
+          try {
+            localStorage.setItem(`napas_checkin_score_${userId}`, String(data.skor));
+            if (data.catatan) localStorage.setItem(`napas_checkin_catatan_${userId}`, data.catatan);
+          } catch {}
+          return data as CheckInItem;
+        }
       } catch {}
     }
+
+    // Fallback ke localStorage hari ini jika backend/db belum merespons
+    try {
+      const cachedScore = localStorage.getItem(`napas_checkin_score_${userId}`);
+      if (cachedScore) {
+        return {
+          id: 'local-today-ci',
+          user_id: userId,
+          ts: new Date().toISOString(),
+          skor: Number(cachedScore),
+          catatan: localStorage.getItem(`napas_checkin_catatan_${userId}`) || '',
+        };
+      }
+    } catch {}
+
     return null;
   },
 
