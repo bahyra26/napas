@@ -96,9 +96,13 @@ def calculate_stress_score(metrics_list: List[Dict[str, Any]]) -> Tuple[Optional
     if not metrics_list:
         return None, ["sensor visual tidak aktif hari ini"]
 
-    valid_samples = [m for m in metrics_list if m.get("face_visible") is not False]
+    valid_samples = [
+        m for m in metrics_list
+        if m.get("face_visible") is not False
+        and (m.get("blink_rate") is not None or m.get("brow_tension") is not None or m.get("gaze_minutes") is not None)
+    ]
     if not valid_samples:
-        return None, ["wajah tidak terdeteksi di depan laptop"]
+        return None, ["sensor visual tidak aktif hari ini"]
 
     ref_blink = 15.0
     avg_blink = sum(float(m.get("blink_rate") or ref_blink) for m in valid_samples) / len(valid_samples)

@@ -480,6 +480,19 @@ export const api = {
 
     if (supabase) {
       try {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        // Ambil check-in terbaru hari ini
+        const { data: latestCi } = await supabase
+          .from('check_ins')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('ts', todayStart.toISOString())
+          .order('ts', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
         const { data } = await supabase
           .from('daily_index')
           .select('*')
@@ -487,6 +500,49 @@ export const api = {
           .order('tanggal', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        const moodScoreMap: Record<number, { index: number; zona: 'hijau' | 'kuning' | 'oranye' }> = {
+          5: { index: 16, zona: 'hijau' },
+          4: { index: 22, zona: 'hijau' },
+          3: { index: 45, zona: 'kuning' },
+          2: { index: 70, zona: 'oranye' },
+          1: { index: 79, zona: 'oranye' },
+        };
+
+        // Jika ada check-in hari ini dan index di daily_index belum sinkron dengan skor mood tersebut
+        if (latestCi && (!data || (latestCi.skor === 3 && Number(data.index) < 30) || (latestCi.skor <= 2 && Number(data.index) < 60) || (latestCi.skor >= 4 && Number(data.index) > 30))) {
+          const mapping = moodScoreMap[latestCi.skor] || { index: 45, zona: 'kuning' };
+          const todayStr = new Date().toISOString().split('T')[0];
+          const reasons = [
+            'belum ada data beban kerja',
+            'sensor visual tidak aktif hari ini',
+            'monitor fokus tidak aktif hari ini',
+            `Catatan: "${latestCi.catatan || 'Mood dicatat'}"`
+          ];
+
+          try {
+            await supabase.from('daily_index').upsert({
+              user_id: userId,
+              tanggal: todayStr,
+              index: mapping.index,
+              zona: mapping.zona,
+              checkin_score: mapping.index,
+              alasan_json: reasons,
+              trend_flag: false
+            }, { onConflict: 'user_id,tanggal' });
+          } catch {}
+
+          return {
+            user_id: userId,
+            tanggal: todayStr,
+            index: mapping.index,
+            zona: mapping.zona,
+            checkin_score: mapping.index,
+            alasan: reasons,
+            trend_flag: false,
+            sensors_missing: ['load', 'stress', 'dist'],
+          };
+        }
 
         if (data) {
           const rawIndex = Number(data.index);
@@ -687,6 +743,35 @@ export const api = {
           .maybeSingle();
 
         if (data) {
+          const scoreMap: Record<number, { index: number; zona: 'hijau' | 'kuning' | 'oranye' }> = {
+            5: { index: 16, zona: 'hijau' },
+            4: { index: 22, zona: 'hijau' },
+            3: { index: 45, zona: 'kuning' },
+            2: { index: 70, zona: 'oranye' },
+            1: { index: 79, zona: 'oranye' },
+          };
+          const mapping = scoreMap[skor] || { index: 45, zona: 'kuning' };
+          const todayStr = new Date().toISOString().split('T')[0];
+
+          try {
+            await supabase.from('daily_index').upsert({
+              user_id: userId,
+              tanggal: todayStr,
+              index: mapping.index,
+              zona: mapping.zona,
+              checkin_score: mapping.index,
+              alasan_json: [
+                'belum ada data beban kerja',
+                'sensor visual tidak aktif hari ini',
+                'monitor fokus tidak aktif hari ini',
+                `Catatan: "${checkinPayload.catatan}"`
+              ],
+              trend_flag: false
+            }, { onConflict: 'user_id,tanggal' });
+          } catch (idxErr) {
+            console.warn('daily_index sync warning:', idxErr);
+          }
+
           return {
             ...data,
             jam_tidur: jamTidur,

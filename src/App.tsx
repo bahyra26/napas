@@ -39,8 +39,38 @@ export const App: React.FC = () => {
   const [isAutoPlanning, setIsAutoPlanning] = useState(false);
 
   // Burnout Engine state
-  const [burnoutScore, setBurnoutScore] = useState<number>(20);
-  const [zonaLabel, setZonaLabel] = useState<string>('Hijau (Prima)');
+  const [burnoutScore, setBurnoutScore] = useState<number>(() => {
+    try {
+      const storedUid = typeof window !== 'undefined' ? localStorage.getItem('napas_user_id') : null;
+      if (storedUid) {
+        const cached = localStorage.getItem(`napas_checkin_score_${storedUid}`);
+        if (cached === '3') return 45;
+        if (cached === '1' || cached === '2') return 79;
+        if (cached === '5' || cached === '4') return 16;
+      }
+      const mood = typeof window !== 'undefined' ? localStorage.getItem('napas_checkin_mood') : null;
+      if (mood === 'Netral') return 45;
+      if (mood === 'Sedih') return 79;
+      if (mood === 'Bahagia / Senang') return 16;
+    } catch {}
+    return 16;
+  });
+  const [zonaLabel, setZonaLabel] = useState<string>(() => {
+    try {
+      const storedUid = typeof window !== 'undefined' ? localStorage.getItem('napas_user_id') : null;
+      if (storedUid) {
+        const cached = localStorage.getItem(`napas_checkin_score_${storedUid}`);
+        if (cached === '3') return 'Kuning (Waspada)';
+        if (cached === '1' || cached === '2') return 'Oranye (Beban Tinggi)';
+        if (cached === '5' || cached === '4') return 'Hijau (Prima)';
+      }
+      const mood = typeof window !== 'undefined' ? localStorage.getItem('napas_checkin_mood') : null;
+      if (mood === 'Netral') return 'Kuning (Waspada)';
+      if (mood === 'Sedih') return 'Oranye (Beban Tinggi)';
+      if (mood === 'Bahagia / Senang') return 'Hijau (Prima)';
+    } catch {}
+    return 'Hijau (Prima)';
+  });
   const [trendText, setTrendText] = useState<string>('Kondisi stabil');
   const [alasanChips, setAlasanChips] = useState<string[]>([]);
   const [todayCheckinScore, setTodayCheckinScore] = useState<number | undefined>(() => {

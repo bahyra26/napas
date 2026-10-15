@@ -24,6 +24,11 @@ def submit_check_in(payload: CheckInCreate):
     try:
         res = supabase.table("check_ins").insert(row).execute()
         if res.data:
+            try:
+                from routers.index import get_or_compute_today_index
+                get_or_compute_today_index(payload.user_id)
+            except Exception:
+                pass
             return res.data[0]
     except Exception as e:
         # Fallback jika kolom baru (jam_tidur / energi) belum ditambahkan ke tabel Supabase
@@ -34,6 +39,11 @@ def submit_check_in(payload: CheckInCreate):
         }
         res = supabase.table("check_ins").insert(basic_row).execute()
         if res.data:
+            try:
+                from routers.index import get_or_compute_today_index
+                get_or_compute_today_index(payload.user_id)
+            except Exception:
+                pass
             item = res.data[0]
             item["jam_tidur"] = payload.jam_tidur
             item["energi"] = payload.energi
