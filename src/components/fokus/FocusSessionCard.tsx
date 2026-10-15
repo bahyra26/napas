@@ -139,9 +139,7 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
           <span className="dot-indicator"></span>
           <span>
             <strong>NAPAS Focus Sanctuary:</strong>
-            {session.agentOnline
-              ? ' Companion Desktop Aktif — Auto-switch kembali ke NAPAS jika membuka distraksi.'
-              : ' Guard Browser Aktif — Link di whitelist diizinkan penuh tanpa dihitung distraksi.'}
+            {' Ruang belajar fokus bebas distraksi dengan timer Pomodoro, audio relaksasi binaural, dan peluncur materi kuliah.'}
           </span>
         </div>
         <div className="banner-quick-actions">
@@ -328,7 +326,7 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
                   ) : (
                     <div className="feedback-content">
                       <span>
-                        ⛔ <strong>Di Luar Whitelist:</strong> Domain <code>{extractDomain(testUrl)}</code> belum diizinkan. Jika dibuka saat fokus, tab akan otomatis ditutup dalam 3 detik.
+                        ⛔ <strong>Di Luar Whitelist:</strong> Domain <code>{extractDomain(testUrl)}</code> belum ada di daftar materi belajar.
                       </span>
                       <button
                         type="button"

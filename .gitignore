@@ -2,14 +2,9 @@
 node_modules/
 .venv/
 venv/
-**/venv/
-**/.venv/
 __pycache__/
 *.py[cod]
 *$py.class
-*.db
-*.sqlite
-*.sqlite3
 /.pnp
 .pnp.js
 
@@ -22,9 +17,10 @@ dist-ssr/
 
 # Environment & local files
 .env
-.env.*
-**/.env
-**/.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Logs
 npm-debug.log*
