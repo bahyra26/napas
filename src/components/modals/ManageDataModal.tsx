@@ -45,7 +45,7 @@ export const ManageDataModal: React.FC<ManageDataModalProps> = ({
         {confirmStep === 'menu' ? (
           <div>
             <p style={{ fontSize: '12.5px', color: '#4b5563', lineHeight: '1.5', marginBottom: '16px' }}>
-              Seluruh data biometrik visual diproses secara lokal di browser Anda. Pilih tindakan manajemen data di bawah ini:
+              Data kesehatan mental dan agenda diproses secara aman di perangkat lokal Anda. Pilih tindakan manajemen data di bawah ini:
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -62,10 +62,10 @@ export const ManageDataModal: React.FC<ManageDataModalProps> = ({
               >
                 <div>
                   <div style={{ fontSize: '13px', fontWeight: 600, color: '#111827' }}>
-                    Reset Pengaturan Sensor &amp; Whitelist
+                    Reset Preferensi Ritme &amp; Notifikasi
                   </div>
                   <div style={{ fontSize: '11px', color: '#6b7280' }}>
-                    Kembalikan izin kamera dan daftar aplikasi fokus ke bawaan.
+                    Kembalikan preferensi jam tidur, kronotipe, dan notifikasi ke bawaan.
                   </div>
                 </div>
                 <button

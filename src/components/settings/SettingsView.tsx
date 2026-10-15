@@ -1,158 +1,123 @@
 import React, { useState, useEffect } from 'react';
-import {
-  INITIAL_INTERVENTION_SETTINGS,
-  INITIAL_SENSOR_PERMISSIONS,
-  INITIAL_USER_PROFILE,
-  INITIAL_WHITELIST_APPS,
-} from '../../data/mockData';
-import {
-  InterventionSettingItem,
-  SensorPermissionItem,
-  UserProfileInfo,
-} from '../../types';
-import { PrivacyBanner } from './PrivacyBanner';
-import { SensorPermissionCard } from './SensorPermissionCard';
-import { InterventionSettingsCard } from './InterventionSettingsCard';
-import { FocusAppsCard } from './FocusAppsCard';
-import { DataAccountCard } from './DataAccountCard';
-import { AddAppModal } from '../modals/AddAppModal';
-import { ThresholdModal } from '../modals/ThresholdModal';
-import { ProfileModal } from '../modals/ProfileModal';
+import { api, getStoredUserId, StudentProfile } from '../../services/api';
+import { googleCalendarService } from '../../services/googleCalendar';
+import { StudentProfileHero } from './StudentProfileHero';
+import { AcademicProfileCard } from './AcademicProfileCard';
+import { CircadianRhythmCard } from './CircadianRhythmCard';
+import { CalendarSyncCard } from './CalendarSyncCard';
+import { NotificationPreferencesCard } from './NotificationPreferencesCard';
+import { DataManagementCard } from './DataManagementCard';
+import { GoogleCalendarModal } from '../modals/GoogleCalendarModal';
 import { ManageDataModal } from '../modals/ManageDataModal';
-import { PrivacyModal } from '../modals/PrivacyModal';
-import { api, getStoredUserId } from '../../services/api';
 
 interface SettingsViewProps {
   onNotify: (message: string, icon?: string) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify }) => {
-  const [sensors, setSensors] = useState<SensorPermissionItem[]>(INITIAL_SENSOR_PERMISSIONS);
-  const [interventions, setInterventions] = useState<InterventionSettingItem[]>(INITIAL_INTERVENTION_SETTINGS);
-  const [thresholdMinutes, setThresholdMinutes] = useState(5);
-  const [whitelistApps, setWhitelistApps] = useState<string[]>(INITIAL_WHITELIST_APPS);
-  const [userProfile, setUserProfile] = useState<UserProfileInfo>(INITIAL_USER_PROFILE);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [userName, setUserName] = useState<string>('Mahasiswa');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [isCalendarConnected, setIsCalendarConnected] = useState<boolean>(false);
+  const [isSyncingCalendar, setIsSyncingCalendar] = useState<boolean>(false);
 
-  // Modal states
-  const [isAddAppOpen, setIsAddAppOpen] = useState(false);
-  const [isThresholdOpen, setIsThresholdOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isManageDataOpen, setIsManageDataOpen] = useState(false);
-  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  // Modals
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+
+  const loadData = async () => {
+    const userId = getStoredUserId();
+    if (!userId) return;
+
+    // 1. Check Google Calendar connection
+    setIsCalendarConnected(googleCalendarService.isGoogleConnected(userId));
+
+    // 2. Fetch User & Profile
+    const [userData, profileData] = await Promise.all([
+      api.getUser(userId),
+      api.getProfile(userId),
+    ]);
+
+    if (userData) {
+      setUserName(userData.nama || 'Mahasiswa');
+      setUserEmail(userData.email || '');
+    }
+
+    if (profileData) {
+      setProfile({
+        ...profileData,
+        nama: profileData.nama || userData?.nama || 'Mahasiswa',
+        email: profileData.email || userData?.email || '',
+      });
+    }
+  };
 
   useEffect(() => {
-    async function loadUserData() {
-      const userId = getStoredUserId();
-      if (!userId) return;
-
-      const user = await api.getUser(userId);
-      if (user) {
-        setUserProfile({
-          name: user.nama,
-          email: user.email,
-          role: 'Mahasiswa',
-        });
-        setSensors((prev) =>
-          prev.map((s) => {
-            if (s.id === 'sensor-camera') {
-              return { ...s, enabled: user.consent_camera };
-            }
-            if (s.id === 'sensor-window') {
-              return { ...s, enabled: user.consent_window };
-            }
-            return s;
-          })
-        );
-      }
-    }
-
-    loadUserData();
+    loadData();
   }, []);
 
-  const handleToggleSensor = async (id: string) => {
-    const target = sensors.find((s) => s.id === id);
-    if (!target) return;
-
-    const newState = !target.enabled;
-    setSensors((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, enabled: newState } : s))
-    );
-
-    onNotify(
-      `${target.title} sekarang ${newState ? 'diaktifkan' : 'dinonaktifkan'}.`,
-      newState ? '🔒' : '⚪'
-    );
-
+  // Save Academic Profile
+  const handleSaveAcademicProfile = async (updated: Partial<StudentProfile>): Promise<boolean> => {
     const userId = getStoredUserId();
-    if (userId) {
-      if (id === 'sensor-camera') {
-        await api.updateUser(userId, { consent_camera: newState });
-      } else if (id === 'sensor-window') {
-        await api.updateUser(userId, { consent_window: newState });
+    if (!userId) return false;
+
+    // Update in users table
+    if (updated.nama || updated.email) {
+      await api.updateUser(userId, {
+        nama: updated.nama,
+        email: updated.email,
+      });
+    }
+
+    // Update in profile table
+    const res = await api.updateProfile(userId, updated);
+    if (res) {
+      setProfile((prev) => (prev ? { ...prev, ...updated } : (updated as StudentProfile)));
+      if (updated.nama) setUserName(updated.nama);
+      if (updated.email) setUserEmail(updated.email);
+      return true;
+    }
+    return false;
+  };
+
+  // Save Circadian Rhythm
+  const handleSaveCircadianRhythm = async (updated: Partial<StudentProfile>): Promise<boolean> => {
+    const userId = getStoredUserId();
+    if (!userId) return false;
+
+    const res = await api.updateProfile(userId, updated);
+    if (res) {
+      setProfile((prev) => (prev ? { ...prev, ...updated } : (updated as StudentProfile)));
+      return true;
+    }
+    return false;
+  };
+
+  // Quick Calendar Sync
+  const handleQuickSyncCalendar = async () => {
+    const userId = getStoredUserId();
+    if (!userId) return;
+
+    setIsSyncingCalendar(true);
+    try {
+      const res = await googleCalendarService.fetchAndSyncEvents(userId);
+      if (res && res.success) {
+        onNotify(`Sinkronisasi berhasil! ${res.count} agenda Google Calendar diselaraskan.`, '📅');
+      } else {
+        onNotify(res.message || 'Koneksi kalender memerlukan autentikasi.', 'ℹ️');
+        setIsCalendarModalOpen(true);
       }
+    } catch {
+      onNotify('Koneksi kalender memerlukan autentikasi ulang.', '⚠️');
+      setIsCalendarModalOpen(true);
+    } finally {
+      setIsSyncingCalendar(false);
+      setIsCalendarConnected(googleCalendarService.isGoogleConnected(userId));
     }
-  };
-
-  const handleToggleIntervention = (id: string) => {
-    setInterventions((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const newState = !item.enabled;
-          onNotify(
-            `${item.title} ${newState ? 'diaktifkan' : 'dinonaktifkan'}.`,
-            newState ? '✅' : '⏸️'
-          );
-          return { ...item, enabled: newState };
-        }
-        return item;
-      })
-    );
-  };
-
-  const handleSaveThreshold = (minutes: number) => {
-    setThresholdMinutes(minutes);
-    onNotify(`Batas distraksi diperbarui menjadi ${minutes} menit.`, '⏱️');
-  };
-
-  const handleAddApp = (appName: string) => {
-    if (whitelistApps.includes(appName)) {
-      onNotify(`${appName} sudah ada di daftar aplikasi fokus.`, '⚠️');
-      return;
-    }
-    setWhitelistApps((prev) => [...prev, appName]);
-    onNotify(`"${appName}" berhasil ditambahkan ke whitelist fokus.`, '🎯');
-  };
-
-  const handleRemoveApp = (appName: string) => {
-    setWhitelistApps((prev) => prev.filter((app) => app !== appName));
-    onNotify(`"${appName}" dihapus dari whitelist.`, '🗑️');
-  };
-
-  const handleExportData = () => {
-    const exportPayload = {
-      user: userProfile,
-      sensors,
-      interventions,
-      thresholdMinutes,
-      whitelistApps,
-      exportedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `napas-data-${Date.now()}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    onNotify('Data berhasil diekspor ke format JSON!', '📥');
   };
 
   const handleClearLocalData = () => {
     localStorage.removeItem('napas_focus_sessions');
-    localStorage.removeItem('napas_focus_whitelist');
-    localStorage.removeItem('napas_whitelist_apps');
     sessionStorage.clear();
     onNotify('Cache dan riwayat sesi lokal berhasil dibersihkan.', '🧹');
     setTimeout(() => {
@@ -160,100 +125,94 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify }) => {
     }, 800);
   };
 
-  const handleResetPreferences = () => {
-    setSensors(INITIAL_SENSOR_PERMISSIONS);
-    setInterventions(INITIAL_INTERVENTION_SETTINGS);
-    setWhitelistApps(INITIAL_WHITELIST_APPS);
-    onNotify('Pengaturan sensor dan preferensi berhasil di-reset.', '🔄');
-  };
-
-  const handleSaveProfile = async (updated: UserProfileInfo) => {
-    setUserProfile(updated);
-    onNotify(`Profil ${updated.name} berhasil diperbarui!`, '👤');
-
+  const handleResetPreferences = async () => {
     const userId = getStoredUserId();
     if (userId) {
-      await api.updateUser(userId, {
-        nama: updated.name,
-        email: updated.email,
+      await api.updateProfile(userId, {
+        jam_tidur: '23:00',
+        jam_bangun: '06:00',
+        kronotipe: 'pagi',
+        target_fokus_jam: 4.0,
       });
+      loadData();
     }
+    localStorage.removeItem('napas_notif_burnout');
+    localStorage.removeItem('napas_notif_checkin');
+    localStorage.removeItem('napas_notif_chime');
+    onNotify('Preferensi ritme dan notifikasi berhasil di-reset ke bawaan.', '🔄');
   };
 
   return (
     <div className="settings-container">
-      {/* Subtitle */}
+      {/* Intro Subtitle */}
       <p className="settings-page-intro">
-        Kelola privasi, intervensi, dan preferensi aplikasi NAPAS-mu.
+        Kelola identitas akademik, ritme waktu belajar, integrasi Google Calendar, dan kedaulatan data Anda.
       </p>
 
-      {/* Full-width Privacy Banner */}
-      <PrivacyBanner
-        onLearnMore={() => setIsPrivacyModalOpen(true)}
+      {/* 1. Hero Banner: Profil Mahasiswa & Status Koneksi */}
+      <StudentProfileHero
+        profile={profile}
+        userName={userName}
+        userEmail={userEmail}
+        isCalendarConnected={isCalendarConnected}
+        onOpenCalendarModal={() => setIsCalendarModalOpen(true)}
       />
 
-      {/* Middle Row: Izin Sensor (Left) & Intervensi (Right) */}
-      <div className="settings-middle-grid">
-        <SensorPermissionCard
-          sensors={sensors}
-          onToggleSensor={handleToggleSensor}
-        />
-        <InterventionSettingsCard
-          settings={interventions}
-          thresholdMinutes={thresholdMinutes}
-          onToggleSetting={handleToggleIntervention}
-          onEditThreshold={() => setIsThresholdOpen(true)}
-        />
-      </div>
+      {/* 2. Main 2-Column Balanced Grid */}
+      <div className="settings-main-grid">
+        {/* Kolom Kiri: Identitas Akademik & Ritme Harian */}
+        <div className="settings-column">
+          <AcademicProfileCard
+            initialProfile={profile}
+            onSaveProfile={handleSaveAcademicProfile}
+            onNotify={onNotify}
+          />
 
-      {/* Bottom Row: Aplikasi Fokus (Left) & Data/Akun (Right) */}
-      <div className="settings-bottom-grid">
-        <FocusAppsCard
-          apps={whitelistApps}
-          onAddApp={() => setIsAddAppOpen(true)}
-          onRemoveApp={handleRemoveApp}
-          onManageWhitelist={() => setIsAddAppOpen(true)}
-        />
-        <DataAccountCard
-          user={userProfile}
-          lastUpdated="hari ini"
-          onExportData={handleExportData}
-          onManageData={() => setIsManageDataOpen(true)}
-          onManageProfile={() => setIsProfileOpen(true)}
-        />
+          <CircadianRhythmCard
+            initialProfile={profile}
+            onSaveRhythm={handleSaveCircadianRhythm}
+            onNotify={onNotify}
+          />
+        </div>
+
+        {/* Kolom Kanan: Google Calendar, Notifikasi, & Manajemen Data */}
+        <div className="settings-column">
+          <CalendarSyncCard
+            isCalendarConnected={isCalendarConnected}
+            onOpenCalendarModal={() => setIsCalendarModalOpen(true)}
+            onSyncNow={handleQuickSyncCalendar}
+            isSyncing={isSyncingCalendar}
+          />
+
+          <NotificationPreferencesCard onNotify={onNotify} />
+
+          <DataManagementCard
+            profile={profile}
+            onOpenManageModal={() => setIsManageModalOpen(true)}
+            onNotify={onNotify}
+          />
+        </div>
       </div>
 
       {/* Modals */}
-      <AddAppModal
-        isOpen={isAddAppOpen}
-        onClose={() => setIsAddAppOpen(false)}
-        onAddApp={handleAddApp}
-      />
-
-      <ThresholdModal
-        isOpen={isThresholdOpen}
-        currentThreshold={thresholdMinutes}
-        onClose={() => setIsThresholdOpen(false)}
-        onSaveThreshold={handleSaveThreshold}
-      />
-
-      <ProfileModal
-        isOpen={isProfileOpen}
-        user={userProfile}
-        onClose={() => setIsProfileOpen(false)}
-        onSaveProfile={handleSaveProfile}
+      <GoogleCalendarModal
+        isOpen={isCalendarModalOpen}
+        onClose={() => {
+          setIsCalendarModalOpen(false);
+          loadData();
+        }}
+        userId={getStoredUserId()}
+        onSyncComplete={async () => {
+          await loadData();
+        }}
+        showToast={onNotify}
       />
 
       <ManageDataModal
-        isOpen={isManageDataOpen}
-        onClose={() => setIsManageDataOpen(false)}
+        isOpen={isManageModalOpen}
+        onClose={() => setIsManageModalOpen(false)}
         onClearLocalData={handleClearLocalData}
         onResetPreferences={handleResetPreferences}
-      />
-
-      <PrivacyModal
-        isOpen={isPrivacyModalOpen}
-        onClose={() => setIsPrivacyModalOpen(false)}
       />
     </div>
   );

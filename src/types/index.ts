@@ -147,5 +147,21 @@ export interface UserProfileInfo {
   role?: string;
 }
 
+export interface StudentProfileData {
+  user_id: string;
+  nama: string;
+  panggilan: string;
+  email: string;
+  kampus: string;
+  jurusan: string;
+  semester: number;
+  jam_tidur: string;
+  jam_bangun: string;
+  kronotipe: 'pagi' | 'siang' | 'malam';
+  target_fokus_jam: number;
+  avatar_url?: string;
+  onboarded?: boolean;
+}
+
 
 
