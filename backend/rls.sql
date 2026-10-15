@@ -15,7 +15,6 @@ ALTER TABLE interventions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE check_ins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_index ENABLE ROW LEVEL SECURITY;
 ALTER TABLE focus_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE study_sessions ENABLE ROW LEVEL SECURITY;
 
 -- 2. KEBIJAKAN AKSES ROW LEVEL SECURITY (RLS POLICIES)
 -- Kunci service_role FastAPI membypass RLS secara default.
@@ -54,14 +53,5 @@ BEGIN
     CREATE POLICY "Users can delete their own focus sessions"
     ON public.focus_sessions FOR DELETE TO authenticated
     USING (auth.uid() = user_id);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'study_sessions' AND policyname = 'Users can manage their own study sessions'
-  ) THEN
-    CREATE POLICY "Users can manage their own study sessions"
-    ON public.study_sessions FOR ALL TO authenticated
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
   END IF;
 END $$;
