@@ -72,27 +72,47 @@ def update_workload_item(item_id: str, payload: dict):
 @router.get("/{user_id}", response_model=List[WorkloadResponse])
 def get_user_workloads(user_id: str):
     u_uuid = deterministic_uuid(user_id)
-    items = local_list_workload_items(u_uuid)
-    if not items and user_id != u_uuid:
-        items = local_list_workload_items(user_id)
+    u_id = ensure_uuid(user_id)
+    items = []
 
-    known_ids = {i.get("id") for i in items}
     if supabase:
         try:
-            u_id = ensure_uuid(user_id)
             res = supabase.table("workload_items") \
                 .select("*") \
                 .in_("user_id", [user_id, u_id, u_uuid]) \
                 .order("deadline", desc=False) \
                 .execute()
             if res.data:
-                for r in res.data:
-                    if r.get("id") not in known_ids:
-                        items.append(r)
+                items = list(res.data)
         except Exception:
             pass
 
-    return items
+    if not items:
+        items = local_list_workload_items(u_uuid)
+        if not items and user_id != u_uuid:
+            items = local_list_workload_items(user_id)
+
+    # DEDUPLIKASI KETAT: jangan biarkan agenda ganda tampil di daftar tugas
+    deduped = []
+    seen_google_ids = set()
+    seen_title_date = set()
+
+    for item in items:
+        gid = item.get("google_event_id")
+        if gid:
+            if gid in seen_google_ids:
+                continue
+            seen_google_ids.add(gid)
+
+        title_clean = (item.get("judul") or "").strip().lower()
+        date_prefix = str(item.get("deadline") or "")[:10]
+        key = (title_clean, date_prefix)
+        if key in seen_title_date:
+            continue
+        seen_title_date.add(key)
+        deduped.append(item)
+
+    return deduped
 
 @router.patch("/{item_id}/status", response_model=WorkloadResponse)
 def update_workload_status(item_id: str, payload: WorkloadUpdateStatus):

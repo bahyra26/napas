@@ -223,8 +223,11 @@ def sync_google_calendar_events(payload: CalendarSyncRequest):
             "description": ev.description
         })
 
+    u_id = ensure_uuid(payload.user_id)
+    ensure_user_in_supabase(u_id)
+
     # 1. Simpan ke SQLite Lokal
-    synced_local = local_bulk_sync_google_events(payload.user_id, raw_events)
+    synced_local = local_bulk_sync_google_events(u_id, raw_events)
 
     # 2. Simpan juga ke Supabase jika tersedia
     synced_supabase = 0
@@ -248,7 +251,7 @@ def sync_google_calendar_events(payload: CalendarSyncRequest):
                         est_jam = round(dur, 1)
 
                 row = {
-                    "user_id": payload.user_id,
+                    "user_id": u_id,
                     "judul": ev.summary,
                     "jenis": jenis,
                     "deadline": (ev.end or ev.start).isoformat(),
@@ -261,7 +264,7 @@ def sync_google_calendar_events(payload: CalendarSyncRequest):
 
                 existing = supabase.table("workload_items") \
                     .select("id") \
-                    .eq("user_id", payload.user_id) \
+                    .in_("user_id", [payload.user_id, u_id]) \
                     .eq("google_event_id", ev.id) \
                     .execute()
 

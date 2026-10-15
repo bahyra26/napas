@@ -22,6 +22,7 @@ export interface CalendarTaskItem {
 
 export interface CalendarDay {
   date: string;
+  raw_date?: string;
   dayName: string;
   dayNum: number;
   monthShort?: string;

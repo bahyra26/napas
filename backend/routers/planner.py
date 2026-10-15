@@ -22,27 +22,52 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
     current_wib = now_wib()
     today_date = current_wib.date()
 
-    # 1. Ambil workload aktif (SQLite Lokal & Supabase)
-    from local_db import local_list_workload_items, deterministic_uuid
+    # 1. Ambil workload aktif (Supabase diutamakan, SQLite Lokal sebagai fallback)
+    from local_db import deterministic_uuid
+    from db import ensure_uuid
     u_uuid = deterministic_uuid(user_id)
-    workloads = local_list_workload_items(u_uuid, status="belum")
-    if not workloads and user_id != u_uuid:
-        workloads = local_list_workload_items(user_id, status="belum")
+    u_id = ensure_uuid(user_id)
+    workloads = []
 
-    known_ids = {w.get("id") for w in workloads}
     if supabase:
         try:
             wl_res = supabase.table("workload_items") \
                 .select("*") \
-                .in_("user_id", [user_id, u_uuid]) \
+                .in_("user_id", [user_id, u_uuid, u_id]) \
                 .eq("status", "belum") \
                 .execute()
             if wl_res.data:
-                for w in wl_res.data:
-                    if w.get("id") not in known_ids:
-                        workloads.append(w)
+                workloads = list(wl_res.data)
         except Exception:
             pass
+
+    if not workloads:
+        from local_db import local_list_workload_items
+        workloads = local_list_workload_items(u_uuid, status="belum")
+        if not workloads and user_id != u_uuid:
+            workloads = local_list_workload_items(user_id, status="belum")
+
+    # DEDUPLIKASI KETAT: jangan biarkan agenda Google atau tugas dengan judul dan tanggal sama muncul berulang!
+    deduped_workloads = []
+    seen_google_ids = set()
+    seen_title_date = set()
+
+    for w in workloads:
+        gid = w.get("google_event_id")
+        if gid:
+            if gid in seen_google_ids:
+                continue
+            seen_google_ids.add(gid)
+
+        title_clean = (w.get("judul") or "").strip().lower()
+        date_prefix = str(w.get("deadline") or "")[:10]
+        key = (title_clean, date_prefix)
+        if key in seen_title_date:
+            continue
+        seen_title_date.add(key)
+        deduped_workloads.append(w)
+
+    workloads = deduped_workloads
 
     # 2. Ambil jadwal kuliah mingguan
     class_schedules = []
@@ -130,9 +155,35 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
         total_effort_points = 0
         total_est_hours = 0.0
 
-        # Tambahkan jadwal kuliah hari ini
+        # Tambahkan jadwal kuliah hari ini (hindari overlap jika Google Calendar sudah menyertakan kelas yang sama)
+        DEFAULT_TEMPLATE_MATKUL = {
+            "kalkulus 2",
+            "struktur data & algoritma",
+            "basis data",
+            "jaringan komputer",
+            "metodologi penelitian"
+        }
+        has_google_events = any(w.get("source") == "google" or bool(w.get("google_event_id")) for w in workloads)
+
         day_classes = [c for c in class_schedules if c.get("hari") == weekday_idx]
+        existing_task_titles = set()
+        has_real_classes_today = False
+        if d_str in workload_by_date:
+            for w in workload_by_date[d_str]:
+                existing_task_titles.add(w["title"].lower())
+                if w.get("jenis") == "kuliah" or w.get("is_google"):
+                    has_real_classes_today = True
+
         for c in day_classes:
+            mk_clean = c['mata_kuliah'].lower().strip()
+            # Jika user sudah punya Google Calendar, abaikan template dummy onboarding
+            if has_google_events and mk_clean in DEFAULT_TEMPLATE_MATKUL:
+                continue
+            # Jika hari ini sudah ada kelas/event asli dari Google, jangan tumpuk jadwal manual
+            if has_real_classes_today:
+                continue
+            if any(mk_clean in t or t in mk_clean for t in existing_task_titles):
+                continue
             jam_m = c.get("jam_mulai", "08:00").replace(":", ".")
             jam_s = c.get("jam_selesai", "10:00").replace(":", ".")
             ruang = f" ({c['ruang']})" if c.get("ruang") else ""

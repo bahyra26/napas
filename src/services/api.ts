@@ -1076,11 +1076,117 @@ export const api = {
   async getRadar(userId: string, days: number = 14): Promise<RadarResponse | null> {
     try {
       const res = await fetch(`${API_BASE_URL}/planner/radar?user_id=${encodeURIComponent(userId)}&days=${days}`);
-      if (!res.ok) return null;
-      return await res.json();
-    } catch {
-      return null;
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.days && data.days.length > 0) {
+          try {
+            localStorage.setItem(`napas_radar_cache_${userId}`, JSON.stringify(data));
+          } catch {}
+          return data;
+        }
+      }
+    } catch (err) {
+      console.warn('Backend getRadar fetch warning:', err);
     }
+
+    // 1. Cek local cache jika ada
+    try {
+      const cached = localStorage.getItem(`napas_radar_cache_${userId}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.days && parsed.days.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+
+    // 2. Direct fallback to Supabase cloud
+    if (supabase) {
+      try {
+        const { data: wlItems } = await supabase
+          .from('workload_items')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('status', 'belum')
+          .order('deadline', { ascending: true });
+
+        const daysArr: RadarDayItem[] = [];
+        const DAY_NAMES_ID = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+        const DAY_SHORT_ID = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+        const MONTH_LONG_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const MONTH_SHORT_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+        const now = new Date();
+        const items = wlItems || [];
+
+        for (let i = 0; i < days; i++) {
+          const d = new Date(now.getTime() + i * 24 * 3600 * 1000);
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const dayNum = d.getDate();
+          const dayPad = String(dayNum).padStart(2, '0');
+          const rawDate = `${y}-${m}-${dayPad}`;
+
+          const wIdx = (d.getDay() + 6) % 7;
+          const dayName = DAY_SHORT_ID[wIdx];
+          const dayFull = DAY_NAMES_ID[wIdx];
+          const monthFull = MONTH_LONG_ID[d.getMonth()];
+          const monthShort = MONTH_SHORT_ID[d.getMonth()];
+
+          const matchingTasks = items
+            .filter((it: any) => it.deadline && it.deadline.startsWith(rawDate))
+            .map((it: any) => ({
+              id: it.id,
+              title: it.judul,
+              time: it.deadline.includes('T')
+                ? `Deadline ${it.deadline.split('T')[1].substring(0, 5).replace(':', '.')}`
+                : 'Deadline 23.59',
+              is_google: it.source === 'google' || !!it.google_event_id,
+              source: it.source || 'local',
+              jenis: it.jenis || 'tugas',
+            }));
+
+          const taskCount = matchingTasks.length;
+          const status: 'Ringan' | 'Sedang' | 'Berat' = taskCount >= 3 ? 'Berat' : taskCount >= 1 ? 'Sedang' : 'Ringan';
+          const load = Math.min(100, taskCount * 25 + 10);
+          const pillText = taskCount === 0 ? 'Bebas' : `${taskCount} agenda`;
+
+          daysArr.push({
+            date: `${dayFull}, ${dayNum} ${monthFull}`,
+            raw_date: rawDate,
+            dayName,
+            dayNum,
+            monthShort,
+            monthFull,
+            status,
+            load,
+            pillText,
+            tasks: matchingTasks,
+          });
+        }
+
+        const fallbackResponse: RadarResponse = {
+          days: daysArr,
+          busiest_day: daysArr.reduce((prev, curr) => (curr.load > prev.load ? curr : prev), daysArr[0]),
+          summary: {
+            total_tasks: items.length,
+            heavy_days: daysArr.filter((d) => d.status === 'Berat').length,
+            free_days: daysArr.filter((d) => d.status === 'Ringan').length,
+            busiest_label: daysArr[0]?.date || 'Hari ini',
+          },
+        };
+
+        try {
+          localStorage.setItem(`napas_radar_cache_${userId}`, JSON.stringify(fallbackResponse));
+        } catch {}
+
+        return fallbackResponse;
+      } catch (sbErr) {
+        console.warn('Supabase fallback for getRadar failed:', sbErr);
+      }
+    }
+
+    return null;
   },
 
   async autoPlan(userId: string, sessionMinutes: number = 50, days: number = 14): Promise<any> {

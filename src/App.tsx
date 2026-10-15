@@ -144,10 +144,22 @@ export const App: React.FC = () => {
 
   // Load Deadline Radar from backend
   const loadRadar = useCallback(async (uid: string) => {
+    // 1. Instant hydration dari local cache jika tersedia
+    try {
+      const cached = localStorage.getItem(`napas_radar_cache_${uid}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.days && parsed.days.length > 0) {
+          setCalendarDays(parsed.days);
+        }
+      }
+    } catch {}
+
     const radar = await api.getRadar(uid, 14);
     if (radar && radar.days && radar.days.length > 0) {
       const mappedDays: CalendarDay[] = radar.days.map((d) => ({
         date: d.date,
+        raw_date: d.raw_date || d.date,
         dayName: d.dayName,
         dayNum: d.dayNum,
         monthShort: d.monthShort,
@@ -158,6 +170,9 @@ export const App: React.FC = () => {
         tasks: d.tasks,
       }));
       setCalendarDays(mappedDays);
+      try {
+        localStorage.setItem(`napas_radar_cache_${uid}`, JSON.stringify({ days: mappedDays }));
+      } catch {}
       setSelectedDate((prev) => {
         const exists = mappedDays.some((md) => md.date === prev);
         return exists ? prev : mappedDays[0].date;
@@ -203,38 +218,45 @@ export const App: React.FC = () => {
   // Auth State Listener & Mount
   useEffect(() => {
     async function checkAuthAndInit() {
-      // 1. Cek sesi Supabase jika user baru kembali dari Google OAuth redirect
-      const session = await authService.getSession();
-      if (session?.user) {
-        if (session.provider_token) {
-          authService.setStoredProviderToken(session.provider_token);
-        }
-        const synced = await api.syncAuth({
-          access_token: session.access_token,
-          auth_id: session.user.id,
-          email: session.user.email,
-          nama: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
-          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
-        });
-        if (synced) {
-          await initUserSession(synced.id);
-          if (session.provider_token) {
-            googleCalendarService.fetchAndSyncEvents(synced.id).then((res) => {
-              if (res.success) {
-                loadRadar(synced.id);
-                loadWorkloads(synced.id);
-                showToast('Google Calendar asli berhasil disinkronkan!', '📅');
-              }
-            });
-          }
-          return;
-        }
-      }
-
-      // 2. Cek userId lokal yang tersimpan
+      // 1. Eksekusi instan jika userId lokal sudah tersimpan agar UI langsung ter-render tanpa delay
       const storedUid = getStoredUserId();
       if (storedUid) {
-        await initUserSession(storedUid);
+        initUserSession(storedUid);
+      }
+
+      // 2. Cek sesi Supabase jika user baru kembali dari Google OAuth redirect atau token aktif
+      try {
+        const session = await authService.getSession();
+        if (session?.user) {
+          if (session.provider_token) {
+            authService.setStoredProviderToken(session.provider_token);
+          }
+          const synced = await api.syncAuth({
+            access_token: session.access_token,
+            auth_id: session.user.id,
+            email: session.user.email,
+            nama: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+            avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+          });
+          if (synced) {
+            setStoredUserId(synced.id, synced.nama || synced.email || 'Mahasiswa');
+            if (synced.id !== storedUid) {
+              await initUserSession(synced.id);
+            }
+            if (session.provider_token) {
+              googleCalendarService.fetchAndSyncEvents(synced.id).then((res) => {
+                if (res.success) {
+                  loadRadar(synced.id);
+                  loadWorkloads(synced.id);
+                  showToast('Google Calendar asli berhasil disinkronkan!', '📅');
+                }
+              });
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Session check warning:', err);
       }
     }
 
@@ -249,13 +271,22 @@ export const App: React.FC = () => {
           email: session.user.email,
         });
         if (synced) {
+          setStoredUserId(synced.id, synced.nama || synced.email || 'Mahasiswa');
           await initUserSession(synced.id);
         }
       }
     });
 
     return () => unsub();
-  }, [initUserSession]);
+  }, [initUserSession, loadRadar, loadWorkloads]);
+
+  // Refresh deadline dan workloads otomatis saat tab Deadline Radar dibuka
+  useEffect(() => {
+    if (activeTab === 'deadline' && userId) {
+      loadRadar(userId);
+      loadWorkloads(userId);
+    }
+  }, [activeTab, userId, loadRadar, loadWorkloads]);
 
   const handleDemoLogin = async () => {
     const demoUser = await api.initDemoUser();
