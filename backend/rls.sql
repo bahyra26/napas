@@ -16,6 +16,7 @@ ALTER TABLE check_ins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_index ENABLE ROW LEVEL SECURITY;
 ALTER TABLE focus_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE class_schedule ENABLE ROW LEVEL SECURITY;
 
 -- 2. KEBIJAKAN AKSES ROW LEVEL SECURITY (RLS POLICIES)
 -- Kunci service_role FastAPI membypass RLS secara default.
@@ -89,5 +90,15 @@ BEGIN
     CREATE POLICY "Users can delete their own profile"
     ON public.user_profiles FOR DELETE TO authenticated
     USING (auth.uid() = user_id);
+  END IF;
+
+  -- Kebijakan class_schedule
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'class_schedule' AND policyname = 'Users can manage their own class schedule'
+  ) THEN
+    CREATE POLICY "Users can manage their own class schedule"
+    ON public.class_schedule FOR ALL TO authenticated
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
   END IF;
 END $$;
