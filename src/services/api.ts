@@ -1,13 +1,13 @@
 import { supabase } from './supabase';
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL !== undefined
-    ? import.meta.env.VITE_API_URL
-    : typeof window !== 'undefined' &&
-      window.location.hostname !== 'localhost' &&
-      window.location.hostname !== '127.0.0.1'
-    ? '/api'
-    : 'http://localhost:8000';
+  typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1'
+    ? (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('127.0.0.1') && !import.meta.env.VITE_API_URL.includes('localhost')
+        ? import.meta.env.VITE_API_URL
+        : '/api')
+    : (import.meta.env.VITE_API_URL || 'http://localhost:8000');
 
 export interface BackendHealth {
   status: string;

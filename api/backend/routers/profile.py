@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Optional
-from db import supabase, now_wib, ensure_uuid
+from db import supabase, now_wib, ensure_uuid, ensure_user_in_supabase
 from local_db import local_save_profile, local_get_profile, deterministic_uuid, get_user_by_id
 from schemas import (
     ProfileUpsert,
@@ -144,8 +144,11 @@ def get_class_schedule(user_id: str):
 @router.post("/schedule")
 def add_class_schedule(payload: ClassScheduleCreate):
     import uuid
+    u_id = ensure_uuid(payload.user_id)
+    ensure_user_in_supabase(u_id)
     row = payload.model_dump()
     row["id"] = str(uuid.uuid4())
+    row["user_id"] = u_id
     if supabase:
         try:
             res = supabase.table("class_schedule").insert(row).execute()
@@ -154,25 +157,27 @@ def add_class_schedule(payload: ClassScheduleCreate):
         except Exception:
             pass
     
-    user_id = payload.user_id
-    if user_id not in _MEM_SCHEDULES:
-        _MEM_SCHEDULES[user_id] = []
-    _MEM_SCHEDULES[user_id].append(row)
+    if u_id not in _MEM_SCHEDULES:
+        _MEM_SCHEDULES[u_id] = []
+    _MEM_SCHEDULES[u_id].append(row)
     return row
 
 @router.post("/schedule/bulk")
 def bulk_set_class_schedule(payload: ClassScheduleBulk):
     import uuid
+    u_id = ensure_uuid(payload.user_id)
+    ensure_user_in_supabase(u_id)
     rows = []
     for item in payload.items:
         r = item.model_dump()
         r["id"] = str(uuid.uuid4())
+        r["user_id"] = u_id
         rows.append(r)
 
     if supabase:
         try:
             if payload.replace:
-                supabase.table("class_schedule").delete().eq("user_id", payload.user_id).execute()
+                supabase.table("class_schedule").delete().eq("user_id", u_id).execute()
             if rows:
                 res = supabase.table("class_schedule").insert(rows).execute()
                 return {"status": "ok", "count": len(res.data or [])}
@@ -181,11 +186,11 @@ def bulk_set_class_schedule(payload: ClassScheduleBulk):
             pass
 
     if payload.replace:
-        _MEM_SCHEDULES[payload.user_id] = rows
+        _MEM_SCHEDULES[u_id] = rows
     else:
-        if payload.user_id not in _MEM_SCHEDULES:
-            _MEM_SCHEDULES[payload.user_id] = []
-        _MEM_SCHEDULES[payload.user_id].extend(rows)
+        if u_id not in _MEM_SCHEDULES:
+            _MEM_SCHEDULES[u_id] = []
+        _MEM_SCHEDULES[u_id].extend(rows)
     return {"status": "ok", "count": len(rows)}
 
 @router.delete("/schedule/{schedule_id}")

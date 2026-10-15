@@ -18,7 +18,7 @@ def create_workload_item(payload: WorkloadCreate):
     ensure_user_in_supabase(u_id)
 
     row = {
-        "user_id": payload.user_id,
+        "user_id": u_id,
         "judul": payload.judul,
         "jenis": payload.jenis,
         "deadline": payload.deadline.isoformat(),

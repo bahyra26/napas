@@ -244,3 +244,76 @@ def list_focus_sessions(user_id: str, limit: int = Query(default=10, ge=1, le=50
             pass
 
     return local_sessions[:limit]
+
+# ---------------------------------------------------------------------------
+# CLOUD-TO-LOCAL AGENT BRIDGE
+# Memungkinkan napas_agent.py di laptop terhubung ke Vercel tanpa terblokir Mixed Content
+# ---------------------------------------------------------------------------
+
+_AGENT_STATE: Dict[str, Any] = {
+    "online": False,
+    "last_seen": 0.0,
+    "active_window": "Desktop",
+    "focus_seconds": 0,
+    "distraction_seconds": 0,
+    "blocked_count": 0,
+    "is_active": False,
+    "session_id": None
+}
+_AGENT_COMMANDS: List[Dict[str, Any]] = []
+_AGENT_EVENTS: List[Dict[str, Any]] = []
+
+@router.post("/agent/command")
+def send_agent_command(cmd: dict):
+    """Dashboard Web mengirim perintah start_session / stop_session / set_study_site ke agent."""
+    _AGENT_COMMANDS.append(cmd)
+    if len(_AGENT_COMMANDS) > 20:
+        _AGENT_COMMANDS.pop(0)
+    return {"status": "ok", "queued": True}
+
+@router.get("/agent/poll")
+def poll_agent_commands():
+    """napas_agent.py mengambil instruksi tertunda dari Dashboard Web."""
+    global _AGENT_COMMANDS
+    cmds = list(_AGENT_COMMANDS)
+    _AGENT_COMMANDS.clear()
+    return {"commands": cmds}
+
+@router.post("/agent/heartbeat")
+def agent_heartbeat(status: dict):
+    """napas_agent.py melaporkan detak jantung & status jendela aktif laptop ke cloud."""
+    global _AGENT_STATE
+    import time
+    _AGENT_STATE = {
+        **status,
+        "online": True,
+        "last_seen": time.time()
+    }
+    return {"status": "ok"}
+
+@router.get("/agent/live")
+def get_agent_live_status():
+    """Dashboard Web membaca status live companion agent."""
+    import time
+    now_t = time.time()
+    is_online = (_AGENT_STATE.get("last_seen", 0) > (now_t - 6.0)) or is_agent_port_active(8765)
+    return {
+        **_AGENT_STATE,
+        "online": is_online
+    }
+
+@router.post("/agent/event")
+def emit_agent_event(event: dict):
+    """napas_agent.py melaporkan distraksi diblokir atau diperingatkan."""
+    _AGENT_EVENTS.append(event)
+    if len(_AGENT_EVENTS) > 30:
+        _AGENT_EVENTS.pop(0)
+    return {"status": "ok"}
+
+@router.get("/agent/events")
+def get_agent_events():
+    """Dashboard Web mengambil event-event dari agent."""
+    global _AGENT_EVENTS
+    evts = list(_AGENT_EVENTS)
+    _AGENT_EVENTS.clear()
+    return {"events": evts}

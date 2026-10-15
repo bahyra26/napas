@@ -1,18 +1,19 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
-from db import supabase, iso_start_today, now_wib, ensure_user_in_supabase
+from db import supabase, iso_start_today, now_wib, ensure_user_in_supabase, ensure_uuid
 from schemas import CheckInCreate, CheckInResponse
 
 router = APIRouter(prefix="/check-ins", tags=["Check-ins"])
 
 @router.post("", response_model=CheckInResponse)
 def submit_check_in(payload: CheckInCreate):
-    ensure_user_in_supabase(payload.user_id)
+    u_id = ensure_uuid(payload.user_id)
+    ensure_user_in_supabase(u_id)
     if not supabase:
         raise HTTPException(status_code=500, detail="Database belum terhubung. Pastikan file .env sudah diisi.")
 
     row = {
-        "user_id": payload.user_id,
+        "user_id": u_id,
         "skor": payload.skor,
         "catatan": payload.catatan
     }

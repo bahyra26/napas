@@ -19,6 +19,7 @@ import time
 import ctypes
 import asyncio
 import urllib.parse
+import urllib.request
 import re
 from typing import Optional, Set, Dict, Any
 
@@ -403,19 +404,148 @@ class FocusAgentState:
 state = FocusAgentState()
 connected_clients = set()
 
-async def broadcast(message: dict):
-    clients = list(connected_clients)
-    if not clients:
-        return
-    raw = json.dumps(message)
-    dead = set()
-    for ws in clients:
+CLOUD_URL: Optional[str] = None
+
+def get_cloud_url_config() -> Optional[str]:
+    """Mengambil URL Cloud Dashboard Vercel dari CLI argumen, environment variable, atau file config."""
+    # 1. Parameter CLI --cloud <url>
+    if "--cloud" in sys.argv:
         try:
-            await ws.send(raw)
+            idx = sys.argv.index("--cloud")
+            if idx + 1 < len(sys.argv):
+                url = sys.argv[idx + 1].strip().rstrip("/")
+                save_cloud_url_config(url)
+                return url
         except Exception:
-            dead.add(ws)
-    if dead:
-        connected_clients.difference_update(dead)
+            pass
+
+    # 2. Environment variable
+    env_url = os.environ.get("NAPAS_CLOUD_URL", "").strip().rstrip("/")
+    if env_url:
+        return env_url
+
+    # 3. File agent_config.json
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent_config.json")
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                val = data.get("cloud_url", "").strip().rstrip("/")
+                if val:
+                    return val
+        except Exception:
+            pass
+
+    return None
+
+def save_cloud_url_config(url: str):
+    """Menyimpan URL Cloud Vercel ke agent_config.json agar tidak perlu diketik ulang."""
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent_config.json")
+    try:
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump({"cloud_url": url.strip().rstrip("/")}, f, indent=2)
+    except Exception:
+        pass
+
+def _sync_http_request(method: str, url: str, payload: Optional[dict] = None) -> Optional[dict]:
+    try:
+        data_bytes = json.dumps(payload).encode("utf-8") if payload is not None else None
+        headers = {"User-Agent": "NAPAS-Focus-Agent/2.0"}
+        if data_bytes:
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(url, data=data_bytes, headers=headers, method=method)
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            content = resp.read().decode("utf-8")
+            if content:
+                return json.loads(content)
+            return {}
+    except Exception:
+        return None
+
+async def cloud_request(method: str, path: str, payload: Optional[dict] = None) -> Optional[dict]:
+    if not CLOUD_URL:
+        return None
+    base = CLOUD_URL.rstrip("/")
+    if not path.startswith("/"):
+        path = "/" + path
+    full_path = f"/api{path}" if not path.startswith("/api") else path
+    url = f"{base}{full_path}"
+    return await asyncio.to_thread(_sync_http_request, method, url, payload)
+
+async def broadcast(message: dict):
+    # 1. Kirim ke Web Dashboard lokal via WebSocket
+    clients = list(connected_clients)
+    if clients:
+        raw = json.dumps(message)
+        dead = set()
+        for ws in clients:
+            try:
+                await ws.send(raw)
+            except Exception:
+                dead.add(ws)
+        if dead:
+            connected_clients.difference_update(dead)
+
+    # 2. Kirim ke Cloud Vercel Bridge jika aktif
+    if CLOUD_URL and message.get("type") in ("app_blocked", "distraction_warning"):
+        asyncio.create_task(cloud_request("POST", "/focus-sessions/agent/event", message))
+
+async def cloud_bridge_loop():
+    """Loop polling Cloud Vercel untuk sinkronisasi sesi fokus, timer, dan detak jantung."""
+    if not CLOUD_URL:
+        return
+    print(f"[*] Cloud Bridge Aktif -> Terhubung ke Vercel: {CLOUD_URL}")
+    while True:
+        try:
+            await asyncio.sleep(1.2)
+            win = get_active_window_info()
+
+            # 1. Kirim Heartbeat ke Vercel
+            heartbeat_data = {
+                "active_window": win.get("title") or win.get("process") or "Desktop",
+                "focus_seconds": state.focus_seconds,
+                "distraction_seconds": state.distraction_seconds,
+                "blocked_count": state.blocked_count,
+                "is_active": state.is_active,
+                "session_id": state.session_id
+            }
+            await cloud_request("POST", "/focus-sessions/agent/heartbeat", heartbeat_data)
+
+            # 2. Ambil instruksi tertunda dari Dashboard Vercel
+            poll_res = await cloud_request("GET", "/focus-sessions/agent/poll")
+            if poll_res and "commands" in poll_res:
+                for cmd in poll_res["commands"]:
+                    msg_type = cmd.get("type")
+                    if msg_type == "start_session":
+                        state.start(
+                            session_id=cmd.get("session_id", f"ses-{int(time.time())}"),
+                            whitelist=cmd.get("whitelist"),
+                            whitelist_keywords=cmd.get("whitelist_keywords"),
+                            action=cmd.get("action", "warn_then_close")
+                        )
+                        print(f"[CLOUD BRIDGE] Sesi fokus dimulai dari Vercel: {state.session_id}")
+                    elif msg_type == "stop_session":
+                        state.stop()
+                        print(f"[CLOUD BRIDGE] Sesi fokus dihentikan dari Vercel.")
+                    elif msg_type == "set_study_site":
+                        site = cmd.get("site")
+                        keywords = cmd.get("keywords") or []
+                        state.active_study_site = site
+                        if site:
+                            state.study_grace_until = time.time() + 15.0
+                            for k in [site, *keywords]:
+                                if not k:
+                                    continue
+                                k_clean = k.lower().strip()
+                                if " " not in k_clean and looks_like_url(k_clean):
+                                    d = extract_base_domain(k_clean)
+                                    if d:
+                                        state.allowed_domains.add(d)
+                            print(f"[CLOUD BRIDGE] Website belajar diizinkan: {site}")
+                        else:
+                            state.study_grace_until = 0.0
+        except Exception:
+            await asyncio.sleep(2.0)
 
 
 async def focus_monitor_loop():
@@ -704,6 +834,7 @@ def clear_port_8765():
         pass
 
 async def main():
+    global CLOUD_URL
     host = "127.0.0.1"
     port = 8765
     print("=" * 60)
@@ -712,7 +843,15 @@ async def main():
 
     clear_port_8765()
 
-    print(f"[*] Berjalan di ws://{host}:{port}")
+    CLOUD_URL = get_cloud_url_config()
+    if CLOUD_URL:
+        print(f"[*] Cloud Bridge Aktif -> {CLOUD_URL}")
+        asyncio.create_task(cloud_bridge_loop())
+    else:
+        print("[*] Berjalan dalam mode Localhost murni.")
+        print("[*] TIP: Jalankan dengan `python agent/napas_agent.py --cloud <url-vercel>` untuk menghubungkan ke web Vercel!")
+
+    print(f"[*] Local WebSocket standby di ws://{host}:{port}")
     print("[*] Menunggu instruksi sesi fokus dari Web Dashboard...")
     print("[*] Tekan Ctrl+C untuk menghentikan.")
 

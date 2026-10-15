@@ -10,35 +10,40 @@ export const RingkasanBeban: React.FC<RingkasanBebanProps> = ({ days }) => {
 
   const targetTotal = days
     ? days.reduce((sum, d) => sum + d.tasks.length, 0)
-    : 19;
+    : 0;
 
   const heavyDaysCount = days
     ? days.filter((d) => d.status === 'Berat').length
-    : 3;
+    : 0;
 
-  const busiestDay = days && days.length > 0
+  const busiestDay = days && days.length > 0 && targetTotal > 0
     ? days.reduce((max, d) => (d.load > max.load ? d : max), days[0])
     : null;
 
-  const busiestDayLabel = busiestDay
+  const busiestDayLabel = busiestDay && busiestDay.tasks.length > 0
     ? `${busiestDay.dayNum} ${busiestDay.monthShort || ''}`
-    : '24 Sep';
+    : '-';
 
   const freeDaysCount = days
     ? days.filter((d) => d.tasks.length === 0).length
-    : 6;
+    : 14;
 
   useEffect(() => {
     let count = 0;
-    const maxVal = targetTotal || 19;
+    const maxVal = targetTotal;
+    if (maxVal === 0) {
+      setTotalCount(0);
+      return;
+    }
+    const step = Math.max(1, Math.ceil(maxVal / 20));
     const timer = setInterval(() => {
-      count += 2;
+      count += step;
       if (count >= maxVal) {
         count = maxVal;
         clearInterval(timer);
       }
       setTotalCount(count);
-    }, 50);
+    }, 40);
 
     return () => clearInterval(timer);
   }, [targetTotal]);

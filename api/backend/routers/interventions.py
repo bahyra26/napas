@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any
 from datetime import timedelta
-from db import supabase, now_wib
+from db import supabase, now_wib, ensure_uuid, ensure_user_in_supabase
 from schemas import InterventionCreate, InterventionResponse
 
 router = APIRouter(prefix="/interventions", tags=["Interventions"])
@@ -10,9 +10,12 @@ from local_db import local_save_intervention, local_list_interventions, determin
 
 @router.post("", response_model=InterventionResponse)
 def log_intervention(payload: InterventionCreate):
+    u_id = ensure_uuid(payload.user_id)
+    ensure_user_in_supabase(u_id)
+
     # Simpan di local SQLite
     local_item = local_save_intervention(
-        user_id=payload.user_id,
+        user_id=u_id,
         tipe=payload.tipe,
         durasi=payload.durasi,
         selesai=payload.selesai
@@ -22,7 +25,7 @@ def log_intervention(payload: InterventionCreate):
         try:
             res = supabase.table("interventions").insert({
                 "id": local_item["id"],
-                "user_id": payload.user_id,
+                "user_id": u_id,
                 "tipe": payload.tipe,
                 "durasi": payload.durasi,
                 "selesai": payload.selesai
