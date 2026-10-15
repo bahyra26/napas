@@ -1001,26 +1001,116 @@ export const api = {
   async getProfile(userId: string): Promise<StudentProfile | null> {
     try {
       const res = await fetch(`${API_BASE_URL}/profile/${encodeURIComponent(userId)}`);
-      if (!res.ok) return null;
-      return await res.json();
-    } catch {
-      return null;
+      if (res.ok) {
+        const data = await res.json();
+        if (data && (data.panggilan || data.kampus)) {
+          try {
+            localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(data));
+          } catch {}
+          return data;
+        }
+      }
+    } catch {}
+
+    // Fallback Supabase Cloud langsung
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (data) {
+          const prof: StudentProfile = {
+            user_id: data.user_id,
+            panggilan: data.panggilan || '',
+            kampus: data.kampus || '',
+            jurusan: data.jurusan || '',
+            semester: data.semester || 1,
+            jam_tidur: data.jam_tidur || '23:00',
+            jam_bangun: data.jam_bangun || '06:00',
+            kronotipe: data.kronotipe || 'pagi',
+            target_fokus_jam: data.target_fokus_jam || 4.0,
+            focus_whitelist: Array.isArray(data.focus_whitelist) ? data.focus_whitelist : [],
+            focus_blacklist: Array.isArray(data.focus_blacklist) ? data.focus_blacklist : [],
+            agent_action: data.agent_action || 'warn_then_close',
+            onboarded: data.onboarded ?? true,
+          };
+          try {
+            localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(prof));
+          } catch {}
+          return prof;
+        }
+      } catch {}
     }
+
+    // Fallback ke localStorage
+    try {
+      const cached = localStorage.getItem(`napas_user_profile_${userId}`);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch {}
+
+    return null;
   },
 
   async updateProfile(userId: string, partial: Partial<StudentProfile>): Promise<StudentProfile | null> {
+    // 1. Simpan langsung ke cache lokal agar input pengguna aman
+    let existingProfile: any = {};
+    try {
+      const cached = localStorage.getItem(`napas_user_profile_${userId}`);
+      if (cached) existingProfile = JSON.parse(cached);
+    } catch {}
+    const mergedProfile = { ...existingProfile, ...partial, user_id: userId };
+    try {
+      localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(mergedProfile));
+      if (partial.panggilan) {
+        localStorage.setItem('napas_user_name', partial.panggilan);
+      }
+    } catch {}
+
+    // 2. Coba kirim ke Backend API
     try {
       const res = await fetch(`${API_BASE_URL}/profile/${encodeURIComponent(userId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(partial),
       });
-      if (!res.ok) return null;
-      return await res.json();
+      if (res.ok) {
+        const saved = await res.json();
+        localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(saved));
+        return saved;
+      }
     } catch (err) {
-      console.error('updateProfile failed:', err);
-      return null;
+      console.warn('updateProfile backend offline, saving to Supabase directly:', err);
     }
+
+    // 3. Fallback simpan langsung ke Supabase Cloud
+    if (supabase) {
+      try {
+        const sbPayload: any = {
+          user_id: userId,
+          updated_at: new Date().toISOString(),
+          ...partial,
+        };
+        const { data } = await supabase
+          .from('user_profiles')
+          .upsert(sbPayload, { onConflict: 'user_id' })
+          .select()
+          .maybeSingle();
+
+        if (data) {
+          localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(data));
+          return data as StudentProfile;
+        }
+      } catch (sbErr) {
+        console.warn('Supabase updateProfile fallback error:', sbErr);
+      }
+    }
+
+    return mergedProfile as StudentProfile;
   },
 
   async getClassSchedule(userId: string): Promise<ClassScheduleItem[]> {

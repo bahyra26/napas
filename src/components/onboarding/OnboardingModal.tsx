@@ -30,10 +30,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
 
   // Step 1: Profil
-  const [panggilan, setPanggilan] = useState(initialName.split(' ')[0] || 'Dinda');
-  const [kampus, setKampus] = useState('Universitas Gadjah Mada');
-  const [jurusan, setJurusan] = useState('Ilmu Komputer');
-  const [semester, setSemester] = useState(6);
+  const [panggilan, setPanggilan] = useState(() => {
+    return initialName !== 'Mahasiswa' ? initialName.split(' ')[0] : '';
+  });
+  const [kampus, setKampus] = useState('');
+  const [jurusan, setJurusan] = useState('');
+  const [semester, setSemester] = useState(2);
 
   // Step 2: Ritme
   const [jamTidur, setJamTidur] = useState('23:00');

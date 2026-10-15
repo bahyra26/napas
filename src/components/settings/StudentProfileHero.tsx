@@ -17,10 +17,10 @@ export const StudentProfileHero: React.FC<StudentProfileHeroProps> = ({
   onOpenCalendarModal,
 }) => {
   const displayName = profile?.nama || userName || 'Mahasiswa NAPAS';
-  const displayEmail = profile?.email || userEmail || 'mahasiswa@ugm.ac.id';
-  const campus = profile?.kampus || 'Universitas Gadjah Mada';
-  const major = profile?.jurusan || 'Ilmu Komputer';
-  const semester = profile?.semester || 6;
+  const displayEmail = profile?.email || userEmail || '';
+  const campus = profile?.kampus || 'Perguruan Tinggi';
+  const major = profile?.jurusan || 'Mahasiswa';
+  const semester = profile?.semester || 1;
 
   // Initials for avatar
   const initials = displayName

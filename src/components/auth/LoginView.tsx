@@ -79,7 +79,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
     const formattedName = resolvedName.charAt(0).toUpperCase() + resolvedName.slice(1);
 
     if (onCustomLogin) {
-      await onCustomLogin(loginEmailOrUser.trim(), formattedName, 'Universitas Gadjah Mada', 'Teknik Informatika');
+      await onCustomLogin(loginEmailOrUser.trim(), formattedName, '', '');
     }
     onNotify(`Selamat datang kembali, ${formattedName}!`, '🌱');
   };
@@ -134,7 +134,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
     const cleanName = regFullName.trim();
     const ident = regEmail.trim() || regUsername.trim() || cleanName;
     if (onCustomLogin) {
-      await onCustomLogin(ident, cleanName, 'Universitas Gadjah Mada', 'Mahasiswa');
+      await onCustomLogin(ident, cleanName, '', '');
     }
     onNotify(`Akun berhasil dibuat! Selamat datang di NAPAS, ${cleanName}!`, '🎉');
   };

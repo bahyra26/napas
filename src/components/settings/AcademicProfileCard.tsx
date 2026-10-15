@@ -17,7 +17,7 @@ export const AcademicProfileCard: React.FC<AcademicProfileCardProps> = ({
   const [email, setEmail] = useState('');
   const [kampus, setKampus] = useState('');
   const [jurusan, setJurusan] = useState('');
-  const [semester, setSemester] = useState(6);
+  const [semester, setSemester] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -25,9 +25,9 @@ export const AcademicProfileCard: React.FC<AcademicProfileCardProps> = ({
       setNama(initialProfile.nama || '');
       setPanggilan(initialProfile.panggilan || '');
       setEmail(initialProfile.email || '');
-      setKampus(initialProfile.kampus || 'Universitas Gadjah Mada');
-      setJurusan(initialProfile.jurusan || 'Ilmu Komputer');
-      setSemester(initialProfile.semester || 6);
+      setKampus(initialProfile.kampus || '');
+      setJurusan(initialProfile.jurusan || '');
+      setSemester(initialProfile.semester || 1);
     }
   }, [initialProfile]);
 
@@ -43,8 +43,8 @@ export const AcademicProfileCard: React.FC<AcademicProfileCardProps> = ({
       nama: nama.trim(),
       panggilan: panggilan.trim() || nama.trim().split(' ')[0],
       email: email.trim(),
-      kampus: kampus.trim() || 'Universitas Gadjah Mada',
-      jurusan: jurusan.trim() || 'Ilmu Komputer',
+      kampus: kampus.trim() || 'Perguruan Tinggi',
+      jurusan: jurusan.trim() || 'Mahasiswa',
       semester: Number(semester) || 1,
     });
 

@@ -290,24 +290,23 @@ export const App: React.FC = () => {
     setStoredUserId(uid, name);
     localStorage.removeItem('napas_demo_mode');
 
-    // Buat profil di backend
-    const updatedProf = await api.updateProfile(uid, {
-      panggilan: name.split(' ')[0],
-      kampus: campus,
-      jurusan: major,
-      semester: 4,
-      onboarded: true,
-    });
-    if (updatedProf) {
-      setStudentProfile(updatedProf);
-    } else {
-      setStudentProfile({
+    // Cek profil yang ada
+    const existing = await api.getProfile(uid);
+    if (!existing || existing.onboarded === false) {
+      const baseProf: Partial<StudentProfile> = {
+        panggilan: name.split(' ')[0],
+        onboarded: false,
+      };
+      if (campus) baseProf.kampus = campus;
+      if (major) baseProf.jurusan = major;
+      const created = await api.updateProfile(uid, baseProf);
+      setStudentProfile(created || {
         user_id: uid,
         nama: name,
         panggilan: name.split(' ')[0],
-        kampus: campus,
-        jurusan: major,
-        semester: 4,
+        kampus: campus || '',
+        jurusan: major || '',
+        semester: 1,
         jam_tidur: '23:00',
         jam_bangun: '06:00',
         kronotipe: 'pagi',
@@ -315,11 +314,15 @@ export const App: React.FC = () => {
         focus_whitelist: [],
         focus_blacklist: [],
         agent_action: 'warn_then_close',
+        onboarded: false,
       });
+      setIsOnboardingOpen(true);
+    } else {
+      setStudentProfile(existing);
     }
 
     await initUserSession(uid);
-    showToast(`Selamat datang kembali, ${name}! Profil berhasil disinkronkan.`, '🎓');
+    showToast(`Selamat datang, ${name}!`, '🎓');
   };
 
   const handleLogout = async () => {
@@ -641,11 +644,20 @@ export const App: React.FC = () => {
         <OnboardingModal
           isOpen={isOnboardingOpen}
           userId={userId}
-          initialName={studentName}
-          onComplete={(prof) => {
+          onComplete={async (prof) => {
             setStudentProfile(prof);
             setIsOnboardingOpen(false);
-            initUserSession(userId);
+            if (prof.panggilan) {
+              localStorage.setItem('napas_user_name', prof.panggilan);
+            }
+            if (userId) {
+              await Promise.all([
+                loadIndexToday(userId),
+                loadWorkloads(userId),
+                loadRadar(userId),
+                focusStore.loadUserWhitelist(userId),
+              ]);
+            }
           }}
           onNotify={showToast}
         />

@@ -58,16 +58,17 @@ def get_user_profile(user_id: str):
         profile = {
             "user_id": user_id,
             "panggilan": user.get("nama", "Mahasiswa").split()[0] if user.get("nama") else "Mahasiswa",
-            "kampus": "Universitas Gadjah Mada",
-            "jurusan": "Ilmu Komputer",
-            "semester": 6,
+            "kampus": "",
+            "jurusan": "",
+            "semester": 1,
             "jam_tidur": "23:00",
             "jam_bangun": "06:00",
             "kronotipe": "pagi",
             "target_fokus_jam": 4.0,
             "focus_whitelist": DEFAULT_WHITELIST,
             "focus_blacklist": DEFAULT_BLACKLIST,
-            "agent_action": "warn_then_close"
+            "agent_action": "warn_then_close",
+            "onboarded": False
         }
 
     # Pastikan focus_whitelist valid list
@@ -111,11 +112,13 @@ def upsert_user_profile(user_id: str, payload: ProfileUpsert):
     # 2. Coba upsert ke Supabase jika tabel ada
     if supabase:
         try:
+            from db import ensure_user_in_supabase
+            ensure_user_in_supabase(u_uuid, nama=payload.panggilan or "Mahasiswa")
             res = supabase.table("user_profiles").upsert(data, on_conflict="user_id").execute()
             if res.data:
                 saved = res.data[0]
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[Supabase Profile Upsert Error]: {e}")
 
         if payload.onboarded is not None:
             try:
