@@ -15,7 +15,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
-  studentName = 'Raka',
+  studentName = 'Mahasiswa',
   avatarUrl,
   onToggleSidebar,
   onSelectTab,

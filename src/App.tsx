@@ -76,7 +76,11 @@ export const App: React.FC = () => {
     }, 3000);
   };
 
-  const studentName = studentProfile?.panggilan || studentProfile?.nama || 'Raka';
+  const studentName =
+    studentProfile?.panggilan ||
+    studentProfile?.nama ||
+    (typeof window !== 'undefined' ? localStorage.getItem('napas_user_name') : null) ||
+    'Mahasiswa';
 
   useEffect(() => {
     document.body.setAttribute('data-tab', activeTab);
@@ -304,13 +308,32 @@ export const App: React.FC = () => {
     localStorage.removeItem('napas_demo_mode');
 
     // Buat profil di backend
-    await api.updateProfile(uid, {
+    const updatedProf = await api.updateProfile(uid, {
       panggilan: name.split(' ')[0],
       kampus: campus,
       jurusan: major,
       semester: 4,
       onboarded: true,
     });
+    if (updatedProf) {
+      setStudentProfile(updatedProf);
+    } else {
+      setStudentProfile({
+        user_id: uid,
+        nama: name,
+        panggilan: name.split(' ')[0],
+        kampus: campus,
+        jurusan: major,
+        semester: 4,
+        jam_tidur: '23:00',
+        jam_bangun: '06:00',
+        kronotipe: 'pagi',
+        target_fokus_jam: 4.0,
+        focus_whitelist: [],
+        focus_blacklist: [],
+        agent_action: 'warn_then_close',
+      });
+    }
 
     await initUserSession(uid);
     showToast(`Selamat datang kembali, ${name}! Profil berhasil disinkronkan.`, '🎓');
@@ -590,7 +613,16 @@ export const App: React.FC = () => {
           {/* Tab 6: Settings */}
           {activeTab === 'settings' && (
             <section id="view-settings" className="page-view active">
-              <SettingsView onNotify={showToast} />
+              <SettingsView
+                onNotify={showToast}
+                onProfileUpdated={(prof) => {
+                  setStudentProfile(prof);
+                  const nameVal = prof.panggilan || prof.nama;
+                  if (nameVal) {
+                    localStorage.setItem('napas_user_name', nameVal);
+                  }
+                }}
+              />
             </section>
           )}
         </div>
