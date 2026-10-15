@@ -261,23 +261,6 @@ export const App: React.FC = () => {
     return () => unsub();
   }, [initUserSession]);
 
-  const handleDemoLogin = async () => {
-    const demoUser = await api.initDemoUser();
-    if (demoUser) {
-      setStoredUserId(demoUser.id, demoUser.nama);
-      localStorage.setItem('napas_demo_mode', 'true');
-      await initUserSession(demoUser.id);
-      showToast('Masuk sebagai Raka Pratama (Mode Demo).', '⚡');
-    } else {
-      // Offline fallback
-      const fallbackId = '951459f9-e92f-4193-b470-ea87a899e18d';
-      setStoredUserId(fallbackId, 'Raka Pratama');
-      localStorage.setItem('napas_demo_mode', 'true');
-      setUserId(fallbackId);
-      showToast('Masuk Mode Demo Raka.', '⚡');
-    }
-  };
-
   const handleCustomLogin = async (
     identifier: string,
     name: string,
@@ -496,7 +479,6 @@ export const App: React.FC = () => {
     return (
       <div className="app-viewport">
         <LoginView
-          onDemoLogin={handleDemoLogin}
           onCustomLogin={handleCustomLogin}
           onNotify={showToast}
         />
