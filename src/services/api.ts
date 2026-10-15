@@ -1016,6 +1016,16 @@ export const api = {
             .eq('email', payload.email)
             .maybeSingle();
           if (byEmail) {
+            if (payload.nama && byEmail.nama !== payload.nama) {
+              try {
+                await supabase
+                  .from('users')
+                  .update({ nama: payload.nama, avatar_url: payload.avatar_url })
+                  .eq('id', byEmail.id);
+                byEmail.nama = payload.nama;
+                if (payload.avatar_url) byEmail.avatar_url = payload.avatar_url;
+              } catch {}
+            }
             setStoredUserId(byEmail.id, byEmail.nama);
             return byEmail as UserProfile;
           }
@@ -1028,6 +1038,16 @@ export const api = {
             .eq('id', payload.auth_id)
             .maybeSingle();
           if (byId) {
+            if (payload.nama && byId.nama !== payload.nama) {
+              try {
+                await supabase
+                  .from('users')
+                  .update({ nama: payload.nama, avatar_url: payload.avatar_url })
+                  .eq('id', byId.id);
+                byId.nama = payload.nama;
+                if (payload.avatar_url) byId.avatar_url = payload.avatar_url;
+              } catch {}
+            }
             setStoredUserId(byId.id, byId.nama);
             return byId as UserProfile;
           }
@@ -1038,6 +1058,7 @@ export const api = {
           id: payload.auth_id,
           nama: cleanName,
           email: payload.email || `${payload.auth_id}@auth.local`,
+          avatar_url: payload.avatar_url,
           consent_camera: true,
           consent_window: true,
           baseline_blink_rate: 15.0,

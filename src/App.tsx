@@ -207,11 +207,22 @@ export const App: React.FC = () => {
   // Auth State Listener & Mount
   useEffect(() => {
     async function checkAuthAndInit() {
+      // 0. Ambil provider_token langsung dari URL hash jika user baru saja dialihkan dari Google OAuth
+      let hashProviderToken: string | null = null;
+      if (typeof window !== 'undefined' && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        hashProviderToken = hashParams.get('provider_token');
+        if (hashProviderToken) {
+          authService.setStoredProviderToken(hashProviderToken);
+        }
+      }
+
       // 1. Cek sesi Supabase jika user baru kembali dari Google OAuth redirect
       const session = await authService.getSession();
       if (session?.user) {
-        if (session.provider_token) {
-          authService.setStoredProviderToken(session.provider_token);
+        const pt = session.provider_token || hashProviderToken || authService.getStoredProviderToken();
+        if (pt) {
+          authService.setStoredProviderToken(pt);
         }
         const synced = await api.syncAuth({
           access_token: session.access_token,
@@ -222,7 +233,7 @@ export const App: React.FC = () => {
         });
         if (synced) {
           await initUserSession(synced.id);
-          if (session.provider_token) {
+          if (pt) {
             googleCalendarService.fetchAndSyncEvents(synced.id).then((res) => {
               if (res.success) {
                 loadRadar(synced.id);
@@ -230,6 +241,10 @@ export const App: React.FC = () => {
                 showToast('Google Calendar asli berhasil disinkronkan!', '📅');
               }
             });
+          }
+          // Bersihkan hash dari URL agar rapi
+          if (window.location.hash && window.history.replaceState) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
           }
           return;
         }
@@ -247,19 +262,34 @@ export const App: React.FC = () => {
     // Listener jika session berubah
     const unsub = authService.onAuthStateChange(async (session) => {
       if (session?.user) {
+        if (session.provider_token) {
+          authService.setStoredProviderToken(session.provider_token);
+        }
         const synced = await api.syncAuth({
           access_token: session.access_token,
           auth_id: session.user.id,
           email: session.user.email,
+          nama: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
         });
         if (synced) {
           await initUserSession(synced.id);
+          const pt = session.provider_token || authService.getStoredProviderToken();
+          if (pt) {
+            googleCalendarService.fetchAndSyncEvents(synced.id).then((res) => {
+              if (res.success) {
+                loadRadar(synced.id);
+                loadWorkloads(synced.id);
+                showToast('Google Calendar asli berhasil disinkronkan!', '📅');
+              }
+            });
+          }
         }
       }
     });
 
     return () => unsub();
-  }, [initUserSession]);
+  }, [initUserSession, loadRadar, loadWorkloads]);
 
   const handleCustomLogin = async (
     identifier: string,
