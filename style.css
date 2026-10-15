@@ -1535,23 +1535,27 @@ body[data-tab="settings"] .dashboard-container {
   }
 }
 
-/* Mobile Screens (under 720px) */
-@media (max-width: 720px) {
+/* Mobile Screens (under 768px) */
+@media (max-width: 768px) {
   html, body, #root {
     height: auto;
     min-height: 100vh;
     overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .app-viewport {
     height: auto;
     min-height: 100vh;
     overflow: visible;
+    overflow-x: hidden;
   }
 
   .main-wrapper {
     height: auto;
     overflow: visible;
+    width: 100%;
+    min-width: 0;
   }
 
   .sidebar {
@@ -1559,8 +1563,12 @@ body[data-tab="settings"] .dashboard-container {
     top: 0;
     bottom: 0;
     left: 0;
+    width: 250px;
     transform: translateX(-100%);
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    z-index: 1000;
   }
 
   .sidebar.open {
@@ -1570,6 +1578,7 @@ body[data-tab="settings"] .dashboard-container {
   .sidebar-overlay.open {
     display: block;
     opacity: 1;
+    z-index: 999;
   }
 
   .mobile-menu-btn {
@@ -1584,18 +1593,28 @@ body[data-tab="settings"] .dashboard-container {
     height: auto;
     overflow: visible;
     justify-content: flex-start;
-    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); /* Space for bottom navigation */
+    padding: 16px 14px calc(88px + env(safe-area-inset-bottom, 0px)); /* Space for bottom navigation */
+  }
+
+  body[data-tab="tren"] .dashboard-container,
+  body[data-tab="deadline"] .dashboard-container,
+  body[data-tab="fokus"] .dashboard-container,
+  body[data-tab="laporan"] .dashboard-container,
+  body[data-tab="settings"] .dashboard-container {
+    padding: 16px 14px calc(88px + env(safe-area-inset-bottom, 0px));
   }
 
   .dashboard-grid {
     grid-template-columns: 1fr;
-    max-width: 380px;
+    width: 100%;
+    max-width: 520px;
     margin: 0 auto;
-    row-gap: 36px;
+    row-gap: 24px;
   }
 
   .col-left, .col-mid, .col-right {
     max-width: 100%;
+    width: 100%;
   }
 
   .col-right {
@@ -1604,13 +1623,13 @@ body[data-tab="settings"] .dashboard-container {
   }
 
   .card-deadline {
-    margin-top: 24px;
+    margin-top: 16px;
   }
 
   .toast {
-    bottom: calc(74px + env(safe-area-inset-bottom, 0px)); /* Above bottom nav */
-    right: 16px;
-    left: 16px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px)); /* Above bottom nav */
+    right: 14px;
+    left: 14px;
     justify-content: center;
   }
 }
@@ -2355,6 +2374,49 @@ body[data-tab="settings"] .dashboard-container {
   transform: translateY(-2px);
 }
 
+@media (max-width: 768px) {
+  .google-calendar-banner-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 18px 16px;
+    border-radius: 16px;
+  }
+
+  .gcal-banner-left {
+    gap: 12px;
+  }
+
+  .gcal-logo-wrapper {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+  }
+
+  .gcal-heading {
+    font-size: 15px;
+  }
+
+  .gcal-subtitle {
+    font-size: 11.5px;
+  }
+
+  .gcal-banner-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-gcal-sync,
+  .btn-gcal-connect,
+  .btn-gcal-add-manual {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+}
+
 .tile-gcal-dot {
   position: absolute;
   top: 8px;
@@ -2546,6 +2608,49 @@ body[data-tab="settings"] .dashboard-container {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+@media (max-width: 600px) {
+  .gcal-modal-card {
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+    padding: 16px 14px !important;
+    border-radius: 16px !important;
+    max-height: calc(100vh - 24px) !important;
+    overflow-y: auto;
+  }
+
+  .gcal-modal-header-brand h3 {
+    font-size: 15px;
+  }
+
+  .gcal-modal-subtext {
+    font-size: 11px;
+  }
+
+  .gcal-modal-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px;
+    gap: 4px;
+    justify-content: flex-start;
+  }
+
+  .gcal-tab-btn {
+    flex: none;
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .gcal-modal-status-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .btn-gcal-disconnect-sm {
+    align-self: flex-end;
+  }
 }
 
 .gcal-feature-box {
@@ -3089,9 +3194,9 @@ body[data-tab="settings"] .dashboard-container {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .deadline-container {
-    padding: 0 4px;
+    padding: 0 2px;
   }
 
   .calendar-tiles-grid {
@@ -3118,12 +3223,13 @@ body[data-tab="settings"] .dashboard-container {
    -------------------------------------------------------------------------- */
 @media (max-width: 480px) {
   .top-header {
-    height: 64px;
-    padding: 0 14px;
+    height: 60px;
+    min-height: 60px;
+    padding: 0 12px;
   }
 
   .header-title {
-    font-size: 17px;
+    font-size: 16px;
     letter-spacing: 0;
   }
 
@@ -3133,13 +3239,13 @@ body[data-tab="settings"] .dashboard-container {
   }
 
   .header-settings-btn {
-    width: 35px;
-    height: 35px;
+    width: 34px;
+    height: 34px;
   }
 
   .header-settings-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
   }
 
   .mobile-bottom-nav {
@@ -3181,16 +3287,16 @@ body[data-tab="settings"] .dashboard-container {
   }
 
   .dashboard-container {
-    padding: 16px 12px 84px;
+    padding: 14px 10px calc(84px + env(safe-area-inset-bottom, 0px));
   }
 
   .tren-card, .deadline-card {
-    padding: 18px 16px;
+    padding: 18px 14px;
     border-radius: 16px;
   }
 
   .card-heatmap-wrap {
-    gap: 18px;
+    gap: 16px;
   }
 
   .heatmap-matrix-wrapper {
@@ -3201,7 +3307,7 @@ body[data-tab="settings"] .dashboard-container {
 
   .calendar-tiles-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    gap: 6px;
   }
 
   .ringkasan-beban-grid {
@@ -3209,12 +3315,12 @@ body[data-tab="settings"] .dashboard-container {
   }
 
   .beban-val {
-    font-size: 20px;
+    font-size: 19px;
   }
 
   .modal-card {
-    max-width: calc(100vw - 28px);
-    padding: 20px 16px;
+    max-width: calc(100vw - 20px);
+    padding: 18px 14px;
     border-radius: 16px;
   }
 }
@@ -3225,7 +3331,7 @@ body[data-tab="settings"] .dashboard-container {
    -------------------------------------------------------------------------- */
 @media (max-width: 360px) {
   .top-header {
-    padding: 0 10px;
+    padding: 0 8px;
   }
 
   .header-title {
@@ -3237,7 +3343,7 @@ body[data-tab="settings"] .dashboard-container {
   }
 
   .header-badge {
-    padding: 4px 8px;
+    padding: 4px 6px;
   }
 
   .bnav-link span {
@@ -3245,20 +3351,27 @@ body[data-tab="settings"] .dashboard-container {
   }
 
   .calendar-tiles-grid {
+    grid-template-columns: repeat(2, 1fr);
     gap: 6px;
   }
 
   .day-tile {
-    padding: 8px 2px 6px;
+    padding: 10px 6px 8px;
   }
 
   .tile-date {
-    font-size: 16px;
+    font-size: 17px;
   }
 
   .tile-pill {
-    font-size: 7.5px;
-    padding: 1px 4px;
+    font-size: 8px;
+    padding: 2px 5px;
+  }
+
+  .gauge-circle,
+  .breathing-circle {
+    width: 190px;
+    height: 190px;
   }
 
   .heatmap-header-row, .hm-row {
@@ -6050,6 +6163,39 @@ body[data-tab="settings"] .dashboard-container {
   }
 }
 
+@media (max-width: 480px) {
+  .auth-overlay {
+    padding: 12px 10px;
+  }
+
+  .auth-card {
+    border-radius: 20px;
+    max-width: 100%;
+  }
+
+  .auth-left {
+    padding: 20px 16px 16px;
+  }
+
+  .auth-right {
+    padding: 20px 14px;
+  }
+
+  .auth-form-title {
+    font-size: 20px;
+  }
+
+  .auth-form-subtitle {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .auth-input {
+    font-size: 14px;
+    padding: 10px 12px 10px 38px;
+  }
+}
+
 /* ==========================================================================
    ONBOARDING MODAL STYLING
    ========================================================================== */
@@ -6345,6 +6491,44 @@ body[data-tab="settings"] .dashboard-container {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .onboarding-overlay {
+    padding: 12px 10px;
+  }
+
+  .onboarding-modal-card {
+    padding: 20px 14px;
+    border-radius: 18px;
+    max-height: calc(100vh - 24px);
+  }
+
+  .form-row-2,
+  .form-row-3 {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .onboarding-stepper {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .step-dot {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .step-title {
+    font-size: 17px;
+  }
+
+  .step-desc {
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
 }
 
 /* ==========================================================================
@@ -7972,6 +8156,20 @@ body[data-tab="settings"] .dashboard-container {
   .tren-laporan-middle-grid,
   .tren-laporan-bottom-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tren-laporan-container {
+    gap: 14px;
+  }
+
+  .tren-laporan-top-grid,
+  .tren-laporan-middle-grid,
+  .tren-laporan-bottom-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 }
 
