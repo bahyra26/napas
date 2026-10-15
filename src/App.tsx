@@ -176,13 +176,23 @@ export const App: React.FC = () => {
       api.getClassSchedule(uid),
     ]);
 
+    const isAlreadyOnboarded =
+      prof?.onboarded === true ||
+      localStorage.getItem(`napas_user_onboarded_${uid}`) === 'true';
+
     if (prof) {
-      setStudentProfile(prof);
-      if (prof.onboarded === false) {
+      setStudentProfile({ ...prof, onboarded: isAlreadyOnboarded });
+      if (!isAlreadyOnboarded) {
         setIsOnboardingOpen(true);
+      } else {
+        setIsOnboardingOpen(false);
       }
     } else {
-      setIsOnboardingOpen(true);
+      if (!isAlreadyOnboarded) {
+        setIsOnboardingOpen(true);
+      } else {
+        setIsOnboardingOpen(false);
+      }
     }
 
     if (sched && sched.length > 0) {
@@ -324,7 +334,11 @@ export const App: React.FC = () => {
 
     // Cek profil yang ada
     const existing = await api.getProfile(uid);
-    if (!existing || existing.onboarded === false) {
+    const isAlreadyOnboarded =
+      existing?.onboarded === true ||
+      localStorage.getItem(`napas_user_onboarded_${uid}`) === 'true';
+
+    if (!isAlreadyOnboarded) {
       const baseProf: Partial<StudentProfile> = {
         panggilan: name.split(' ')[0],
         onboarded: false,
@@ -351,6 +365,7 @@ export const App: React.FC = () => {
       setIsOnboardingOpen(true);
     } else {
       setStudentProfile(existing);
+      setIsOnboardingOpen(false);
     }
 
     await initUserSession(uid);

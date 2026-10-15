@@ -1107,46 +1107,58 @@ export const api = {
       const res = await fetch(`${API_BASE_URL}/profile/${encodeURIComponent(userId)}`);
       if (res.ok) {
         const data = await res.json();
-        if (data && (data.panggilan || data.kampus)) {
+        if (data && (data.panggilan || data.kampus || data.nama)) {
           try {
             localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(data));
+            if (data.onboarded) {
+              localStorage.setItem(`napas_user_onboarded_${userId}`, 'true');
+            }
           } catch {}
           return data;
         }
       }
     } catch {}
 
-    // Fallback Supabase Cloud langsung
+    // Fallback Supabase Cloud langsung (Cek tabel user_profiles DAN users)
     if (supabase) {
       try {
-        const { data } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle();
+        const [profRes, userRes] = await Promise.all([
+          supabase.from('user_profiles').select('*').eq('user_id', userId).maybeSingle(),
+          supabase.from('users').select('id, nama, email, onboarded').eq('id', userId).maybeSingle(),
+        ]);
 
-        if (data) {
+        const profRow = profRes.data;
+        const userRow = userRes.data;
+
+        if (profRow || userRow) {
+          const isOnboarded = Boolean(userRow?.onboarded ?? profRow?.onboarded ?? false);
           const prof: StudentProfile = {
-            user_id: data.user_id,
-            panggilan: data.panggilan || '',
-            kampus: data.kampus || '',
-            jurusan: data.jurusan || '',
-            semester: data.semester || 1,
-            jam_tidur: data.jam_tidur || '23:00',
-            jam_bangun: data.jam_bangun || '06:00',
-            kronotipe: data.kronotipe || 'pagi',
-            target_fokus_jam: data.target_fokus_jam || 4.0,
-            focus_whitelist: Array.isArray(data.focus_whitelist) ? data.focus_whitelist : [],
-            focus_blacklist: Array.isArray(data.focus_blacklist) ? data.focus_blacklist : [],
-            agent_action: data.agent_action || 'warn_then_close',
-            onboarded: data.onboarded ?? true,
+            user_id: userId,
+            nama: userRow?.nama || '',
+            panggilan: profRow?.panggilan || (userRow?.nama ? userRow.nama.split(' ')[0] : 'Mahasiswa'),
+            kampus: profRow?.kampus || '',
+            jurusan: profRow?.jurusan || '',
+            semester: profRow?.semester || 1,
+            jam_tidur: profRow?.jam_tidur || '23:00',
+            jam_bangun: profRow?.jam_bangun || '06:00',
+            kronotipe: profRow?.kronotipe || 'pagi',
+            target_fokus_jam: profRow?.target_fokus_jam || 4.0,
+            focus_whitelist: Array.isArray(profRow?.focus_whitelist) ? profRow.focus_whitelist : [],
+            focus_blacklist: Array.isArray(profRow?.focus_blacklist) ? profRow.focus_blacklist : [],
+            agent_action: profRow?.agent_action || 'warn_then_close',
+            onboarded: isOnboarded,
           };
           try {
             localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(prof));
+            if (isOnboarded) {
+              localStorage.setItem(`napas_user_onboarded_${userId}`, 'true');
+            }
           } catch {}
           return prof;
         }
-      } catch {}
+      } catch (err) {
+        console.warn('getProfile Supabase error:', err);
+      }
     }
 
     // Fallback ke localStorage
@@ -1173,6 +1185,9 @@ export const api = {
       if (partial.panggilan) {
         localStorage.setItem('napas_user_name', partial.panggilan);
       }
+      if (partial.onboarded) {
+        localStorage.setItem(`napas_user_onboarded_${userId}`, 'true');
+      }
     } catch {}
 
     // 2. Coba kirim ke Backend API
@@ -1185,20 +1200,49 @@ export const api = {
       if (res.ok) {
         const saved = await res.json();
         localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(saved));
+        if (saved.onboarded) {
+          localStorage.setItem(`napas_user_onboarded_${userId}`, 'true');
+        }
         return saved;
       }
     } catch (err) {
       console.warn('updateProfile backend offline, saving to Supabase directly:', err);
     }
 
-    // 3. Fallback simpan langsung ke Supabase Cloud
+    // 3. Fallback simpan langsung ke Supabase Cloud (Sanitasi skema agar bebas dari error PGRST204)
     if (supabase) {
       try {
+        // A. Perbarui flag onboarded di tabel users
+        if (partial.onboarded !== undefined) {
+          await supabase
+            .from('users')
+            .update({ onboarded: partial.onboarded })
+            .eq('id', userId);
+        }
+
+        // B. Filter field yang aman untuk tabel user_profiles Supabase
+        const allowedProfileCols = [
+          'panggilan',
+          'kampus',
+          'jurusan',
+          'semester',
+          'jam_tidur',
+          'jam_bangun',
+          'kronotipe',
+          'target_fokus_jam',
+          'focus_whitelist',
+          'focus_blacklist',
+        ];
         const sbPayload: any = {
           user_id: userId,
           updated_at: new Date().toISOString(),
-          ...partial,
         };
+        for (const col of allowedProfileCols) {
+          if ((partial as any)[col] !== undefined) {
+            sbPayload[col] = (partial as any)[col];
+          }
+        }
+
         const { data } = await supabase
           .from('user_profiles')
           .upsert(sbPayload, { onConflict: 'user_id' })
@@ -1206,8 +1250,12 @@ export const api = {
           .maybeSingle();
 
         if (data) {
-          localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(data));
-          return data as StudentProfile;
+          const finalProfile = { ...data, onboarded: partial.onboarded ?? true };
+          localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(finalProfile));
+          if (finalProfile.onboarded) {
+            localStorage.setItem(`napas_user_onboarded_${userId}`, 'true');
+          }
+          return finalProfile as StudentProfile;
         }
       } catch (sbErr) {
         console.warn('Supabase updateProfile fallback error:', sbErr);
@@ -1220,11 +1268,21 @@ export const api = {
   async getClassSchedule(userId: string): Promise<ClassScheduleItem[]> {
     try {
       const res = await fetch(`${API_BASE_URL}/schedule/${encodeURIComponent(userId)}`);
-      if (!res.ok) return [];
-      return await res.json();
-    } catch {
-      return [];
+      if (res.ok) return await res.json();
+    } catch {}
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('class_schedule')
+          .select('*')
+          .eq('user_id', userId)
+          .order('hari', { ascending: true })
+          .order('jam_mulai', { ascending: true });
+        if (data && data.length > 0) return data as ClassScheduleItem[];
+      } catch {}
     }
+    return [];
   },
 
   async addClassSchedule(payload: Omit<ClassScheduleItem, 'id'>): Promise<ClassScheduleItem | null> {
@@ -1234,12 +1292,30 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) return null;
-      return await res.json();
+      if (res.ok) return await res.json();
     } catch (err) {
       console.error('addClassSchedule failed:', err);
-      return null;
     }
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('class_schedule')
+          .insert({
+            user_id: payload.user_id,
+            mata_kuliah: payload.mata_kuliah,
+            hari: payload.hari,
+            jam_mulai: payload.jam_mulai,
+            jam_selesai: payload.jam_selesai,
+            ruang: payload.ruang || '',
+            source: payload.source || 'manual',
+          })
+          .select()
+          .maybeSingle();
+        if (data) return data as ClassScheduleItem;
+      } catch {}
+    }
+    return null;
   },
 
   async bulkSetClassSchedule(userId: string, items: Omit<ClassScheduleItem, 'id'>[]): Promise<boolean> {
@@ -1249,11 +1325,34 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, items, replace: true }),
       });
-      return res.ok;
+      if (res.ok) return true;
     } catch (err) {
-      console.error('bulkSetClassSchedule failed:', err);
-      return false;
+      console.warn('bulkSetClassSchedule backend offline, saving to Supabase directly:', err);
     }
+
+    if (supabase) {
+      try {
+        await supabase.from('class_schedule').delete().eq('user_id', userId);
+        if (items.length > 0) {
+          const insertPayload = items.map((it) => ({
+            user_id: userId,
+            mata_kuliah: it.mata_kuliah,
+            hari: it.hari,
+            jam_mulai: it.jam_mulai,
+            jam_selesai: it.jam_selesai,
+            ruang: it.ruang || '',
+            source: it.source || 'manual',
+          }));
+          const { error } = await supabase.from('class_schedule').insert(insertPayload);
+          if (!error) return true;
+        } else {
+          return true;
+        }
+      } catch (sbErr) {
+        console.warn('Supabase bulkSetClassSchedule fallback error:', sbErr);
+      }
+    }
+    return false;
   },
 
   async deleteClassSchedule(scheduleId: string): Promise<boolean> {
@@ -1261,10 +1360,16 @@ export const api = {
       const res = await fetch(`${API_BASE_URL}/schedule/${encodeURIComponent(scheduleId)}`, {
         method: 'DELETE',
       });
-      return res.ok;
-    } catch {
-      return false;
+      if (res.ok) return true;
+    } catch {}
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('class_schedule').delete().eq('id', scheduleId);
+        return !error;
+      } catch {}
     }
+    return false;
   },
 
   async getRadar(userId: string, days: number = 14): Promise<RadarResponse | null> {

@@ -107,9 +107,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       onboarded: true,
     };
 
+    try {
+      localStorage.setItem(`napas_user_onboarded_${userId}`, 'true');
+    } catch {}
+
     const savedProfile = await api.updateProfile(userId, profilePayload);
 
-    // Simpan jadwal kuliah ke backend
+    // Simpan jadwal kuliah ke database (Supabase / Backend)
     if (schedules.length > 0) {
       await api.bulkSetClassSchedule(
         userId,
@@ -127,9 +131,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     setSubmitting(false);
     onNotify(`Selamat datang, ${panggilan}! Radar burnout-mu siap digunakan.`, '🌿');
     if (savedProfile) {
-      onComplete(savedProfile);
+      onComplete({ ...savedProfile, onboarded: true });
     } else {
-      onComplete({ ...profilePayload, user_id: userId } as StudentProfile);
+      onComplete({ ...profilePayload, user_id: userId, onboarded: true } as StudentProfile);
     }
   };
 

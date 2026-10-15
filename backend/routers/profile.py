@@ -68,7 +68,7 @@ def get_user_profile(user_id: str):
             "focus_whitelist": DEFAULT_WHITELIST,
             "focus_blacklist": DEFAULT_BLACKLIST,
             "agent_action": "warn_then_close",
-            "onboarded": False
+            "onboarded": bool(user.get("onboarded", False))
         }
 
     # Pastikan focus_whitelist valid list
@@ -76,12 +76,14 @@ def get_user_profile(user_id: str):
     if not wl or isinstance(wl, dict) or len(wl) == 0:
         profile["focus_whitelist"] = DEFAULT_WHITELIST
 
+    is_user_onboarded = user.get("onboarded") if user.get("onboarded") is not None else profile.get("onboarded", False)
+
     return {
         **profile,
         "nama": user.get("nama", profile.get("panggilan", "Mahasiswa")),
         "email": user.get("email", ""),
         "avatar_url": user.get("avatar_url", ""),
-        "onboarded": user.get("onboarded", profile.get("onboarded", False))
+        "onboarded": bool(is_user_onboarded)
     }
 
 @router.put("/profile/{user_id}")
@@ -114,7 +116,22 @@ def upsert_user_profile(user_id: str, payload: ProfileUpsert):
         try:
             from db import ensure_user_in_supabase
             ensure_user_in_supabase(u_uuid, nama=payload.panggilan or "Mahasiswa")
-            res = supabase.table("user_profiles").upsert(data, on_conflict="user_id").execute()
+
+            # Filter hanya field yang valid ada di tabel user_profiles Supabase
+            ALLOWED_PROFILE_FIELDS = (
+                "panggilan", "kampus", "jurusan", "semester",
+                "jam_tidur", "jam_bangun", "kronotipe", "target_fokus_jam",
+                "focus_whitelist", "focus_blacklist"
+            )
+            sb_profile_data = {
+                "user_id": u_uuid,
+                "updated_at": data.get("updated_at")
+            }
+            for col in ALLOWED_PROFILE_FIELDS:
+                if col in data:
+                    sb_profile_data[col] = data[col]
+
+            res = supabase.table("user_profiles").upsert(sb_profile_data, on_conflict="user_id").execute()
             if res.data:
                 saved = res.data[0]
         except Exception as e:
@@ -123,10 +140,13 @@ def upsert_user_profile(user_id: str, payload: ProfileUpsert):
         if payload.onboarded is not None:
             try:
                 supabase.table("users").update({"onboarded": payload.onboarded}).in_("id", [user_id, u_uuid]).execute()
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[Supabase Users Onboarded Error]: {e}")
 
-    return saved
+    return {
+        **saved,
+        "onboarded": payload.onboarded if payload.onboarded is not None else saved.get("onboarded", True)
+    }
 
 
 @router.get("/schedule/{user_id}")
