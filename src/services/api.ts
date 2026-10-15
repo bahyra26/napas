@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { FocusDailyBar } from '../types';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL !== undefined
@@ -831,16 +832,12 @@ export const api = {
       // backend offline
     }
 
-    // Jika backend punya data bermakna (ada sesi tercatat), gunakan langsung
-    if (
-      backendData &&
-      backendData.overview &&
-      (backendData.overview.focusPercent > 0 || backendData.overview.focusDuration !== '0 menit')
-    ) {
+    // 1. Jika backend mengembalikan respons, gunakan data riil dari database backend
+    if (backendData) {
       return backendData;
     }
 
-    // Hitung sesi tambahan dari local cache jika ada
+    // 2. Jika backend offline, hitung HANYA dari sesi lokal milik pengguna ini
     let localExtraFocusSeconds = 0;
     try {
       const stored = localStorage.getItem('napas_completed_focus_sessions');
@@ -855,49 +852,59 @@ export const api = {
       }
     } catch {}
 
-    const totalMinutes = Math.round(225 + localExtraFocusSeconds / 60);
+    const totalMinutes = Math.round(localExtraFocusSeconds / 60);
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
     const durationLabel = hours > 0 ? `${hours} jam ${mins} menit` : `${mins} menit`;
 
+    // Bar 7 hari dengan tanggal dinamis minggu ini (nilai 0 jika belum ada sesi)
+    const now = new Date();
+    const daysShort = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const daysFull = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const cleanBars: FocusDailyBar[] = Array.from({ length: 7 }, (_, idx) => {
+      const d = new Date(now.getTime() - (6 - idx) * 24 * 3600 * 1000);
+      const dayIdx = d.getDay();
+      return {
+        id: `bar-${idx + 1}`,
+        dayShort: daysShort[dayIdx],
+        dayFull: daysFull[dayIdx],
+        focusPercent: 0,
+        distractPercent: 0,
+        focusDuration: '0 menit',
+        distractDuration: '0 menit',
+        totalDuration: '0 menit',
+        totalHoursNum: 0,
+      };
+    });
+
     return {
       overview: {
         date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-        focusPercent: 78,
-        distractPercent: 22,
+        focusPercent: localExtraFocusSeconds > 0 ? 100 : 0,
+        distractPercent: 0,
         focusDuration: durationLabel,
-        distractDuration: '1 jam 5 menit',
-        motivationalNote: 'Ritme konsentrasimu terjaga sangat baik hari ini! Pertahankan jeda teratur.',
+        distractDuration: '0 menit',
+        motivationalNote:
+          localExtraFocusSeconds > 0
+            ? 'Sesi fokus aktif tercatat! Pertahankan konsistensi belajarmu.'
+            : 'Belum ada sesi belajar tercatat. Mulai sesi fokus di atas untuk merekam produktivitas belajarmu!',
       },
-      top_distractors: [
-        { id: 'dist-1', name: 'YouTube (Entertainment)', durationMinutes: 35, durationLabel: '35m', percentage: 48 },
-        { id: 'dist-2', name: 'Instagram & TikTok', durationMinutes: 20, durationLabel: '20m', percentage: 28 },
-        { id: 'dist-3', name: 'Discord / Chat Grup', durationMinutes: 10, durationLabel: '10m', percentage: 14 },
-        { id: 'dist-4', name: 'Tab Browsing Acak', durationMinutes: 7, durationLabel: '7m', percentage: 10 },
-      ],
+      top_distractors: [],
       streak: {
-        currentStreak: 4,
+        currentStreak: localExtraFocusSeconds > 0 ? 1 : 0,
         targetRule: 'Target 50 menit belajar fokus per hari',
-        bestRecord: 7,
+        bestRecord: localExtraFocusSeconds > 0 ? 1 : 0,
         days: [
-          { letter: 'S', dayName: 'Senin', completed: true },
-          { letter: 'S', dayName: 'Selasa', completed: true },
-          { letter: 'R', dayName: 'Rabu', completed: true },
-          { letter: 'K', dayName: 'Kamis', completed: true },
+          { letter: 'S', dayName: 'Senin', completed: false },
+          { letter: 'S', dayName: 'Selasa', completed: false },
+          { letter: 'R', dayName: 'Rabu', completed: false },
+          { letter: 'K', dayName: 'Kamis', completed: false },
           { letter: 'J', dayName: 'Jumat', completed: localExtraFocusSeconds > 0 },
           { letter: 'S', dayName: 'Sabtu', completed: false },
           { letter: 'M', dayName: 'Minggu', completed: false },
         ],
       },
-      weekly_bars: [
-        { id: 'bar-1', dayShort: 'Sen', dayFull: 'Senin', focusPercent: 75, distractPercent: 25, focusDuration: '3.5 jam', distractDuration: '1.2 jam', totalDuration: '4.7 jam', totalHoursNum: 4.7 },
-        { id: 'bar-2', dayShort: 'Sel', dayFull: 'Selasa', focusPercent: 82, distractPercent: 18, focusDuration: '4.2 jam', distractDuration: '0.9 jam', totalDuration: '5.1 jam', totalHoursNum: 5.1 },
-        { id: 'bar-3', dayShort: 'Rab', dayFull: 'Rabu', focusPercent: 70, distractPercent: 30, focusDuration: '3.0 jam', distractDuration: '1.3 jam', totalDuration: '4.3 jam', totalHoursNum: 4.3 },
-        { id: 'bar-4', dayShort: 'Kam', dayFull: 'Kamis', focusPercent: 85, distractPercent: 15, focusDuration: '4.8 jam', distractDuration: '0.8 jam', totalDuration: '5.6 jam', totalHoursNum: 5.6 },
-        { id: 'bar-5', dayShort: 'Jum', dayFull: 'Jumat', focusPercent: 68, distractPercent: 32, focusDuration: '2.5 jam', distractDuration: '1.2 jam', totalDuration: '3.7 jam', totalHoursNum: 3.7 },
-        { id: 'bar-6', dayShort: 'Sab', dayFull: 'Sabtu', focusPercent: 90, distractPercent: 10, focusDuration: '2.0 jam', distractDuration: '0.2 jam', totalDuration: '2.2 jam', totalHoursNum: 2.2 },
-        { id: 'bar-7', dayShort: 'Min', dayFull: 'Minggu', focusPercent: 60, distractPercent: 40, focusDuration: '1.5 jam', distractDuration: '1.0 jam', totalDuration: '2.5 jam', totalHoursNum: 2.5 },
-      ],
+      weekly_bars: cleanBars,
     };
   },
 
@@ -922,12 +929,15 @@ export const api = {
           .order('tanggal', { ascending: true });
 
         const scores = indices || [];
-        const avgScore = scores.length > 0 ? Math.round(scores.reduce((a: number, b: any) => a + Number(b.index), 0) / scores.length) : 68;
-        const lastZona = scores.length > 0 ? scores[scores.length - 1].zona : 'oranye';
+        const hasData = scores.length > 0;
+        const avgScore = hasData ? Math.round(scores.reduce((a: number, b: any) => a + Number(b.index), 0) / scores.length) : 0;
+        const lastZona = hasData ? scores[scores.length - 1].zona : 'hijau';
 
         return {
           title: lastZona === 'hijau' ? 'Kondisi mental dan fisik sangat prima!' : 'Kamu sudah berusaha keras minggu ini.',
-          description: `Rata-rata skor burnout pekan ini berada di angka ${avgScore}%. Pola aktivitas dan waktu istirahat tetap terjaga dengan baik.`,
+          description: hasData
+            ? `Rata-rata skor burnout pekan ini berada di angka ${avgScore}%. Pola aktivitas dan waktu istirahat tetap terjaga dengan baik.`
+            : 'Belum ada akumulasi tekanan atau tugas berat tercatat pekan ini. Kondisimu terpantau prima!',
           weeklyScore: avgScore,
           zoneName: `zona ${lastZona}`,
           note: 'Pertahankan ritme fokus dan lakukan jeda napas 4-7-8 secara teratur.',
@@ -959,9 +969,9 @@ export const api = {
           ],
           advisory: 'Jika kondisi ini berlanjut 7 hari, pertimbangkan konsultasi ke BK kampus atau dokter.',
           summaryStats: [
-            { id: 'stat-muncul', value: '5 kali', label: 'intervensi muncul', colorType: 'orange' },
-            { id: 'stat-selesai', value: '4 / 5', label: 'intervensi selesai', colorType: 'green' },
-            { id: 'stat-risiko', value: '2 hari', label: 'risiko tinggi', colorType: 'red' },
+            { id: 'stat-muncul', value: '0 kali', label: 'intervensi muncul', colorType: 'orange' },
+            { id: 'stat-selesai', value: '0 / 0', label: 'intervensi selesai', colorType: 'green' },
+            { id: 'stat-risiko', value: '0 hari', label: 'risiko tinggi', colorType: 'red' },
           ],
           ai_provider: 'Clinical Wellbeing Engine (Cloud)',
         };
