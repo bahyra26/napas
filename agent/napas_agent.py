@@ -13,6 +13,9 @@ Arsitektur: Strict Whitelist (Default Deny)
 """
 
 import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
 import os
 import json
 import time
@@ -22,6 +25,9 @@ import urllib.parse
 import urllib.request
 import re
 from typing import Optional, Set, Dict, Any
+
+import logging
+logging.getLogger("websockets").setLevel(logging.CRITICAL)
 
 try:
     import websockets
@@ -827,9 +833,22 @@ def clear_port_8765():
     """Memastikan port 8765 bersih dari proses orphan sebelum mengikat socket."""
     try:
         import subprocess
-        cmd = "Get-NetTCPConnection -LocalPort 8765 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
-        subprocess.run(["powershell", "-NoProfile", "-Command", cmd], capture_output=True, timeout=5)
-        time.sleep(0.4)
+        out = subprocess.check_output("netstat -ano", shell=True, text=True, stderr=subprocess.DEVNULL)
+        current_pid = os.getpid()
+        killed = False
+        for line in out.splitlines():
+            if ":8765" in line and "LISTENING" in line:
+                parts = line.strip().split()
+                if parts:
+                    try:
+                        pid = int(parts[-1])
+                        if pid != current_pid and pid > 0:
+                            subprocess.run(f"taskkill /F /PID {pid}", shell=True, capture_output=True)
+                            killed = True
+                    except (ValueError, IndexError):
+                        pass
+        if killed:
+            time.sleep(0.8)
     except Exception:
         pass
 
@@ -857,8 +876,22 @@ async def main():
 
     asyncio.create_task(focus_monitor_loop())
 
-    async with websockets.serve(handler, host, port):
-        await asyncio.Future()
+    try:
+        async with websockets.serve(handler, host, port):
+            await asyncio.Future()
+    except OSError as e:
+        if "10048" in str(e) or getattr(e, "winerror", None) == 10048:
+            print("[*] Port 8765 sedang dipakai. Membersihkan proses lama...")
+            clear_port_8765()
+            try:
+                async with websockets.serve(handler, host, port):
+                    await asyncio.Future()
+            except OSError:
+                print("\n[INFO] NAPAS Focus Agent sudah aktif dan berjalan di port 8765.")
+                print("[*] Companion Agent siap digunakan.")
+                await asyncio.Future()
+        else:
+            raise
 
 if __name__ == "__main__":
     try:

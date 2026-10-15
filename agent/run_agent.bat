@@ -7,12 +7,12 @@ echo.
 cd /d "%~dp0"
 if exist "..\.venv\Scripts\python.exe" (
     echo Menggunakan Python virtualenv workspace...
-    ..\.venv\Scripts\python.exe napas_agent.py
+    ..\.venv\Scripts\python.exe napas_agent.py %*
 ) else if exist "..\backend\venv\Scripts\python.exe" (
     echo Menggunakan Python virtualenv dari backend...
-    ..\backend\venv\Scripts\python.exe napas_agent.py
+    ..\backend\venv\Scripts\python.exe napas_agent.py %*
 ) else (
     echo Menjalankan dengan Python sistem...
-    python napas_agent.py
+    python napas_agent.py %*
 )
 pause
