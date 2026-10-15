@@ -26,9 +26,7 @@ export const DataManagementCard: React.FC<DataManagementCardProps> = ({
       const [history, workloads, checkIns] = await Promise.all([
         api.getIndexHistory(userId, 30),
         api.getWorkloads(userId),
-        fetch(`http://localhost:8000/check-ins?user_id=${encodeURIComponent(userId)}&days=30`)
-          .then((r) => (r.ok ? r.json() : []))
-          .catch(() => []),
+        api.getCheckIns(userId, 30),
       ]);
 
       const exportPayload = {

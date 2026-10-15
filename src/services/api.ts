@@ -698,6 +698,27 @@ export const api = {
     return null;
   },
 
+  async getCheckIns(userId: string, days: number = 14): Promise<CheckInItem[]> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/check-ins?user_id=${encodeURIComponent(userId)}&days=${days}`);
+      if (res.ok) return await res.json();
+    } catch {}
+
+    if (supabase) {
+      try {
+        const sinceIso = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
+        const { data } = await supabase
+          .from('check_ins')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('ts', sinceIso)
+          .order('ts', { ascending: false });
+        if (data) return data as CheckInItem[];
+      } catch {}
+    }
+    return [];
+  },
+
   async postIntervention(
     userId: string,
     tipe: 'breathing' | 'lock' | 'break' | 'playbook',

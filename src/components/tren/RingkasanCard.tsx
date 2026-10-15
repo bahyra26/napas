@@ -14,9 +14,7 @@ export const RingkasanCard: React.FC = () => {
 
       const [history, checkIns] = await Promise.all([
         api.getIndexHistory(userId, 14),
-        fetch(`http://localhost:8000/check-ins?user_id=${encodeURIComponent(userId)}&days=14`)
-          .then((r) => (r.ok ? r.json() : []))
-          .catch(() => []),
+        api.getCheckIns(userId, 14),
       ]);
 
       if (history && history.length > 0) {
