@@ -284,7 +284,7 @@ export const googleCalendarService = {
         start: new Date(now.getTime() + 4 * 24 * 3600 * 1000 + 10 * 3600 * 1000).toISOString(),
         end: new Date(now.getTime() + 4 * 24 * 3600 * 1000 + 12 * 3600 * 1000).toISOString(),
         all_day: false,
-        description: 'Evaluasi integrasi API backend dan kesiapan user testing.',
+        description: 'Evaluasi pembagian bab laporan akhir dan persiapan presentasi tim.',
       },
       {
         id: `sample-gcal-4-${Date.now()}`,
@@ -311,14 +311,14 @@ export const googleCalendarService = {
       return {
         success: true,
         count: syncedCount,
-        message: `Berhasil menyinkronkan ${syncedCount} agenda kalender perkuliahan ke Deadline Radar & Dashboard!`,
+        message: `Berhasil menyinkronkan ${syncedCount} agenda perkuliahan ke Deadline Radar & Dashboard!`,
       };
     } catch {
       this.setGoogleConnected(userId, true, sampleEvents.length);
       return {
         success: true,
         count: sampleEvents.length,
-        message: `Berhasil menyinkronkan 5 agenda kalender perkuliahan ke sistem lokal!`,
+        message: `Berhasil menyinkronkan 5 agenda perkuliahan ke jadwal Anda!`,
       };
     }
   },

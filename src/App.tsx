@@ -394,7 +394,7 @@ export const App: React.FC = () => {
                 if (res.success) {
                   loadRadar(synced.id);
                   loadWorkloads(synced.id);
-                  showToast('Google Calendar asli berhasil disinkronkan!', '📅');
+                  showToast('Google Calendar berhasil disinkronkan!', '📅');
                 }
               });
             }
@@ -436,7 +436,7 @@ export const App: React.FC = () => {
               if (res.success) {
                 loadRadar(synced.id);
                 loadWorkloads(synced.id);
-                showToast('Google Calendar asli berhasil disinkronkan!', '📅');
+                showToast('Google Calendar berhasil disinkronkan!', '📅');
               }
             });
           }

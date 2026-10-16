@@ -95,7 +95,7 @@ export const StudentProfileHero: React.FC<StudentProfileHeroProps> = ({
     try {
       const base64Url = await processImageFile(file);
       await onUpdateAvatar?.(base64Url);
-      onNotify?.('Foto profil berhasil diperbarui dan disimpan ke database!', '📸');
+      onNotify?.('Foto profil berhasil diperbarui!', '📸');
     } catch (err: any) {
       onNotify?.(err?.message || 'Gagal memperbarui foto profil', '❌');
     } finally {
@@ -213,7 +213,7 @@ export const StudentProfileHero: React.FC<StudentProfileHeroProps> = ({
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-          <span>On-Device SQLite Local-First</span>
+          <span>Penyimpanan Aman &amp; Privat</span>
         </div>
       </div>
     </div>

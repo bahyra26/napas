@@ -35,7 +35,7 @@ export const authService = {
 
   async signInWithPassword(emailOrUsername: string, password: string): Promise<{ user?: any; error?: string }> {
     if (!supabaseClient) {
-      return { error: 'Supabase client belum terkonfigurasi' };
+      return { error: 'Layanan autentikasi sedang tidak tersedia.' };
     }
     try {
       let email = emailOrUsername.trim();
@@ -148,7 +148,7 @@ export const authService = {
     username: string;
   }): Promise<{ user?: any; error?: string }> {
     if (!supabaseClient) {
-      return { error: 'Supabase client belum terkonfigurasi' };
+      return { error: 'Layanan pendaftaran sedang tidak tersedia.' };
     }
     const cleanEmail = params.email.trim();
     const cleanName = params.fullName.trim();
@@ -232,7 +232,7 @@ export const authService = {
 
   async resetPassword(email: string): Promise<{ error?: string }> {
     if (!supabaseClient) {
-      return { error: 'Supabase client belum terkonfigurasi' };
+      return { error: 'Layanan reset password sedang tidak tersedia.' };
     }
     try {
       const redirectUrl = window.location.origin + window.location.pathname;
@@ -249,7 +249,7 @@ export const authService = {
   async signInWithGoogle(): Promise<{ error?: string }> {
     if (!supabaseClient) {
       return {
-        error: 'Kredensial Supabase (VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY) belum diisi di .env.',
+        error: 'Layanan autentikasi Google sedang dalam pemeliharaan. Silakan gunakan opsi sinkronisasi lainnya.',
       };
     }
 

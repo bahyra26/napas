@@ -56,7 +56,7 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
       }
     } catch {
       setIsLoading(false);
-      showToast('Gagal memuat agenda kalender uji coba.', '❌');
+      showToast('Gagal menyinkronkan agenda perkuliahan.', '❌');
     }
   };
 
@@ -120,12 +120,16 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
     reader.readAsText(file);
   };
 
-  // 4. Login Akun Google Asli (OAuth)
+  // 4. Login Akun Google
   const handleOAuthLogin = async () => {
     showToast('Mengarahkan ke otorisasi Google...', '🔗');
     const res = await authService.signInWithGoogle();
     if (res?.error) {
-      showToast(res.error, '⚠️');
+      if (res.error.toLowerCase().includes('provider') || res.error.toLowerCase().includes('supabase')) {
+        showToast('Layanan sinkronisasi Google Calendar sedang dalam pemeliharaan. Silakan gunakan opsi Sinkronisasi Cepat atau Impor File .ics.', 'ℹ️');
+      } else {
+        showToast(res.error, '⚠️');
+      }
     }
   };
 
@@ -192,31 +196,31 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
             className={`gcal-tab-btn ${activeTab === 'demo' ? 'active' : ''}`}
             onClick={() => setActiveTab('demo')}
           >
-            ⚡ Uji Coba Instan (1-Klik)
+            ⚡ Sinkronisasi Cepat
           </button>
           <button
             type="button"
             className={`gcal-tab-btn ${activeTab === 'oauth' ? 'active' : ''}`}
             onClick={() => setActiveTab('oauth')}
           >
-            🔗 Login Google (OAuth)
+            🔗 Akun Google
           </button>
           <button
             type="button"
             className={`gcal-tab-btn ${activeTab === 'ical' ? 'active' : ''}`}
             onClick={() => setActiveTab('ical')}
           >
-            📋 Impor Link / File (.ics)
+            📋 Impor File / Link (.ics)
           </button>
         </div>
 
-        {/* Tab 1: Uji Coba Instan (Demo Akademik) */}
+        {/* Tab 1: Sinkronisasi Cepat Agenda Perkuliahan */}
         {activeTab === 'demo' && (
           <div className="gcal-tab-panel">
             <div className="gcal-feature-box">
-              <h4>⚡ Uji Coba Kalender Instan (Demo Akademik)</h4>
+              <h4>⚡ Sinkronisasi Jadwal Perkuliahan</h4>
               <p>
-                Fitur ini memuat <strong>5 agenda perkuliahan, praktikum, tugas, dan ujian semester</strong> secara otomatis ke dalam sistem NAPAS tanpa perlu konfigurasi Google Cloud Console.
+                Muat langsung <strong>jadwal perkuliahan, praktikum, tugas, dan ujian semester</strong> secara otomatis ke dalam kalender NAPAS Anda.
               </p>
               <ul style={{ margin: '8px 0 0 16px', fontSize: '12px', color: '#374151' }}>
                 <li>Praktikum Jaringan Komputer (Lab 3) — Besok</li>
@@ -241,7 +245,7 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
                     <span>Menyinkronkan Agenda...</span>
                   </>
                 ) : (
-                  '🚀 Muat 5 Agenda Kalender Uji Coba'
+                  '🚀 Sinkronkan Jadwal Perkuliahan'
                 )}
               </button>
             </div>
@@ -313,29 +317,14 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
           </div>
         )}
 
-        {/* Tab 3: OAuth Google Asli */}
+        {/* Tab 3: Akun Google */}
         {activeTab === 'oauth' && (
           <div className="gcal-tab-panel">
             <div className="gcal-feature-box gcal-notice-box">
-              <h4>ℹ️ Integrasi Akun Google OAuth</h4>
+              <h4>ℹ️ Hubungkan Akun Google</h4>
               <p>
-                Metode ini menghubungkan langsung akun Google Anda via login OAuth untuk membaca agenda dari Google Calendar API secara otomatis.
+                Hubungkan akun Google Anda untuk menyinkronkan agenda perkuliahan, tenggat tugas, dan jadwal penting dari Google Calendar secara otomatis ke dalam sistem NAPAS.
               </p>
-              
-              <div className="gcal-warning-banner">
-                <strong>Catatan Konfigurasi Supabase:</strong>
-                <p>
-                  Jika muncul error <em>&quot;Unsupported provider: provider is not enabled&quot;</em>, artinya toggle Google Provider di dashboard Supabase belum diaktifkan:
-                </p>
-                <ol style={{ paddingLeft: 18, margin: '6px 0', fontSize: 11.5 }}>
-                  <li>Buka <strong>Supabase Dashboard &gt; Authentication &gt; Providers</strong>.</li>
-                  <li>Aktifkan toggle <strong>Google</strong>.</li>
-                  <li>Masukkan <strong>Google Client ID</strong> & <strong>Client Secret</strong> dari Google Cloud Console.</li>
-                </ol>
-                <p style={{ margin: 0, fontSize: 11 }}>
-                  💡 <em>Jika Anda belum mengatur Google Cloud Console, gunakan <strong>Tab &quot;⚡ Sinkronisasi Instan&quot;</strong> di atas untuk mencoba fitur ini langsung tanpa hambatan.</em>
-                </p>
-              </div>
             </div>
 
             <div className="gcal-modal-actions">
@@ -346,7 +335,7 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
                 </svg>
-                <span>Masuk dengan Akun Google (OAuth)</span>
+                <span>Masuk dengan Akun Google</span>
               </button>
             </div>
           </div>

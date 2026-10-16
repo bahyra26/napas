@@ -131,7 +131,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({ onNotify }) => {
     const res = await api.postCheckIn(userId, 4, text);
     if (res) {
       setSavedReflection(text);
-      onNotify('Refleksi harian berhasil disimpan ke database!', '💚');
+      onNotify('Refleksi harian Anda berhasil disimpan!', '💚');
     } else {
       setSavedReflection(text);
       onNotify(`Refleksi harian tersimpan: "${text.substring(0, 32)}..."`, '💚');

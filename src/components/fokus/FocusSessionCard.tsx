@@ -273,7 +273,7 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
                     <button
                       type="button"
                       className="chip-link-btn"
-                      title="Uji coba buka website ini"
+                      title="Buka website ini"
                       onClick={() => handleLaunchAllowedSite(w)}
                     >
                       ↗

@@ -17,7 +17,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
     >
       <div className="modal-card" style={{ maxWidth: '480px' }}>
         <div className="modal-header">
-          <h3>Arsitektur Privasi On-Device NAPAS</h3>
+          <h3>Kebijakan &amp; Komitmen Privasi NAPAS</h3>
           <button type="button" className="modal-close-btn" onClick={onClose}>
             &times;
           </button>
@@ -35,19 +35,19 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
           >
             <strong style={{ color: '#065f46' }}>🛡️ Jaminan Privasi Tanpa Rekaman Wajah:</strong>
             <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#047857' }}>
-              Kamera hanya digunakan untuk mendeteksi landmark 3D (frekuensi kedipan &amp; ketegangan alis) langsung di memori browser (WebAssembly). Tidak ada foto atau video yang pernah disimpan atau dikirim ke internet.
+              Kamera hanya menganalisis indikator fokus secara real-time langsung di perangkat Anda tanpa pernah merekam, menyimpan, atau mengirim foto maupun video Anda ke server mana pun.
             </p>
           </div>
 
           <ul style={{ paddingLeft: '18px', margin: '0 0 16px 0', fontSize: '12.5px', color: '#4b5563' }}>
             <li style={{ marginBottom: '6px' }}>
-              <strong>Zero Biometric Cloud Storage:</strong> Data wajah langsung dibuang seketika setelah nilai numerik ketegangan dihitung.
+              <strong>Privasi Biometrik Terjamin:</strong> Data visual diproses seketika di perangkat Anda dan langsung dibuang setelah analisis selesai.
             </li>
             <li style={{ marginBottom: '6px' }}>
               <strong>Kendali Penuh Izin Sensor:</strong> Anda bebas mematikan kamera atau pelacakan jendela kapan saja lewat sakelar di tab Settings.
             </li>
             <li style={{ marginBottom: '6px' }}>
-              <strong>Enkripsi Sesi Kalender:</strong> Akses Google Calendar hanya menggunakan token OAuth terotorisasi untuk sinkronisasi agenda akademik.
+              <strong>Enkripsi Sesi Kalender:</strong> Akses Google Calendar menggunakan otorisasi resmi Google yang aman dan terenkripsi untuk sinkronisasi agenda akademik.
             </li>
           </ul>
         </div>

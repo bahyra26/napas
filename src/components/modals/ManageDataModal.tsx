@@ -101,7 +101,7 @@ export const ManageDataModal: React.FC<ManageDataModalProps> = ({
                     Hapus Cache &amp; Riwayat Sesi Lokal
                   </div>
                   <div style={{ fontSize: '11px', color: '#b91c1c' }}>
-                    Bersihkan riwayat fokus, token sementara, dan cache tersimpan.
+                    Bersihkan riwayat fokus, sesi aktif, dan cache tersimpan.
                   </div>
                 </div>
                 <button
