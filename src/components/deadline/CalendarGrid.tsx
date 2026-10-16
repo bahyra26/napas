@@ -1,16 +1,19 @@
 import React from 'react';
 import { CalendarDay } from '../../types';
+import { SkeletonCalendar } from '../common/SkeletonLoader';
 
 interface CalendarGridProps {
   days: CalendarDay[];
   selectedDate: string;
   onSelectDay: (day: CalendarDay) => void;
+  isLoading?: boolean;
 }
 
 export const CalendarGrid: React.FC<CalendarGridProps> = ({
   days,
   selectedDate,
   onSelectDay,
+  isLoading = false,
 }) => {
   return (
     <div className="deadline-card card-calendar-grid">
@@ -25,8 +28,11 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
         </div>
       </div>
 
-      <div className="calendar-tiles-grid" id="calendarTilesGrid">
-        {days.map((day) => {
+      {isLoading ? (
+        <SkeletonCalendar />
+      ) : (
+        <div className="calendar-tiles-grid" id="calendarTilesGrid">
+          {days.map((day) => {
           const isSelected = selectedDate === day.date;
           const tileClass =
             day.status === 'Berat'
@@ -57,7 +63,8 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

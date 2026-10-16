@@ -1,5 +1,6 @@
 import { api, getStoredUserId } from './api';
 import { agentClient, AgentStatusEvent } from './agentClient';
+import { realtimeSync } from './realtimeSync';
 import {
   WhitelistWebsite,
   DEFAULT_STUDENT_WHITELIST,
@@ -470,6 +471,8 @@ class FocusSessionStore {
 
     this.startTimerLoop();
 
+    realtimeSync.broadcast('FOCUS_SESSION_CHANGED', { isRunning: true, sessionId: this.state.sessionId });
+
     this.notify(
       `Sesi fokus ${this.state.durationMinutes} menit dimulai! Guard website aktif melindungi konsentrasimu.`,
       '🎯'
@@ -527,6 +530,8 @@ class FocusSessionStore {
         completed,
       });
     }
+
+    realtimeSync.broadcast('FOCUS_SESSION_CHANGED', { isRunning: false, completed, sessionId: sid });
 
     ambientAudio.playChime();
 

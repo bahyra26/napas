@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { api, StudentProfile } from '../../services/api';
+import { LoadingSpinner } from '../common/LoadingSpinner';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -56,6 +58,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [blacklist, setBlacklist] = useState(['Discord', 'YouTube', 'Instagram', 'TikTok', 'Steam', 'Mobile Legends']);
   const [newBlacklistApp, setNewBlacklistApp] = useState('');
 
+  // Confirmation state for removing schedule
+  const [scheduleToDelete, setScheduleToDelete] = useState<{ idx: number; name: string } | null>(null);
+
 
   if (!isOpen) return null;
 
@@ -74,8 +79,17 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     onNotify('Mata kuliah ditambahkan!', '📅');
   };
 
-  const handleRemoveSchedule = (idx: number) => {
-    setSchedules((prev) => prev.filter((_, i) => i !== idx));
+  const handleRequestRemoveSchedule = (idx: number) => {
+    const target = schedules[idx];
+    setScheduleToDelete({ idx, name: target ? target.mata_kuliah : 'jadwal ini' });
+  };
+
+  const handleConfirmRemoveSchedule = () => {
+    if (scheduleToDelete !== null) {
+      setSchedules((prev) => prev.filter((_, i) => i !== scheduleToDelete.idx));
+      onNotify(`Mata kuliah ${scheduleToDelete.name} dihapus.`, '🗑️');
+      setScheduleToDelete(null);
+    }
   };
 
   const handleAddBlacklist = () => {
@@ -301,7 +315,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     <span className="sc-name">{sc.mata_kuliah}</span>
                     <span className="sc-time">{sc.jam_mulai} - {sc.jam_selesai}</span>
                   </div>
-                  <button type="button" className="btn-del-sc" onClick={() => handleRemoveSchedule(idx)}>
+                  <button type="button" className="btn-del-sc" onClick={() => handleRequestRemoveSchedule(idx)} title="Hapus mata kuliah ini">
                     &times;
                   </button>
                 </div>
@@ -427,12 +441,36 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 onClick={handleFinish}
                 disabled={submitting}
               >
-                {submitting ? 'Menyimpan...' : '🎉 Selesai & Buka Dashboard!'}
+                {submitting ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <LoadingSpinner size="sm" color="white" />
+                    <span>Menyimpan Pengaturan...</span>
+                  </span>
+                ) : (
+                  '🎉 Selesai & Buka Dashboard!'
+                )}
               </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Modal Validasi Hapus Jadwal Kuliah */}
+      <ConfirmModal
+        isOpen={!!scheduleToDelete}
+        variant="danger"
+        icon="🗑️"
+        title="Hapus Mata Kuliah Ini?"
+        message={
+          <>
+            Apakah kamu yakin ingin menghapus <strong>"{scheduleToDelete?.name}"</strong> dari daftar jadwal kuliah mingguan?
+          </>
+        }
+        confirmText="Hapus"
+        cancelText="Batal"
+        onConfirm={handleConfirmRemoveSchedule}
+        onCancel={() => setScheduleToDelete(null)}
+      />
     </div>
   );
 };

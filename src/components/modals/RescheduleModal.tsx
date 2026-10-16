@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { LoadingSpinner } from '../common/LoadingSpinner';
 
 interface RescheduleModalProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
   availableDays = [],
   currentLoadScore = 0,
 }) => {
+  const [reschedulingDay, setReschedulingDay] = useState<string | null>(null);
+
   if (!isOpen) return null;
 
   return (
@@ -64,21 +67,36 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
           </div>
         ) : (
           <div className="reschedule-recommendations">
-            {availableDays.map((rec) => (
-              <div
-                key={rec.day}
-                className="reschedule-item"
-                onClick={() => onConfirmReschedule(rec.day)}
-              >
-                <div className="reschedule-item-info">
-                  <span className="reschedule-item-day">{rec.day}</span>
-                  <span className="reschedule-item-badge">{rec.badge}</span>
+            {availableDays.map((rec) => {
+              const isMovingThis = reschedulingDay === rec.day;
+              return (
+                <div
+                  key={rec.day}
+                  className="reschedule-item"
+                  onClick={() => {
+                    if (reschedulingDay) return;
+                    setReschedulingDay(rec.day);
+                    onConfirmReschedule(rec.day);
+                  }}
+                  style={{ opacity: reschedulingDay && !isMovingThis ? 0.6 : 1 }}
+                >
+                  <div className="reschedule-item-info">
+                    <span className="reschedule-item-day">{rec.day}</span>
+                    <span className="reschedule-item-badge">{rec.badge}</span>
+                  </div>
+                  <button type="button" className="btn-pilih-reschedule" disabled={reschedulingDay !== null}>
+                    {isMovingThis ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <LoadingSpinner size="xs" color="white" />
+                        <span>Memindahkan...</span>
+                      </span>
+                    ) : (
+                      'Pindahkan'
+                    )}
+                  </button>
                 </div>
-                <button type="button" className="btn-pilih-reschedule">
-                  Pindahkan
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

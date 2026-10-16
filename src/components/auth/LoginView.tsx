@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { authService } from '../../services/supabase';
 import { setStoredUserId } from '../../services/api';
+import { LoadingSpinner } from '../common/LoadingSpinner';
 
 interface LoginViewProps {
   onCustomLogin?: (identifier: string, name: string, campus: string, major: string) => void | Promise<void>;
@@ -365,8 +366,17 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
                 {/* Submit Button */}
                 <button type="submit" className="auth-submit-btn" disabled={loading}>
-                  <span>{loading ? 'Memproses...' : 'Login'}</span>
-                  <span>→</span>
+                  {loading ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center', width: '100%' }}>
+                      <LoadingSpinner size="sm" color="white" />
+                      <span>Memproses...</span>
+                    </span>
+                  ) : (
+                    <>
+                      <span>Login</span>
+                      <span>→</span>
+                    </>
+                  )}
                 </button>
 
                 {/* Divider */}
@@ -444,8 +454,17 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
                     {/* Submit Button */}
                     <button type="submit" className="auth-submit-btn" disabled={loading}>
-                      <span>{loading ? 'Mengirim Tautan...' : 'Kirim Tautan Reset'}</span>
-                      <span>→</span>
+                      {loading ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center', width: '100%' }}>
+                          <LoadingSpinner size="sm" color="white" />
+                          <span>Mengirim Tautan...</span>
+                        </span>
+                      ) : (
+                        <>
+                          <span>Kirim Tautan Reset</span>
+                          <span>→</span>
+                        </>
+                      )}
                     </button>
 
                     <div className="auth-divider">
@@ -666,8 +685,17 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
                 {/* Submit Button */}
                 <button type="submit" className="auth-submit-btn" disabled={loading}>
-                  <span>{loading ? 'Mendaftarkan...' : 'Daftar'}</span>
-                  <span>→</span>
+                  {loading ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center', width: '100%' }}>
+                      <LoadingSpinner size="sm" color="white" />
+                      <span>Mendaftarkan...</span>
+                    </span>
+                  ) : (
+                    <>
+                      <span>Daftar</span>
+                      <span>→</span>
+                    </>
+                  )}
                 </button>
 
                 {/* Divider */}

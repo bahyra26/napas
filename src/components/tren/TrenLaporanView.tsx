@@ -10,6 +10,8 @@ import { InsightMingguanCard } from '../laporan/InsightMingguanCard';
 import { RefleksiHariIniCard } from '../laporan/RefleksiHariIniCard';
 import { ReflectionModal } from '../modals/ReflectionModal';
 import { api, getStoredUserId } from '../../services/api';
+import { SkeletonCard } from '../common/SkeletonLoader';
+import { realtimeSync } from '../../services/realtimeSync';
 
 interface TrenLaporanViewProps {
   onNotify: (message: string, icon?: string) => void;
@@ -21,32 +23,55 @@ export const TrenLaporanView: React.FC<TrenLaporanViewProps> = ({ onNotify }) =>
   const [insight, setInsight] = useState<WeeklyInsightData>(WEEKLY_INSIGHT);
   const [savedReflection, setSavedReflection] = useState<string>('');
   const [isReflectionOpen, setIsReflectionOpen] = useState(false);
+  const [isLoadingInsight, setIsLoadingInsight] = useState(true);
 
   const fetchInsightAndJournal = async () => {
     const userId = getStoredUserId();
     if (!userId) return;
 
-    // 1. Fetch Weekly Insight
-    const insightData = await api.getWeeklyInsight(userId);
-    if (insightData) {
-      setInsight({
-        title: insightData.title,
-        description: insightData.description,
-        weeklyScore: insightData.weeklyScore,
-        zoneName: insightData.zoneName,
-        note: insightData.note,
-      });
-    }
+    setIsLoadingInsight(true);
+    try {
+      // 1. Fetch Weekly Insight
+      const insightData = await api.getWeeklyInsight(userId);
+      if (insightData) {
+        setInsight({
+          title: insightData.title,
+          description: insightData.description,
+          weeklyScore: insightData.weeklyScore,
+          zoneName: insightData.zoneName,
+          note: insightData.note,
+        });
+      }
 
-    // 2. Fetch today's check-in reflection
-    const ci = await api.getTodayCheckIn(userId);
-    if (ci && ci.catatan) {
-      setSavedReflection(ci.catatan);
+      // 2. Fetch today's check-in reflection
+      const ci = await api.getTodayCheckIn(userId);
+      if (ci && ci.catatan) {
+        setSavedReflection(ci.catatan);
+      }
+    } finally {
+      setIsLoadingInsight(false);
     }
   };
 
   useEffect(() => {
     fetchInsightAndJournal();
+
+    // Listen to real-time events across tabs & cloud updates
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'napas_realtime_event_bus' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed.type === 'MOOD_CHANGED' || parsed.type === 'FOCUS_SESSION_CHANGED' || parsed.type === 'INDEX_CHANGED') {
+            fetchInsightAndJournal();
+          }
+        } catch {}
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   const handleRangeChange = (range: string, period?: string) => {
@@ -72,6 +97,7 @@ export const TrenLaporanView: React.FC<TrenLaporanViewProps> = ({ onNotify }) =>
       setSavedReflection(text);
       onNotify(`Refleksi harian tersimpan: "${text.substring(0, 32)}..."`, '💚');
     }
+    realtimeSync.broadcast('MOOD_CHANGED', { catatan: text });
   };
 
   return (
@@ -87,7 +113,11 @@ export const TrenLaporanView: React.FC<TrenLaporanViewProps> = ({ onNotify }) =>
 
       {/* 2. Top Row: Evaluasi Kognitif (Insight) + Jurnal Refleksi Diri */}
       <div className="tren-laporan-top-grid">
-        <InsightMingguanCard data={insight} />
+        {isLoadingInsight ? (
+          <SkeletonCard height={190} rows={3} />
+        ) : (
+          <InsightMingguanCard data={insight} />
+        )}
         <RefleksiHariIniCard
           savedText={savedReflection}
           onOpenReflection={() => setIsReflectionOpen(true)}

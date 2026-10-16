@@ -7,6 +7,7 @@ import { FocusStreakCard } from './FocusStreakCard';
 import { FokusVsDistraksiChart } from './FokusVsDistraksiChart';
 import { FocusSessionCard } from './FocusSessionCard';
 import { api, getStoredUserId } from '../../services/api';
+import { SkeletonCard } from '../common/SkeletonLoader';
 
 interface FokusViewProps {
   onNotify: (message: string, icon?: string) => void;
@@ -43,12 +44,15 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
   const [distractors, setDistractors] = useState<FocusTopDistractor[]>([]);
   const [streakInfo, setStreakInfo] = useState(EMPTY_STREAK);
   const [weeklyBars, setWeeklyBars] = useState<FocusDailyBar[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchFocusData = async (rangeStr = '7 hari terakhir', periodStr = '7days') => {
     const userId = getStoredUserId();
     if (!userId) return;
 
-    let days = 7;
+    setIsLoading(true);
+    try {
+      let days = 7;
     if (periodStr === 'year' || rangeStr.toLowerCase().includes('tahun')) {
       days = 365;
     } else if (periodStr === 'month' || rangeStr.toLowerCase().includes('bulan')) {
@@ -57,18 +61,37 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
       days = 14;
     }
 
-    const data = await api.getFocusSummary(userId, days, periodStr);
-    if (data) {
-      if (data.overview) setOverview(data.overview as FocusOverviewData);
-      setDistractors(data.top_distractors || []);
-      if (data.streak) setStreakInfo(data.streak);
-      setWeeklyBars(data.weekly_bars || []);
+      const data = await api.getFocusSummary(userId, days, periodStr);
+      if (data) {
+        if (data.overview) setOverview(data.overview as FocusOverviewData);
+        setDistractors(data.top_distractors || []);
+        if (data.streak) setStreakInfo(data.streak);
+        setWeeklyBars(data.weekly_bars || []);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchFocusData(selectedRange, selectedPeriod);
-  }, []);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'napas_realtime_event_bus' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed.type === 'FOCUS_SESSION_CHANGED') {
+            fetchFocusData(selectedRange, selectedPeriod);
+          }
+        } catch {}
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [selectedRange, selectedPeriod]);
 
   const handleRangeChange = (range: string, period?: string) => {
     const normPeriod = (period || (range.includes('tahun') ? 'year' : range.includes('bulan') ? 'month' : range.includes('14') ? '14days' : '7days')) as any;
@@ -116,30 +139,44 @@ export const FokusView: React.FC<FokusViewProps> = ({ onNotify }) => {
 
       {/* 3. Top 3 Cards Grid */}
       <div className="fokus-top-grid">
-        <FokusOverviewCard
-          data={overview}
-          periodLabel={selectedRange === '7 hari terakhir' ? 'Hari Ini' : selectedRange}
-          onRefresh={handleRefreshOverview}
-        />
-        <TopPencuriWaktuCard
-          distractors={distractors}
-        />
-        <FocusStreakCard
-          currentStreak={streakInfo.currentStreak}
-          targetRule={streakInfo.targetRule}
-          bestRecord={streakInfo.bestRecord}
-          days={streakInfo.days}
-        />
+        {isLoading ? (
+          <>
+            <SkeletonCard height={200} rows={4} />
+            <SkeletonCard height={200} rows={4} />
+            <SkeletonCard height={200} rows={4} />
+          </>
+        ) : (
+          <>
+            <FokusOverviewCard
+              data={overview}
+              periodLabel={selectedRange === '7 hari terakhir' ? 'Hari Ini' : selectedRange}
+              onRefresh={handleRefreshOverview}
+            />
+            <TopPencuriWaktuCard
+              distractors={distractors}
+            />
+            <FocusStreakCard
+              currentStreak={streakInfo.currentStreak}
+              targetRule={streakInfo.targetRule}
+              bestRecord={streakInfo.bestRecord}
+              days={streakInfo.days}
+            />
+          </>
+        )}
       </div>
 
       {/* 4. Bottom Chart Card */}
       <div className="fokus-bottom-grid">
-        <FokusVsDistraksiChart
-          data={weeklyBars}
-          selectedRange={selectedRange}
-          selectedPeriod={selectedPeriod}
-          onSelectPeriod={handleRangeChange}
-        />
+        {isLoading ? (
+          <SkeletonCard height={260} rows={6} />
+        ) : (
+          <FokusVsDistraksiChart
+            data={weeklyBars}
+            selectedRange={selectedRange}
+            selectedPeriod={selectedPeriod}
+            onSelectPeriod={handleRangeChange}
+          />
+        )}
       </div>
     </div>
   );

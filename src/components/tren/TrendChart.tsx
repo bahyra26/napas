@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TREND_POINTS as FALLBACK_POINTS } from '../../data/mockData';
 import { TrendPoint } from '../../types';
 import { api, getStoredUserId } from '../../services/api';
+import { SkeletonChart } from '../common/SkeletonLoader';
 
 const Y_AXIS_LEVELS = [
   { label: '100%', y: 30 },
@@ -35,12 +36,15 @@ export const TrendChart: React.FC = () => {
 
   const [hoveredPoint, setHoveredPoint] = useState<TrendPoint | null>(null);
   const [selectedDays, setSelectedDays] = useState<number>(14);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const loadHistory = async (days: number) => {
     const userId = getStoredUserId();
     if (!userId) return;
 
-    const history = await api.getIndexHistory(userId, days);
+    setIsLoading(true);
+    try {
+      const history = await api.getIndexHistory(userId, days);
     if (history && history.length >= 2) {
       const total = history.length;
       const mappedPoints: TrendPoint[] = history.map((item, idx) => {
@@ -83,7 +87,10 @@ export const TrendChart: React.FC = () => {
       setIsTrendAlert(false);
       setTrendAlertText('Fluktuasi harian dalam ambang kendali');
     }
-  };
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   useEffect(() => {
     loadHistory(selectedDays);
@@ -153,7 +160,10 @@ export const TrendChart: React.FC = () => {
       </div>
 
       <div className="chart-canvas-area" id="trendChartContainer">
-        <svg className="trend-svg" viewBox="0 0 770 260" preserveAspectRatio="none">
+        {isLoading ? (
+          <SkeletonChart height={220} />
+        ) : (
+          <svg className="trend-svg" viewBox="0 0 770 260" preserveAspectRatio="none">
           {/* Horizontal Gridlines & Y-Axis Labels (0% to 100% by 20%) */}
           <g className="chart-y-axis">
             {Y_AXIS_LEVELS.map((level) => (
@@ -237,8 +247,9 @@ export const TrendChart: React.FC = () => {
             ))}
           </g>
         </svg>
+        )}
 
-        {tooltip.show && (
+        {!isLoading && tooltip.show && (
           <div
             className={`chart-tooltip show align-${tooltip.alignMode}`}
             id="chartTooltip"

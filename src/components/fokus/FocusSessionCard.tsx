@@ -8,6 +8,7 @@ import {
   isUrlAllowed,
   extractDomain,
 } from '../../services/focusGuardian';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 interface FocusSessionCardProps {
   onSessionCompleted: () => void;
@@ -23,6 +24,7 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
 
   // Form states
   const [newSiteName, setNewSiteName] = useState('');
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [newSiteUrl, setNewSiteUrl] = useState('');
   const [showAddSite, setShowAddSite] = useState(false);
 
@@ -489,13 +491,30 @@ export const FocusSessionCard: React.FC<FocusSessionCardProps> = ({
             <button
               type="button"
               className="btn-cancel-focus"
-              onClick={() => focusStore.stopSession(false)}
+              onClick={() => setIsCancelConfirmOpen(true)}
             >
               Akhiri Lebih Awal
             </button>
           </div>
         </div>
       )}
+
+      {/* Modal Validasi Akhiri Sesi Fokus Lebih Awal */}
+      <ConfirmModal
+        isOpen={isCancelConfirmOpen}
+        variant="warning"
+        icon="⏱️"
+        title="Akhiri Sesi Fokus Lebih Awal?"
+        message="Sesi belajarmu sedang berjalan. Jika diakhiri sekarang tanpa diselesaikan, progres waktu fokus sesi ini tidak akan tercatat ke statistik mingguan."
+        confirmText="Ya, Akhiri Sesi"
+        cancelText="Lanjutkan Fokus"
+        onConfirm={() => {
+          setIsCancelConfirmOpen(false);
+          focusStore.stopSession(false);
+          onNotify('Sesi fokus diakhiri lebih awal.', '⏸️');
+        }}
+        onCancel={() => setIsCancelConfirmOpen(false)}
+      />
     </div>
   );
 };

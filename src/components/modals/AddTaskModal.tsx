@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PriorityType } from '../../types';
-
+import { LoadingSpinner } from '../common/LoadingSpinner';
 
 export interface NewTaskPayload {
   title: string;
@@ -38,6 +38,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [dueTime, setDueTime] = useState('23:59');
   const [estJam, setEstJam] = useState(2.0);
   const [priority, setPriority] = useState<PriorityType>('red');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -60,20 +61,25 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       ? `Besok · ${dueTime}`
       : `${deadlineDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} · ${dueTime}`;
 
-    onAddTask({
-      title: title.trim(),
-      meta,
-      priority,
-      deadlineIso: deadlineDate.toISOString(),
-      estJam,
-      effort: effortNum,
-      mataKuliah: chosenMatkul || undefined,
-    });
+    setIsSubmitting(true);
+    try {
+      onAddTask({
+        title: title.trim(),
+        meta,
+        priority,
+        deadlineIso: deadlineDate.toISOString(),
+        estJam,
+        effort: effortNum,
+        mataKuliah: chosenMatkul || undefined,
+      });
 
-    setTitle('');
-    setCustomMatkul('');
-    setPriority('red');
-    onClose();
+      setTitle('');
+      setCustomMatkul('');
+      setPriority('red');
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -231,11 +237,19 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
               className="btn-cancel"
               id="modalCancelBtn"
               onClick={onClose}
+              disabled={isSubmitting}
             >
               Batal
             </button>
-            <button type="submit" className="btn-submit">
-              Simpan Tugas
+            <button type="submit" className="btn-submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <LoadingSpinner size="sm" color="white" />
+                  <span>Menyimpan...</span>
+                </span>
+              ) : (
+                'Simpan Tugas'
+              )}
             </button>
           </div>
         </form>

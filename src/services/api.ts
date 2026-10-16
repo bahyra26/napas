@@ -1,5 +1,8 @@
 import { supabase } from './supabase';
 import { FocusDailyBar } from '../types';
+import { loadingTracker, useIsFetching, useActiveFetchCount } from './loadingTracker';
+
+export { loadingTracker, useIsFetching, useActiveFetchCount };
 
 const API_BASE_URL =
   typeof window !== 'undefined' &&
@@ -243,7 +246,7 @@ export function setStoredUserId(id: string, name?: string): void {
   if (name) localStorage.setItem(STORAGE_KEY_USER_NAME, name);
 }
 
-export const api = {
+const rawApi = {
   baseUrl: API_BASE_URL,
 
   async getHealth(): Promise<BackendHealth | null> {
@@ -1832,4 +1835,20 @@ export const api = {
     }
   },
 };
+
+export const api = new Proxy(rawApi, {
+  get(target, prop, receiver) {
+    const value = Reflect.get(target, prop, receiver);
+    if (typeof value === 'function') {
+      return function (this: any, ...args: any[]) {
+        const result = value.apply(this, args);
+        if (result && typeof result.then === 'function') {
+          return loadingTracker.wrap(result, String(prop));
+        }
+        return result;
+      };
+    }
+    return value;
+  },
+}) as typeof rawApi;
 

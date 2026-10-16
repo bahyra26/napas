@@ -1,16 +1,19 @@
 import React from 'react';
 import { TaskItem } from '../../types';
+import { SkeletonTasks } from '../common/SkeletonLoader';
 
 interface QuickTasksProps {
   tasks: TaskItem[];
   onDeleteTask: (id: string) => void;
   onOpenAddModal: () => void;
+  isLoading?: boolean;
 }
 
 export const QuickTasks: React.FC<QuickTasksProps> = ({
   tasks,
   onDeleteTask,
   onOpenAddModal,
+  isLoading = false,
 }) => {
   return (
     <div className="card-deadline">
@@ -37,7 +40,9 @@ export const QuickTasks: React.FC<QuickTasksProps> = ({
       </div>
 
       <div className="deadline-list" id="deadlineList">
-        {tasks.length === 0 ? (
+        {isLoading ? (
+          <SkeletonTasks count={2} />
+        ) : tasks.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '12px 0' }}>
             Belum ada deadline terdekat.
           </p>

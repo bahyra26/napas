@@ -13,7 +13,7 @@ export const ManageDataModal: React.FC<ManageDataModalProps> = ({
   onClearLocalData,
   onResetPreferences,
 }) => {
-  const [confirmStep, setConfirmStep] = useState<'menu' | 'confirm_delete'>('menu');
+  const [confirmStep, setConfirmStep] = useState<'menu' | 'confirm_delete' | 'confirm_reset'>('menu');
 
   if (!isOpen) return null;
 
@@ -70,10 +70,7 @@ export const ManageDataModal: React.FC<ManageDataModalProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    onResetPreferences();
-                    onClose();
-                  }}
+                  onClick={() => setConfirmStep('confirm_reset')}
                   style={{
                     padding: '6px 12px',
                     borderRadius: '6px',
@@ -136,6 +133,48 @@ export const ManageDataModal: React.FC<ManageDataModalProps> = ({
                 }}
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        ) : confirmStep === 'confirm_reset' ? (
+          <div>
+            <div style={{ textAlign: 'center', padding: '10px 0 16px 0' }}>
+              <span style={{ fontSize: '32px', display: 'block', marginBottom: '8px' }}>🔄</span>
+              <h4 style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#b45309' }}>
+                Reset Preferensi ke Bawaan?
+              </h4>
+              <p style={{ fontSize: '12px', color: '#4b5563', lineHeight: '1.5' }}>
+                Pengaturan target jam tidur, bangun, dan preferensi notifikasi akan dikembalikan ke setelan awal. Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <button
+                type="button"
+                className="btn-cancel"
+                onClick={() => setConfirmStep('menu')}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onResetPreferences();
+                  setConfirmStep('menu');
+                  onClose();
+                }}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: '#d97706',
+                  color: '#ffffff',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Ya, Reset Preferensi
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { CalendarDay } from '../../types';
+import { LoadingSpinner } from '../common/LoadingSpinner';
 
 interface AgendaDetailProps {
   selectedDay: CalendarDay;
@@ -116,6 +117,14 @@ export const AgendaDetail: React.FC<AgendaDetailProps> = ({
         </div>
 
         <div className="agenda-actions-stack">
+          {/* Active AI Processing Banner */}
+          {isAutoPlanning && (
+            <div className="autoplan-loading-card">
+              <span className="autoplan-loading-spinner" />
+              <span>AI sedang menganalisis slot luang & menyusun rencana belajar optimal...</span>
+            </div>
+          )}
+
           {/* Tombol Auto-Planner */}
           {onAutoPlan && (
             <button
@@ -125,7 +134,14 @@ export const AgendaDetail: React.FC<AgendaDetailProps> = ({
               disabled={isAutoPlanning}
               title="Menganalisis tugas tertunda dan menyusun slot belajar cerdas"
             >
-              <span>{isAutoPlanning ? 'Menyusun Rencana...' : '⚡ Buat Rencana Belajar Otomatis'}</span>
+              {isAutoPlanning ? (
+                <>
+                  <LoadingSpinner size="sm" color="white" />
+                  <span>Mengoptimalkan Rencana...</span>
+                </>
+              ) : (
+                <span>⚡ Buat Rencana Belajar Otomatis</span>
+              )}
             </button>
           )}
 

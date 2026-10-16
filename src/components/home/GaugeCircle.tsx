@@ -5,6 +5,7 @@ interface GaugeCircleProps {
   trendText?: string;
   zonaLabel?: string;
   onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const GaugeCircle: React.FC<GaugeCircleProps> = ({
@@ -12,6 +13,7 @@ export const GaugeCircle: React.FC<GaugeCircleProps> = ({
   trendText = '17 dari kemarin',
   zonaLabel = 'Hijau',
   onRefresh,
+  isRefreshing = false,
 }) => {
   const getZoneClass = () => {
     const zl = (zonaLabel || '').toLowerCase();
@@ -26,18 +28,19 @@ export const GaugeCircle: React.FC<GaugeCircleProps> = ({
   return (
     <div className="gauge-wrapper">
       <div
-        className={`gauge-circle ${zoneClass}`}
+        className={`gauge-circle ${zoneClass} ${isRefreshing ? 'is-refreshing' : ''}`}
         id="gaugeCircle"
-        title="Klik untuk segarkan skor"
-        onClick={onRefresh}
+        title={isRefreshing ? 'Sedang memperbarui skor...' : 'Klik untuk segarkan skor'}
+        onClick={isRefreshing ? undefined : onRefresh}
       >
         <span className="gauge-percent" id="gaugeValue">
-          {score}%
+          {isRefreshing ? '...' : `${score}%`}
         </span>
         <span className="gauge-trend">
           <svg
-            width="11"
-            height="11"
+            className={isRefreshing ? 'spinning' : ''}
+            width="12"
+            height="12"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -45,10 +48,19 @@ export const GaugeCircle: React.FC<GaugeCircleProps> = ({
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <polyline points="19 12 12 19 5 12"></polyline>
+            {isRefreshing ? (
+              <>
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </>
+            ) : (
+              <>
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="19 12 12 19 5 12"></polyline>
+              </>
+            )}
           </svg>
-          {trendText}
+          {isRefreshing ? 'Memperbarui...' : trendText}
         </span>
       </div>
       <div className="gauge-status">

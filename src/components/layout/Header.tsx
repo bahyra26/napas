@@ -11,7 +11,13 @@ interface HeaderProps {
   onSyncCalendar?: () => void;
   isSyncingCalendar?: boolean;
   onLogout?: () => void;
+  theme?: 'light' | 'dark';
+  onToggleTheme?: () => void;
+  realtimeStatus?: 'connected' | 'connecting' | 'offline';
+  onOpenPwaModal?: () => void;
 }
+
+import { pwaService } from '../../services/pwaService';
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
@@ -22,12 +28,22 @@ export const Header: React.FC<HeaderProps> = ({
   onSyncCalendar,
   isSyncingCalendar = false,
   onLogout,
+  theme = 'light',
+  onToggleTheme,
+  onOpenPwaModal,
 }) => {
   const [focusState, setFocusState] = useState<FocusSessionState>(() => focusStore.getState());
+  const [isInstalled, setIsInstalled] = useState(pwaService.isInstalled());
 
   useEffect(() => {
-    const unsub = focusStore.subscribe((st) => setFocusState({ ...st }));
-    return () => unsub();
+    const unsubFocus = focusStore.subscribe((st) => setFocusState({ ...st }));
+    const unsubPwa = pwaService.onInstallableChange(() => {
+      setIsInstalled(pwaService.isInstalled());
+    });
+    return () => {
+      unsubFocus();
+      unsubPwa();
+    };
   }, []);
 
   const titles: Record<TabType, string> = {
@@ -61,6 +77,7 @@ export const Header: React.FC<HeaderProps> = ({
         <h1 className="header-title" id="pageHeaderTitle">
           {titles[activeTab] || 'NAPAS'}
         </h1>
+
 
         {/* Global Live Focus Badge */}
         {focusState.isRunning && (
@@ -110,6 +127,35 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="header-right">
+
+        {/* Tombol Pasang PWA */}
+        {onOpenPwaModal && (
+          <button
+            type="button"
+            className={`btn-header-install ${isInstalled ? 'installed' : ''}`}
+            onClick={onOpenPwaModal}
+            title={isInstalled ? 'Aplikasi NAPAS PWA Terpasang' : 'Pasang Aplikasi NAPAS ke Desktop / Android / iOS'}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="15"
+              height="15"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span className="install-btn-text">
+              {isInstalled ? 'PWA Aktif' : 'Install App'}
+            </span>
+          </button>
+        )}
+
         {/* Tombol Sinkron Google Calendar */}
         {onSyncCalendar && (
           <button
@@ -174,6 +220,55 @@ export const Header: React.FC<HeaderProps> = ({
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
         </button>
+
+        {/* Dark / Light Mode Toggle Button */}
+        {onToggleTheme && (
+          <button
+            type="button"
+            className={`header-theme-btn ${theme === 'dark' ? 'is-dark' : 'is-light'}`}
+            onClick={onToggleTheme}
+            aria-label={theme === 'dark' ? 'Ganti ke Mode Terang (Siang)' : 'Ganti ke Mode Malam (Gelap)'}
+            title={theme === 'dark' ? 'Mode Malam Aktif — Klik untuk Mode Terang ☀️' : 'Mode Terang Aktif — Klik untuk Mode Malam 🌙'}
+          >
+            {theme === 'dark' ? (
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="#facc15"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="theme-icon sun"
+              >
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            ) : (
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="theme-icon moon"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            )}
+          </button>
+        )}
 
         {/* Tombol Logout / Ganti Akun */}
         {onLogout && (

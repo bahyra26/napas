@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { googleCalendarService } from '../../services/googleCalendar';
 import { authService } from '../../services/supabase';
 import { api } from '../../services/api';
+import { LoadingSpinner } from '../common/LoadingSpinner';
 
 interface GoogleCalendarModalProps {
   isOpen: boolean;
@@ -232,9 +233,16 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
                 className={`btn-gcal-primary ${isLoading ? 'loading' : ''}`}
                 onClick={handleSampleSync}
                 disabled={isLoading}
-                style={{ width: '100%', padding: '12px', fontSize: '13.5px', fontWeight: 600 }}
+                style={{ width: '100%', padding: '12px', fontSize: '13.5px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
-                {isLoading ? 'Menyinkronkan Agenda...' : '🚀 Muat 5 Agenda Kalender Uji Coba'}
+                {isLoading ? (
+                  <>
+                    <LoadingSpinner size="sm" color="white" />
+                    <span>Menyinkronkan Agenda...</span>
+                  </>
+                ) : (
+                  '🚀 Muat 5 Agenda Kalender Uji Coba'
+                )}
               </button>
             </div>
           </div>
@@ -290,8 +298,16 @@ export const GoogleCalendarModal: React.FC<GoogleCalendarModalProps> = ({
                 className={`btn-gcal-primary ${isLoading ? 'loading' : ''}`}
                 onClick={handleIcalSync}
                 disabled={isLoading || (!icalContent && !icalUrl)}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
-                {isLoading ? 'Memproses Kalender...' : '📥 Impor Agenda ke Kalender NAPAS'}
+                {isLoading ? (
+                  <>
+                    <LoadingSpinner size="sm" color="white" />
+                    <span>Memproses Kalender...</span>
+                  </>
+                ) : (
+                  '📥 Impor Agenda ke Kalender NAPAS'
+                )}
               </button>
             </div>
           </div>

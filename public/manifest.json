@@ -1,0 +1,118 @@
+{
+  "id": "/",
+  "name": "NAPAS - Pendamping Kesejahteraan & Manajemen Beban Mahasiswa",
+  "short_name": "NAPAS",
+  "description": "Platform Manajemen Beban Kognitif, Deteksi Burnout Dini, dan Ruang Fokus Mahasiswa Indonesia",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "background_color": "#0a5445",
+  "theme_color": "#0a5445",
+  "orientation": "any",
+  "categories": [
+    "education",
+    "productivity",
+    "lifestyle",
+    "health"
+  ],
+  "lang": "id",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "./assets/napas_icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/logo_brain.png",
+      "sizes": "80x65",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Check-In Hari Ini",
+      "short_name": "Check-In",
+      "description": "Catat mood dan kondisi energimu hari ini",
+      "url": "./#checkin",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Ruang Belajar & Fokus",
+      "short_name": "Fokus",
+      "description": "Mulai sesi belajar bebas distraksi",
+      "url": "./#fokus",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Deadline Radar",
+      "short_name": "Radar",
+      "description": "Lihat kalender beban dan jadwal tugas kuliah",
+      "url": "./#deadline",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Tren Kesejahteraan",
+      "short_name": "Laporan",
+      "description": "Evaluasi kognitif dan refleksi mingguan",
+      "url": "./#tren",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
+}

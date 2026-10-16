@@ -21,6 +21,7 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect, currentS
   const [jamTidur, setJamTidur] = useState<number>(7);
   const [energi, setEnergi] = useState<number>(3);
   const [showDetails, setShowDetails] = useState<boolean>(false);
+  const [savingMood, setSavingMood] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentScore === 5 || currentScore === 4) {
@@ -37,10 +38,12 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect, currentS
 
   const handleSelect = (mood: MoodType, icon: string, score: number) => {
     setSelectedMood(mood);
+    setSavingMood(mood);
     try {
       localStorage.setItem('napas_checkin_mood', mood);
     } catch {}
     onMoodSelect(mood, icon, score, jamTidur, energi);
+    window.setTimeout(() => setSavingMood(null), 700);
   };
 
   const handleUpdateSleepOrEnergy = (newSleep?: number, newEnergy?: number) => {
@@ -83,8 +86,9 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect, currentS
         {/* Happy Button (Skor: 5) */}
         <button
           type="button"
-          className={`mood-btn mood-happy ${selectedMood === 'Bahagia / Senang' ? 'active' : ''}`}
+          className={`mood-btn mood-happy ${selectedMood === 'Bahagia / Senang' ? 'active' : ''} ${savingMood === 'Bahagia / Senang' ? 'is-saving' : ''}`}
           onClick={() => handleSelect('Bahagia / Senang', '😊', 5)}
+          disabled={savingMood !== null}
         >
           <svg className="mood-icon" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
@@ -99,8 +103,9 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect, currentS
         {/* Neutral Button (Skor: 3) */}
         <button
           type="button"
-          className={`mood-btn mood-neutral ${selectedMood === 'Netral' ? 'active' : ''}`}
+          className={`mood-btn mood-neutral ${selectedMood === 'Netral' ? 'active' : ''} ${savingMood === 'Netral' ? 'is-saving' : ''}`}
           onClick={() => handleSelect('Netral', '😐', 3)}
+          disabled={savingMood !== null}
         >
           <svg className="mood-icon" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
@@ -115,8 +120,9 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect, currentS
         {/* Sad Button (Skor: 1) */}
         <button
           type="button"
-          className={`mood-btn mood-sad ${selectedMood === 'Sedih' ? 'active' : ''}`}
+          className={`mood-btn mood-sad ${selectedMood === 'Sedih' ? 'active' : ''} ${savingMood === 'Sedih' ? 'is-saving' : ''}`}
           onClick={() => handleSelect('Sedih', '😔', 1)}
+          disabled={savingMood !== null}
         >
           <svg className="mood-icon" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"></circle>

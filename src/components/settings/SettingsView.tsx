@@ -7,49 +7,66 @@ import { CircadianRhythmCard } from './CircadianRhythmCard';
 import { CalendarSyncCard } from './CalendarSyncCard';
 import { NotificationPreferencesCard } from './NotificationPreferencesCard';
 import { DataManagementCard } from './DataManagementCard';
+import { PwaSettingsCard } from './PwaSettingsCard';
 import { GoogleCalendarModal } from '../modals/GoogleCalendarModal';
 import { ManageDataModal } from '../modals/ManageDataModal';
+import { PwaInstallModal } from '../modals/PwaInstallModal';
+import { SkeletonProfile } from '../common/SkeletonLoader';
 
 interface SettingsViewProps {
   onNotify: (message: string, icon?: string) => void;
   onProfileUpdated?: (prof: StudentProfile) => void;
+  theme?: 'light' | 'dark';
+  onToggleTheme?: () => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify, onProfileUpdated }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({
+  onNotify,
+  onProfileUpdated,
+  theme = 'light',
+  onToggleTheme,
+}) => {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [userName, setUserName] = useState<string>('Mahasiswa');
   const [userEmail, setUserEmail] = useState<string>('');
   const [isCalendarConnected, setIsCalendarConnected] = useState<boolean>(false);
   const [isSyncingCalendar, setIsSyncingCalendar] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Modals
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
 
   const loadData = async () => {
     const userId = getStoredUserId();
     if (!userId) return;
 
-    // 1. Check Google Calendar connection
-    setIsCalendarConnected(googleCalendarService.isGoogleConnected(userId));
+    setIsLoading(true);
+    try {
+      // 1. Check Google Calendar connection
+      setIsCalendarConnected(googleCalendarService.isGoogleConnected(userId));
 
-    // 2. Fetch User & Profile
-    const [userData, profileData] = await Promise.all([
-      api.getUser(userId),
-      api.getProfile(userId),
-    ]);
+      // 2. Fetch User & Profile
+      const [userData, profileData] = await Promise.all([
+        api.getUser(userId),
+        api.getProfile(userId),
+      ]);
 
-    if (userData) {
-      setUserName(userData.nama || 'Mahasiswa');
-      setUserEmail(userData.email || '');
-    }
+      if (userData) {
+        setUserName(userData.nama || 'Mahasiswa');
+        setUserEmail(userData.email || '');
+      }
 
-    if (profileData) {
-      setProfile({
-        ...profileData,
-        nama: profileData.nama || userData?.nama || 'Mahasiswa',
-        email: profileData.email || userData?.email || '',
-      });
+      if (profileData) {
+        setProfile({
+          ...profileData,
+          nama: profileData.nama || userData?.nama || 'Mahasiswa',
+          email: profileData.email || userData?.email || '',
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -155,17 +172,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify, onProfileU
         Kelola identitas akademik, ritme waktu belajar, integrasi Google Calendar, dan kedaulatan data Anda.
       </p>
 
-      {/* 1. Hero Banner: Profil Mahasiswa & Status Koneksi */}
-      <StudentProfileHero
-        profile={profile}
-        userName={userName}
-        userEmail={userEmail}
-        isCalendarConnected={isCalendarConnected}
-        onOpenCalendarModal={() => setIsCalendarModalOpen(true)}
-      />
+      {isLoading && !profile ? (
+        <SkeletonProfile />
+      ) : (
+        <>
+          {/* 1. Hero Banner: Profil Mahasiswa & Status Koneksi */}
+          <StudentProfileHero
+            profile={profile}
+            userName={userName}
+            userEmail={userEmail}
+            isCalendarConnected={isCalendarConnected}
+            onOpenCalendarModal={() => setIsCalendarModalOpen(true)}
+          />
 
-      {/* 2. Main 2-Column Balanced Grid */}
-      <div className="settings-main-grid">
+          {/* 2. Main 2-Column Balanced Grid */}
+          <div className="settings-main-grid">
         {/* Kolom Kiri: Identitas Akademik & Ritme Harian */}
         <div className="settings-column">
           <AcademicProfileCard
@@ -190,7 +211,78 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify, onProfileU
             isSyncing={isSyncingCalendar}
           />
 
+          {/* Tema & Tampilan Visual */}
+          <div className="settings-card appearance-card">
+            <div className="settings-card-header">
+              <div className="card-header-icon-title">
+                <div className="card-icon-badge color-yellow">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="settings-card-title">Tema &amp; Tampilan Visual</h2>
+                  <p className="settings-card-subtitle">
+                    Pilih mode tampilan siang atau malam untuk kenyamanan mata saat belajar.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="theme-selector-grid">
+              <button
+                type="button"
+                className={`theme-option-btn ${theme === 'light' ? 'selected' : ''}`}
+                onClick={() => theme !== 'light' && onToggleTheme?.()}
+              >
+                <div className="theme-preview light-preview">
+                  <div className="preview-header"></div>
+                  <div className="preview-body">
+                    <div className="preview-badge"></div>
+                    <div className="preview-line"></div>
+                  </div>
+                </div>
+                <div className="theme-option-label">
+                  <span>☀️ Mode Terang (Siang)</span>
+                  {theme === 'light' && <span className="theme-active-dot">✓</span>}
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={`theme-option-btn ${theme === 'dark' ? 'selected' : ''}`}
+                onClick={() => theme !== 'dark' && onToggleTheme?.()}
+              >
+                <div className="theme-preview dark-preview">
+                  <div className="preview-header"></div>
+                  <div className="preview-body">
+                    <div className="preview-badge"></div>
+                    <div className="preview-line"></div>
+                  </div>
+                </div>
+                <div className="theme-option-label">
+                  <span>🌙 Mode Malam (Gelap)</span>
+                  {theme === 'dark' && <span className="theme-active-dot">✓</span>}
+                </div>
+              </button>
+            </div>
+          </div>
+
           <NotificationPreferencesCard onNotify={onNotify} />
+
+          {/* PWA & Offline Support Card */}
+          <PwaSettingsCard
+            onOpenInstallModal={() => setIsPwaModalOpen(true)}
+            onNotify={onNotify}
+          />
 
           <DataManagementCard
             profile={profile}
@@ -199,8 +291,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify, onProfileU
           />
         </div>
       </div>
+      </>
+      )}
 
       {/* Modals */}
+      <PwaInstallModal
+        isOpen={isPwaModalOpen}
+        onClose={() => setIsPwaModalOpen(false)}
+        onNotify={onNotify}
+      />
+
       <GoogleCalendarModal
         isOpen={isCalendarModalOpen}
         onClose={() => {

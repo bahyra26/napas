@@ -26,10 +26,16 @@ import { api, getStoredUserId, setStoredUserId, StudentProfile } from './service
 import { authService } from './services/supabase';
 import { googleCalendarService } from './services/googleCalendar';
 import { focusStore } from './services/focusSessionStore';
+import { InitialScreenLoader } from './components/common/InitialScreenLoader';
+import { ConfirmModal } from './components/common/ConfirmModal';
+import { realtimeSync } from './services/realtimeSync';
+import { PwaInstallModal } from './components/modals/PwaInstallModal';
+import { pwaService } from './services/pwaService';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState<'connected' | 'connecting' | 'offline'>('connected');
 
   // Auth & Student Profile state
   const [userId, setUserId] = useState<string | null>(getStoredUserId());
@@ -37,6 +43,53 @@ export const App: React.FC = () => {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isSyncingCalendar, setIsSyncingCalendar] = useState(false);
   const [isAutoPlanning, setIsAutoPlanning] = useState(false);
+
+  // Theme Mode (Terang / Gelap)
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('napas_theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
+    } catch {}
+    return 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.body.classList.add('dark-mode');
+      document.body.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+      document.documentElement.removeAttribute('data-theme');
+      document.body.classList.remove('dark-mode');
+      document.body.removeAttribute('data-theme');
+    }
+    localStorage.setItem('napas_theme', theme);
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      showToast(next === 'dark' ? 'Mode Malam diaktifkan 🌙' : 'Mode Terang diaktifkan ☀️', next === 'dark' ? '🌙' : '☀️');
+      realtimeSync.broadcast('THEME_CHANGED', next);
+      return next;
+    });
+  };
+
+  // Loading states
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshingScore, setIsRefreshingScore] = useState(false);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+  const [isLoadingRadar, setIsLoadingRadar] = useState(false);
+
+  // Confirmation Modal states (Validasi Selektif)
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
 
   // Burnout Engine state
   const [burnoutScore, setBurnoutScore] = useState<number>(() => {
@@ -100,6 +153,17 @@ export const App: React.FC = () => {
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+  const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
+
+  // PWA Offline/Online Connection Listener
+  useEffect(() => {
+    const unsubOnline = pwaService.onOnlineChange((online) => {
+      if (!online) {
+        showToast('Koneksi terputus. Mode Offline PWA aktif (data lokal tetap aman).', '📶');
+      }
+    });
+    return () => unsubOnline();
+  }, []);
 
   // Toast state
   const [toast, setToast] = useState<ToastState>({
@@ -163,30 +227,35 @@ export const App: React.FC = () => {
 
   // Load workloads from backend
   const loadWorkloads = useCallback(async (uid: string) => {
-    const workloads = await api.getWorkloads(uid);
-    if (workloads && workloads.length > 0) {
-      const activeWorkloads = workloads.filter((w) => w.status !== 'selesai');
-      if (activeWorkloads.length > 0) {
-        const mapped: TaskItem[] = activeWorkloads.map((w) => {
-          let meta = 'Mendatang';
-          try {
-            const dl = new Date(w.deadline);
-            meta = dl.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-          } catch {}
-          const priority: PriorityType =
-            w.effort >= 4 ? 'red' : w.effort >= 3 ? 'yellow' : 'green';
-          return {
-            id: w.id,
-            title: w.judul,
-            meta,
-            priority,
-          };
-        });
-        setTasks(mapped);
-        return;
+    setIsLoadingTasks(true);
+    try {
+      const workloads = await api.getWorkloads(uid);
+      if (workloads && workloads.length > 0) {
+        const activeWorkloads = workloads.filter((w) => w.status !== 'selesai');
+        if (activeWorkloads.length > 0) {
+          const mapped: TaskItem[] = activeWorkloads.map((w) => {
+            let meta = 'Mendatang';
+            try {
+              const dl = new Date(w.deadline);
+              meta = dl.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+            } catch {}
+            const priority: PriorityType =
+              w.effort >= 4 ? 'red' : w.effort >= 3 ? 'yellow' : 'green';
+            return {
+              id: w.id,
+              title: w.judul,
+              meta,
+              priority,
+            };
+          });
+          setTasks(mapped);
+          return;
+        }
       }
+      setTasks([]);
+    } finally {
+      setIsLoadingTasks(false);
     }
-    setTasks([]);
   }, []);
 
   // Load Deadline Radar from backend
@@ -202,28 +271,33 @@ export const App: React.FC = () => {
       }
     } catch {}
 
-    const radar = await api.getRadar(uid, 14);
-    if (radar && radar.days && radar.days.length > 0) {
-      const mappedDays: CalendarDay[] = radar.days.map((d) => ({
-        date: d.date,
-        raw_date: d.raw_date || d.date,
-        dayName: d.dayName,
-        dayNum: d.dayNum,
-        monthShort: d.monthShort,
-        monthFull: d.monthFull,
-        status: d.status,
-        load: d.load,
-        pillText: d.pillText,
-        tasks: d.tasks,
-      }));
-      setCalendarDays(mappedDays);
-      try {
-        localStorage.setItem(`napas_radar_cache_${uid}`, JSON.stringify({ days: mappedDays }));
-      } catch {}
-      setSelectedDate((prev) => {
-        const exists = mappedDays.some((md) => md.date === prev);
-        return exists ? prev : mappedDays[0].date;
-      });
+    setIsLoadingRadar(true);
+    try {
+      const radar = await api.getRadar(uid, 14);
+      if (radar && radar.days && radar.days.length > 0) {
+        const mappedDays: CalendarDay[] = radar.days.map((d) => ({
+          date: d.date,
+          raw_date: d.raw_date || d.date,
+          dayName: d.dayName,
+          dayNum: d.dayNum,
+          monthShort: d.monthShort,
+          monthFull: d.monthFull,
+          status: d.status,
+          load: d.load,
+          pillText: d.pillText,
+          tasks: d.tasks,
+        }));
+        setCalendarDays(mappedDays);
+        try {
+          localStorage.setItem(`napas_radar_cache_${uid}`, JSON.stringify({ days: mappedDays }));
+        } catch {}
+        setSelectedDate((prev) => {
+          const exists = mappedDays.some((md) => md.date === prev);
+          return exists ? prev : mappedDays[0].date;
+        });
+      }
+    } finally {
+      setIsLoadingRadar(false);
     }
   }, []);
 
@@ -277,24 +351,25 @@ export const App: React.FC = () => {
   // Auth State Listener & Mount
   useEffect(() => {
     async function checkAuthAndInit() {
-      // 0. Ambil provider_token langsung dari URL hash jika user baru saja dialihkan dari Google OAuth
-      let hashProviderToken: string | null = null;
-      if (typeof window !== 'undefined' && window.location.hash) {
-        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-        hashProviderToken = hashParams.get('provider_token');
-        if (hashProviderToken) {
-          authService.setStoredProviderToken(hashProviderToken);
-        }
-      }
-
-      // 1. Eksekusi instan jika userId lokal sudah tersimpan agar UI langsung ter-render tanpa delay
-      const storedUid = getStoredUserId();
-      if (storedUid) {
-        initUserSession(storedUid);
-      }
-
-      // 2. Cek sesi Supabase jika user baru kembali dari Google OAuth redirect atau token aktif
+      setIsInitialLoading(true);
       try {
+        // 0. Ambil provider_token langsung dari URL hash jika user baru saja dialihkan dari Google OAuth
+        let hashProviderToken: string | null = null;
+        if (typeof window !== 'undefined' && window.location.hash) {
+          const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+          hashProviderToken = hashParams.get('provider_token');
+          if (hashProviderToken) {
+            authService.setStoredProviderToken(hashProviderToken);
+          }
+        }
+
+        // 1. Eksekusi instan jika userId lokal sudah tersimpan agar UI langsung ter-render tanpa delay
+        const storedUid = getStoredUserId();
+        if (storedUid) {
+          initUserSession(storedUid);
+        }
+
+        // 2. Cek sesi Supabase jika user baru kembali dari Google OAuth redirect atau token aktif
         const session = await authService.getSession();
         if (session?.user) {
           const pt = session.provider_token || hashProviderToken || authService.getStoredProviderToken();
@@ -331,6 +406,8 @@ export const App: React.FC = () => {
         }
       } catch (err) {
         console.warn('Session check warning:', err);
+      } finally {
+        setIsInitialLoading(false);
       }
     }
 
@@ -376,6 +453,46 @@ export const App: React.FC = () => {
       loadWorkloads(userId);
     }
   }, [activeTab, userId, loadRadar, loadWorkloads]);
+
+  // Real-Time Sync Subscription (Supabase Postgres Changes + Cross-Tab Bus + Desktop WebSocket + Heartbeat)
+  useEffect(() => {
+    if (!userId) return;
+
+    const cleanup = realtimeSync.init({
+      userId,
+      onWorkloadChange: () => {
+        loadWorkloads(userId);
+        loadRadar(userId);
+        loadIndexToday(userId);
+      },
+      onCheckinChange: (payload) => {
+        if (payload?.skor) {
+          setTodayCheckinScore(payload.skor);
+        }
+        loadIndexToday(userId);
+      },
+      onFocusSessionChange: () => {
+        loadIndexToday(userId);
+      },
+      onScheduleChange: () => {
+        loadProfileAndSchedule(userId);
+        loadRadar(userId);
+      },
+      onIndexChange: () => {
+        loadIndexToday(userId);
+      },
+      onThemeChange: (newTheme) => {
+        setTheme(newTheme);
+      },
+      onConnectionStatusChange: (status) => {
+        setRealtimeStatus(status);
+      },
+    });
+
+    return () => {
+      cleanup();
+    };
+  }, [userId, loadWorkloads, loadRadar, loadIndexToday, loadProfileAndSchedule]);
 
   const handleCustomLogin = async (
     identifier: string,
@@ -486,7 +603,9 @@ export const App: React.FC = () => {
 
     if (planRes && planRes.created > 0) {
       showToast(planRes.message, '⚡');
-      await Promise.all([loadRadar(userId), loadWorkloads(userId)]);
+      await Promise.all([loadRadar(userId), loadWorkloads(userId), loadIndexToday(userId)]);
+      realtimeSync.broadcast('TASK_CHANGED');
+      realtimeSync.broadcast('SCHEDULE_CHANGED');
     } else {
       showToast(planRes?.message || 'Tidak ada tugas yang perlu dijadwalkan.', 'ℹ️');
     }
@@ -494,8 +613,13 @@ export const App: React.FC = () => {
 
   const handleRefreshScore = async () => {
     if (userId) {
-      await loadIndexToday(userId);
-      showToast(`Skor diperbarui: ${burnoutScore}% (${zonaLabel})`, '✨');
+      setIsRefreshingScore(true);
+      try {
+        await loadIndexToday(userId);
+        showToast(`Skor diperbarui: ${burnoutScore}% (${zonaLabel})`, '✨');
+      } finally {
+        setIsRefreshingScore(false);
+      }
     }
   };
 
@@ -524,6 +648,7 @@ export const App: React.FC = () => {
     if (userId) {
       await api.postCheckIn(userId, score, `Mood: ${mood}`, jamTidur, energi);
       await loadIndexToday(userId);
+      realtimeSync.broadcast('MOOD_CHANGED', { skor: score });
     }
   };
 
@@ -534,13 +659,27 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleDeleteTask = async (id: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-    showToast('Tugas dihapus!', '🗑️');
+  const handleRequestDeleteTask = (id: string) => {
+    const target = tasks.find((t) => t.id === id);
+    setTaskToDelete({ id, title: target?.title || 'Tugas ini' });
+  };
 
-    if (userId) {
-      await api.deleteWorkload(id);
-      await Promise.all([loadIndexToday(userId), loadRadar(userId)]);
+  const handleConfirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+    setIsDeletingTask(true);
+    const { id, title } = taskToDelete;
+    try {
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+      showToast(`Tugas "${title}" berhasil dihapus.`, '🗑️');
+
+      if (userId) {
+        await api.deleteWorkload(id);
+        await Promise.all([loadIndexToday(userId), loadRadar(userId)]);
+        realtimeSync.broadcast('TASK_CHANGED');
+      }
+      setTaskToDelete(null);
+    } finally {
+      setIsDeletingTask(false);
     }
   };
 
@@ -561,6 +700,7 @@ export const App: React.FC = () => {
       if (saved) {
         setTasks((prev) => prev.map((t) => (t.id === tempId ? { ...t, id: saved.id } : t)));
         await Promise.all([loadIndexToday(userId), loadRadar(userId)]);
+        realtimeSync.broadcast('TASK_CHANGED');
       }
     }
   };
@@ -583,10 +723,13 @@ export const App: React.FC = () => {
       });
       showToast(`Tugas "${movableTask.title}" berhasil dipindahkan ke ${targetDay}!`, '✅');
       await Promise.all([loadRadar(userId), loadWorkloads(userId), loadIndexToday(userId)]);
+      realtimeSync.broadcast('SCHEDULE_CHANGED');
+      realtimeSync.broadcast('TASK_CHANGED');
     } else {
       showToast(`Jadwal dialihkan ke ${targetDay}.`, '✅');
       if (userId) {
         await Promise.all([loadRadar(userId), loadIndexToday(userId)]);
+        realtimeSync.broadcast('SCHEDULE_CHANGED');
       }
     }
   };
@@ -611,6 +754,11 @@ export const App: React.FC = () => {
           ? 'Bebas Agenda · Akhir Pekan'
           : 'Bebas Agenda',
     }));
+
+  // Jika sedang bootstrapping data awal
+  if (isInitialLoading && userId) {
+    return <InitialScreenLoader />;
+  }
 
   // Jika belum login, tampilkan LoginView
   if (!userId) {
@@ -643,7 +791,11 @@ export const App: React.FC = () => {
           onSelectTab={setActiveTab}
           onSyncCalendar={handleSyncGoogleCalendar}
           isSyncingCalendar={isSyncingCalendar}
-          onLogout={handleLogout}
+          onLogout={() => setIsLogoutConfirmOpen(true)}
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
+          realtimeStatus={realtimeStatus}
+          onOpenPwaModal={() => setIsPwaModalOpen(true)}
         />
 
         <div className="dashboard-container">
@@ -657,6 +809,7 @@ export const App: React.FC = () => {
                     zonaLabel={zonaLabel}
                     trendText={trendText}
                     onRefresh={handleRefreshScore}
+                    isRefreshing={isRefreshingScore}
                   />
                   <KenapaCard alasan={alasanChips} />
                 </section>
@@ -673,7 +826,8 @@ export const App: React.FC = () => {
                   />
                   <QuickTasks
                     tasks={tasks}
-                    onDeleteTask={handleDeleteTask}
+                    isLoading={isLoadingTasks}
+                    onDeleteTask={handleRequestDeleteTask}
                     onOpenAddModal={() => setIsAddTaskOpen(true)}
                   />
                 </section>
@@ -708,6 +862,7 @@ export const App: React.FC = () => {
                       days={calendarDays}
                       selectedDate={selectedDate}
                       onSelectDay={handleSelectDay}
+                      isLoading={isLoadingRadar}
                     />
                     <RingkasanBeban days={calendarDays} />
                   </div>
@@ -735,6 +890,8 @@ export const App: React.FC = () => {
             <section id="view-settings" className="page-view active">
               <SettingsView
                 onNotify={showToast}
+                theme={theme}
+                onToggleTheme={handleToggleTheme}
                 onProfileUpdated={(prof) => {
                   setStudentProfile(prof);
                   const nameVal = prof.panggilan || prof.nama;
@@ -798,6 +955,48 @@ export const App: React.FC = () => {
           onNotify={showToast}
         />
       )}
+
+      {/* Modal Pasang PWA */}
+      <PwaInstallModal
+        isOpen={isPwaModalOpen}
+        onClose={() => setIsPwaModalOpen(false)}
+        onNotify={showToast}
+      />
+
+      {/* Modal Validasi Logout */}
+      <ConfirmModal
+        isOpen={isLogoutConfirmOpen}
+        variant="warning"
+        icon="🚪"
+        title="Yakin Ingin Keluar?"
+        message="Kamu akan keluar dari akun NAPAS. Semua sesi aktif dan data progres belajarmu tersimpan dengan aman."
+        confirmText="Ya, Keluar"
+        cancelText="Tetap di Sini"
+        onConfirm={async () => {
+          setIsLogoutConfirmOpen(false);
+          await handleLogout();
+        }}
+        onCancel={() => setIsLogoutConfirmOpen(false)}
+      />
+
+      {/* Modal Validasi Hapus Tugas */}
+      <ConfirmModal
+        isOpen={!!taskToDelete}
+        variant="danger"
+        icon="🗑️"
+        title="Hapus Tugas Ini?"
+        message={
+          <>
+            Apakah kamu yakin ingin menghapus tugas{' '}
+            <strong>"{taskToDelete?.title}"</strong>? Tugas akan dihapus permanen dan Radar Bebanmu akan dikalkulasi ulang.
+          </>
+        }
+        confirmText="Hapus Tugas"
+        cancelText="Batal"
+        isLoading={isDeletingTask}
+        onConfirm={handleConfirmDeleteTask}
+        onCancel={() => !isDeletingTask && setTaskToDelete(null)}
+      />
 
       <Toast
         visible={toast.visible}

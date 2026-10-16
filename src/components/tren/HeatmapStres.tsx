@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HEATMAP_DATA as FALLBACK_DATA, HEATMAP_HOURS as FALLBACK_HOURS } from '../../data/mockData';
 import { HeatmapRow } from '../../types';
 import { api, getStoredUserId } from '../../services/api';
+import { SkeletonHeatmap } from '../common/SkeletonLoader';
 
 interface HeatmapStresProps {
   onCellInteract?: (info: string) => void;
@@ -18,25 +19,31 @@ export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) =>
     'Pertahankan pola belajar bertahap dan aktifkan sesi fokus saat mulai belajar.'
   );
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadHeatmap() {
       const userId = getStoredUserId();
       if (!userId) return;
 
-      const data = await api.getHeatmap(userId, 7);
-      if (data && data.rows && data.rows.length > 0) {
-        setHours(data.hours || FALLBACK_HOURS);
-        setRows(data.rows as HeatmapRow[]);
-        if (data.peak_stress_hours) {
-          setPeakHours(data.peak_stress_hours);
+      setIsLoading(true);
+      try {
+        const data = await api.getHeatmap(userId, 7);
+        if (data && data.rows && data.rows.length > 0) {
+          setHours(data.hours || FALLBACK_HOURS);
+          setRows(data.rows as HeatmapRow[]);
+          if (data.peak_stress_hours) {
+            setPeakHours(data.peak_stress_hours);
+          }
+          if (data.heaviest_day) {
+            setHeaviestDay(data.heaviest_day);
+          }
+          if (data.advice) {
+            setAdvice(data.advice);
+          }
         }
-        if (data.heaviest_day) {
-          setHeaviestDay(data.heaviest_day);
-        }
-        if (data.advice) {
-          setAdvice(data.advice);
-        }
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -55,35 +62,41 @@ export const HeatmapStres: React.FC<HeatmapStresProps> = ({ onCellInteract }) =>
       <div className="heatmap-col">
         <h2 className="tren-card-title">Heatmap Stres per Jam &amp; Hari</h2>
         <div className="heatmap-matrix-wrapper">
-          {/* Column Hour Headers */}
-          <div className="heatmap-header-row">
-            <span className="hm-corner"></span>
-            {hours.map((hr) => (
-              <span key={hr} className="hm-th">
-                {hr}
-              </span>
-            ))}
-          </div>
-
-          {/* 7 Rows (Sen s/d Min) */}
-          <div className="heatmap-rows">
-            {rows.map((row) => (
-              <div className="hm-row" key={row.dayName}>
-                <span className="hm-day">{row.dayName}</span>
-                <div className="hm-cells">
-                  {row.cells.map((cell, idx) => (
-                    <span
-                      key={idx}
-                      className={`hm-cell cell-${cell.level} ${selectedCell === cell.info ? 'cell-selected' : ''}`}
-                      data-info={cell.info}
-                      title={cell.info}
-                      onClick={() => handleCellClick(cell.info)}
-                    />
-                  ))}
-                </div>
+          {isLoading ? (
+            <SkeletonHeatmap />
+          ) : (
+            <>
+              {/* Column Hour Headers */}
+              <div className="heatmap-header-row">
+                <span className="hm-corner"></span>
+                {hours.map((hr) => (
+                  <span key={hr} className="hm-th">
+                    {hr}
+                  </span>
+                ))}
               </div>
-            ))}
-          </div>
+
+              {/* 7 Rows (Sen s/d Min) */}
+              <div className="heatmap-rows">
+                {rows.map((row) => (
+                  <div className="hm-row" key={row.dayName}>
+                    <span className="hm-day">{row.dayName}</span>
+                    <div className="hm-cells">
+                      {row.cells.map((cell, idx) => (
+                        <span
+                          key={idx}
+                          className={`hm-cell cell-${cell.level} ${selectedCell === cell.info ? 'cell-selected' : ''}`}
+                          data-info={cell.info}
+                          title={cell.info}
+                          onClick={() => handleCellClick(cell.info)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {selectedCell && (
