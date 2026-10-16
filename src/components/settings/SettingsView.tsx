@@ -18,6 +18,7 @@ interface SettingsViewProps {
   onProfileUpdated?: (prof: StudentProfile) => void;
   theme?: 'light' | 'dark';
   onToggleTheme?: () => void;
+  onLogout?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -25,6 +26,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onProfileUpdated,
   theme = 'light',
   onToggleTheme,
+  onLogout,
 }) => {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [userName, setUserName] = useState<string>('Mahasiswa');
@@ -289,6 +291,48 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             onOpenManageModal={() => setIsManageModalOpen(true)}
             onNotify={onNotify}
           />
+
+          {/* Akun & Sesi Pengguna Card */}
+          <div className="settings-card account-session-card">
+            <div className="settings-card-header">
+              <div className="settings-card-icon" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' }}>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <div>
+                <h2 className="settings-card-title">Akun & Sesi Pengguna</h2>
+                <p className="settings-card-desc">Kelola sesi masuk dan keamanan akun Anda</p>
+              </div>
+            </div>
+
+            <div className="account-info-box">
+              <div className="account-info-details">
+                <div className="account-name-row">
+                  <span className="account-status-badge">Terverifikasi</span>
+                  <strong className="account-user-name">{userName}</strong>
+                </div>
+                <span className="account-user-email">{userEmail || 'Akun Mahasiswa NAPAS'}</span>
+              </div>
+
+              {onLogout && (
+                <button
+                  type="button"
+                  className="btn-settings-logout"
+                  onClick={onLogout}
+                  title="Keluar dari akun Anda"
+                >
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  <span>Keluar dari Akun</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
       </>

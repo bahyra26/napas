@@ -6,6 +6,7 @@ interface SidebarProps {
   onSelectTab: (tab: TabType) => void;
   isOpen: boolean;
   onClose: () => void;
+  onLogout?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -13,6 +14,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectTab,
   isOpen,
   onClose,
+  onLogout,
 }) => {
   const navItems: { id: TabType; label: string }[] = [
     { id: 'home', label: 'Home' },
@@ -59,6 +61,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           ))}
         </nav>
+
+        {onLogout && (
+          <div className="sidebar-bottom-action">
+            <button
+              type="button"
+              className="sidebar-logout-btn"
+              onClick={() => {
+                onLogout();
+                onClose();
+              }}
+              title="Keluar dari akun NAPAS"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="17"
+                height="17"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              <span>Keluar Akun</span>
+            </button>
+          </div>
+        )}
       </aside>
     </>
   );

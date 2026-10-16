@@ -27,6 +27,7 @@ import { authService } from './services/supabase';
 import { googleCalendarService } from './services/googleCalendar';
 import { focusStore } from './services/focusSessionStore';
 import { InitialScreenLoader } from './components/common/InitialScreenLoader';
+import { GlobalLoadingBar } from './components/common/GlobalLoadingBar';
 import { ConfirmModal } from './components/common/ConfirmModal';
 import { realtimeSync } from './services/realtimeSync';
 import { PwaInstallModal } from './components/modals/PwaInstallModal';
@@ -366,7 +367,7 @@ export const App: React.FC = () => {
         // 1. Eksekusi instan jika userId lokal sudah tersimpan agar UI langsung ter-render tanpa delay
         const storedUid = getStoredUserId();
         if (storedUid) {
-          initUserSession(storedUid);
+          await initUserSession(storedUid);
         }
 
         // 2. Cek sesi Supabase jika user baru kembali dari Google OAuth redirect atau token aktif
@@ -757,13 +758,19 @@ export const App: React.FC = () => {
 
   // Jika sedang bootstrapping data awal
   if (isInitialLoading && userId) {
-    return <InitialScreenLoader />;
+    return (
+      <div className="app-viewport">
+        <GlobalLoadingBar forceActive={true} />
+        <InitialScreenLoader />
+      </div>
+    );
   }
 
   // Jika belum login, tampilkan LoginView
   if (!userId) {
     return (
       <div className="app-viewport">
+        <GlobalLoadingBar />
         <LoginView
           onCustomLogin={handleCustomLogin}
           onNotify={showToast}
@@ -775,11 +782,13 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-viewport">
+      <GlobalLoadingBar />
       <Sidebar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        onLogout={() => setIsLogoutConfirmOpen(true)}
       />
 
       <div className="main-wrapper">
@@ -892,6 +901,7 @@ export const App: React.FC = () => {
                 onNotify={showToast}
                 theme={theme}
                 onToggleTheme={handleToggleTheme}
+                onLogout={() => setIsLogoutConfirmOpen(true)}
                 onProfileUpdated={(prof) => {
                   setStudentProfile(prof);
                   const nameVal = prof.panggilan || prof.nama;
