@@ -4,13 +4,18 @@
 
 [![Deploy to GitHub Pages](https://github.com/bahyra26/napas/actions/workflows/deploy.yml/badge.svg)](https://github.com/bahyra26/napas/actions/workflows/deploy.yml)
 [![Live Demo](https://img.shields.io/badge/Demo-Live%20Website-0a5445?style=flat&logo=googlechrome&logoColor=white)](https://bahyra26.github.io/napas/)
-[![Tech Stack](https://img.shields.io/badge/Stack-React%20%7C%20TypeScript%20%7C%20Vite-blue?style=flat)](https://vitejs.dev/)
+[![Tech Stack](https://img.shields.io/badge/Stack-React%20%7C%20FastAPI%20%7C%20TypeScript-blue?style=flat)](https://vitejs.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
+## 📖 Dokumentasi Lengkap
+* 👉 **[Panduan Lengkap Pengguna & Tata Cara Penggunaan (PANDUAN_PENGGUNA.md)](PANDUAN_PENGGUNA.md)** — Panduan langkah demi langkah penggunaan seluruh fitur untuk mahasiswa.
+
+---
+
 ## 🌐 Live Demo
-Aplikasi web ini telah dideploy secara otomatis menggunakan GitHub Actions:  
+Aplikasi web ini telah dideploy secara otomatis:  
 👉 **[https://bahyra26.github.io/napas/](https://bahyra26.github.io/napas/)**
 
 ---
@@ -18,61 +23,52 @@ Aplikasi web ini telah dideploy secara otomatis menggunakan GitHub Actions:
 ## 💡 Latar Belakang & Visi Produk
 Banyak mahasiswa menghadapi siklus *burnout* akibat akumulasi beban deadline kuliah, jam belajar tak teratur, dan distraksi digital tanpa menyadari penurunan kondisi fisik maupun mental mereka. 
 
-**NAPAS** dirancang sebagai radar burnout preventif yang menggabungkan 3 sinyal utama:
+**NAPAS** dirancang sebagai radar burnout preventif yang menggabungkan sinyal utama:
 1. **S1: Workload Scanner** — Pemindaian jadwal, beban tugas, dan kalender deadline.
-2. **S2: BioVisual Sensor (On-Device)** — Deteksi pola kedipan mata, ketegangan alis/rahang secara lokal tanpa menyimpan atau mengirim video webcam (*Privacy by Design*).
+2. **S2: BioVisual Sensor (On-Device)** — Deteksi pola kedipan mata dan fokus secara lokal tanpa menyimpan atau mengirim video webcam (*Privacy by Design*).
 3. **S3: Focus Guard** — Klasifikasi jendela aktif akademik vs distraksi digital.
 
-Hasil integrasi sinyal ini diterjemahkan ke dalam **Burnout Index (0–100)** yang **transparan & terjelaskan (*Explainable AI*)**, dilengkapi intervensi on-device serta rencana aksi mandiri (**Wellness Playbook**).
+Hasil integrasi sinyal ini diterjemahkan ke dalam **Burnout Index (0–100)** yang **transparan & terjelaskan (*Explainable AI*)**, dilengkapi intervensi relaksasi on-device serta rencana aksi mandiri (**Wellness Playbook**).
 
 ---
 
-## ✨ 6 Modul Utama Dashboard
+## ✨ Modul Utama Aplikasi
 
 ### 1. 🏠 Home (Dashboard Harian & Profil)
 * **Burnout Index Gauge**: Lingkaran persentase dinamis dengan label zona (*Hijau: Prima, Kuning: Sedang, Oranye/Merah: Tinggi*).
 * **Explainable Card ("Kenapa skor ini?")**: Rincian indikator penjelas (jumlah deadline, durasi tidur, waktu distraksi, dan ritme kedipan mata) dengan accordion detail lanjutan.
-* **Mood Check-In 2-Ketukan**: Check-in emosi subjektif instan (*Bahagia, Netral, Sedih*) dengan feedback badge dan notifikasi interaktif.
+* **Mood Check-In 2-Ketukan**: Check-in emosi subjektif instan (*Bahagia, Netral, Sedih*) dengan feedback interaktif.
 * **Latihan Pernapasan Terpandu (Breathing 4-7-8)**: Panduan ritme napas visual langsung di halaman beranda (*Tarik Napas 4s → Tahan 7s → Hembuskan 8s*).
 * **Deadline Terdekat**: Manajemen daftar tugas cepat dengan modal interaktif untuk menambahkan tugas baru (*+ Tambah Tugas*).
 
 ### 2. 📈 Tren Kesejahteraan
 * **Early Warning Line Chart 14 Hari**: Grafik fluktuasi skor dengan titik anotasi khusus (**Titik Intervensi**) dan banner peringatan tren memburuk jika indeks naik beruntun.
 * **Heatmap Stres per Jam & Hari**: Matriks visual 8 jam (08:00 - 22:00) x 7 hari dengan indikasi warna beban (*Ringan, Sedang, Berat*) dan tooltip detail per sel.
-* **Analisis & Pola Klinis Ringan**: Identifikasi waktu puncak stres dan pola hari terberat beserta rekomendasi jeda istirahat.
+* **Jurnal & Refleksi Harian**: Ruang pencatatan refleksi malam yang tersimpan aman untuk mengevaluasi hari Anda.
 
 ### 3. 🎯 Deadline Radar
 * **Kalender Beban Kognitif 14 Hari**: Grid tanggal dinamis *real-time* yang terhitung otomatis dari hari ini.
 * **Ringkasan Beban Terpadu**: Statistik otomatis untuk total tugas, jumlah hari zona berat, tanggal terpadat, dan hari bebas deadline.
-* **Detail Agenda & Load Score**: Rincian tugas per hari dengan skor beban harian.
+* **Integrasi Google Calendar**:
+  - *⚡ Sinkronisasi Cepat*: Memuat agenda perkuliahan semester secara instan.
+  - *🔗 Akun Google*: Menghubungkan Google Calendar resmi untuk sinkronisasi otomatis.
+  - *📋 Impor File (.ics)*: Mengunggah berkas kalender standar iCal.
 * **Rekomendasi Reschedule Pintar**: Modal interaktif untuk memindahkan agenda berat ke hari bebas beban guna meredakan stres.
 
-### 4. ⏱️ Fokus & Distraksi
-* **Overview Fokus Harian**: Donut chart proporsi waktu fokus vs waktu distraksi dengan pesan motivasi harian.
-* **Top 5 Pencuri Waktu**: Visualisasi aplikasi pengurang fokus (YouTube, Instagram, Discord, game, media sosial) beserta durasi menitnya.
+### 4. ⏱️ Sesi Fokus (Focus Guard)
+* **Pomodoro Focus Timer**: Sesi belajar terstruktur dengan penghitung waktu mundur dan jeda istirahat.
+* **Whitelist Website Akademik**: Akses cepat ke situs perkuliahan yang diizinkan (Google Scholar, GitHub, Notion, dll.).
 * **Focus Streak Gamifikasi**: Pelacakan konsistensi fokus harian (Senin s/d Minggu) dengan target >4 jam/hari dan pencatatan rekor terbaik.
-* **Grafik Fokus vs Distraksi (7 Hari Terakhir)**: Stacked bar chart persentase waktu produktif harian.
 
 ### 5. 📑 Laporan & Rekomendasi
 * **Insight Mingguan (AI/LLM-Based)**: Narasi empati yang meringkas evaluasi performa dan istirahat mingguan mahasiswa.
 * **Wellness Playbook Berjenjang**: 3 langkah aksi mandiri konkret (pembatasan layar malam, jeda jalan kaki, dukungan sosial) dengan eskalasi bertanggung jawab ke Bimbingan Konseling (BK) kampus jika stres berlanjut.
-* **Riwayat Intervensi**: Log aktivitas pemulihan terbaru (*Breathing*, *Focus Lock*, *Microbreak*).
-* **Refleksi Harian**: Modal refleksi malam untuk mencatat hal baik yang ingin diulang esok hari.
 
-### 6. ⚙️ Settings & Privasi
-* **Komitmen Privasi Penuh (*Privacy by Design*)**: Banner jaminan pemrosesan sinyal lokal on-device.
+### 6. ⚙️ Settings, Profil & Privasi
+* **Profil Mahasiswa**: Pengaturan identitas, program studi, semester, preferensi ritme tidur/kronotipe, dan upload foto profil.
+* **Komitmen Privasi Penuh (*Privacy by Design*)**: Jaminan pemrosesan sinyal lokal on-device tanpa rekaman visual.
 * **Izin Sensor Mandiri (Opt-In)**: Pengguna memegang kendali penuh untuk menyalakan/mematikan Kamera BioVisual, Aktivitas Jendela, dan Check-in.
-* **Personalisasi Intervensi**: Konfigurasi toggle latihan pernapasan, focus lock, microbreak, dan pengaturan batas toleransi distraksi.
-* **Whitelist Aplikasi Fokus**: Manajemen aplikasi akademik (VS Code, Notion, Google Docs, dll.) yang tidak dihitung sebagai distraksi.
-* **Manajemen Data**: Opsi ekspor data kesehatan mandiri dan kelola profil akun.
-
----
-
-## 🕒 Sistem Waktu Dinamis (Real-Time Dynamic System)
-Seluruh penanggalan pada aplikasi ini terintegrasi secara dinamis dengan waktu lokal pengguna:
-* **Penanggalan Hari Ini**: Format standar Indonesia (`Sen, 5 Okt 2026`) yang otomatis berubah setiap hari.
-* **Kalender 14 Hari & Grafik 7 Hari**: Rentang hari dihitung secara otomatis dari tanggal berjalan (`new Date()`).
-* **Timestamp Terakhir Diperbarui**: Jam dan menit pada menu pengaturan merefleksikan waktu akses nyata.
+* **Kedaulatan Data**: Ekspor rekap lengkap (JSON), ekspor tren harian (CSV), serta pembersihan cache dan reset preferensi akun.
 
 ---
 
@@ -80,84 +76,41 @@ Seluruh penanggalan pada aplikasi ini terintegrasi secara dinamis dengan waktu l
 
 * **Frontend Framework**: [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
 * **Build Tool & Dev Server**: [Vite](https://vitejs.dev/)
+* **Backend API**: [FastAPI](https://fastapi.tiangolo.com/) (Python)
+* **Penyimpanan Data**: SQLite Local-First & Supabase Cloud Sync
 * **Styling**: Vanilla CSS (Responsive Flexbox & Grid, CSS Variables Design Tokens, Keyframe Animations)
-* **Tipografi**: Poppins (Google Fonts)
-* **Ikon**: Phosphor & Heroicons Vector SVG
-* **CI/CD Deployment**: GitHub Actions (Build otomatis ke GitHub Pages)
+* **Tipografi**: Poppins & Inter (Google Fonts)
+* **Desktop Agent**: Python background companion untuk pelacakan jendela aktif
 
 ---
 
-## 📁 Struktur Direktori
-
-```text
-napas/
-├── .github/workflows/
-│   └── deploy.yml            # Workflow CI/CD otomatis ke GitHub Pages
-├── dokumen/                  # Dokumentasi & aset mockup visual UI/UX
-│   ├── home.jpeg
-│   ├── tren.jpeg
-│   ├── deadline.jpeg
-│   ├── fokus.jpeg
-│   ├── laporan.jpeg
-│   └── settings.jpeg
-├── public/
-│   └── assets/               # Aset statis publik (logo, ikon vektor)
-├── src/
-│   ├── components/
-│   │   ├── common/           # Toast, reusable components
-│   │   ├── deadline/         # CalendarGrid, RingkasanBeban, AgendaDetail
-│   │   ├── fokus/            # Overview, Streak, TopDistractors, BarChart
-│   │   ├── home/             # GaugeCircle, KenapaCard, MoodCheckin, Breathing
-│   │   ├── laporan/          # InsightMingguan, Playbook, Riwayat, Refleksi
-│   │   ├── layout/           # Header, Sidebar, MobileBottomNav
-│   │   ├── modals/           # AddTask, Reschedule, Threshold, AddApp, Profil
-│   │   ├── settings/         # PrivacyBanner, SensorPermission, FocusApps
-│   │   └── tren/             # TrendChart, HeatmapStres, Ringkasan, Kesimpulan
-│   ├── data/                 # Initial mock data & demo datasets
-│   ├── types/                # TypeScript interface definitions
-│   ├── utils/                # dateUtils.ts (penanggalan real-time dinamis)
-│   ├── App.tsx               # Root application component & routing state
-│   └── main.tsx              # React DOM render entrypoint
-├── index.html                # Entrypoint HTML
-├── style.css                 # Global design system & layout styling
-├── vite.config.ts            # Konfigurasi Vite & base path
-└── package.json              # Dependency manifest & scripts
-```
-
----
-
-## 🚀 Menjalankan Secara Lokal
+## 🚀 Cara Menjalankan Secara Lokal
 
 ### Prasyarat
 * [Node.js](https://nodejs.org/) versi 18 atau lebih baru
-* npm (disertakan bersama Node.js)
+* [Python](https://www.python.org/) versi 3.10 atau lebih baru
 
-### Langkah Instalasi
-1. Clone repositori:
-   ```bash
-   git clone https://github.com/bahyra26/napas.git
-   cd napas
-   ```
-
-2. Instal dependensi:
-   ```bash
-   npm install
-   ```
-
-3. Jalankan server pengembangan lokal:
-   ```bash
-   npm run dev
-   ```
-
-4. Buka di browser:  
-   👉 **http://localhost:3000** (atau URL yang ditampilkan di terminal).
-
-### Membangun Versi Produksi (*Build*)
-Untuk memvalidasi atau membuat bundle statis:
+### 1. Menjalankan Backend (FastAPI)
 ```bash
-npm run build
-npm run preview
+cd backend
+pip install -r requirements.txt
+python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
+*(Atau klik dua kali file `backend/run_backend.bat` di Windows)*.
+
+### 2. Menjalankan Frontend (React + Vite)
+```bash
+npm install
+npm run dev
+```
+Akses di browser Anda: 👉 **`http://localhost:3000`**
+
+### 3. Menjalankan Agen Pendamping Desktop (Opsional)
+```bash
+cd agent
+python napas_agent.py
+```
+*(Atau klik dua kali file `agent/run_agent.bat`)*.
 
 ---
 
@@ -169,5 +122,4 @@ NAPAS dirancang dengan prinsip **Ethics & Privacy by Design**:
 
 ---
 
-## 👥 Tim Pengembang
-Dikembangkan untuk **JOINTS (Jogja Information Technology Session)** — Universitas Gadjah Mada (UGM).
+*NAPAS — Bernapas Lebih Tenang, Belajar Lebih Seimbang.* 🌿
