@@ -16,6 +16,8 @@ class UserUpdate(BaseModel):
     consent_camera: Optional[bool] = None
     consent_window: Optional[bool] = None
     baseline_blink_rate: Optional[float] = None
+    avatar_url: Optional[str] = None
+    onboarded: Optional[bool] = None
 
 class UserResponse(BaseModel):
     id: str
@@ -235,6 +237,8 @@ class SimulateRequest(BaseModel):
 
 # --- PROFIL MAHASISWA ---
 class ProfileUpsert(BaseModel):
+    nama: Optional[str] = None
+    email: Optional[str] = None
     panggilan: Optional[str] = None
     kampus: Optional[str] = None
     jurusan: Optional[str] = None

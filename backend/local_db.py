@@ -160,6 +160,14 @@ def init_db():
         c.execute("ALTER TABLE workload_items ADD COLUMN mata_kuliah TEXT")
     except Exception:
         pass
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN avatar_url TEXT")
+    except Exception:
+        pass
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN onboarded INTEGER DEFAULT 0")
+    except Exception:
+        pass
 
     conn.commit()
 
@@ -198,14 +206,24 @@ def save_or_update_user(user_id: str, nama: str, email: Optional[str] = None) ->
             UPDATE users SET nama = ?, email = ? WHERE id = ?
         """, (clean_name, clean_email, clean_id))
     else:
-        c.execute("""
-            INSERT INTO users (id, nama, email, consent_camera, consent_window, baseline_blink_rate, created_at)
-            VALUES (?, ?, ?, 1, 1, 15.0, ?)
-        """, (clean_id, clean_name, clean_email, now_iso))
+        try:
+            c.execute("""
+                INSERT INTO users (id, nama, email, consent_camera, consent_window, baseline_blink_rate, created_at)
+                VALUES (?, ?, ?, 1, 1, 15.0, ?)
+            """, (clean_id, clean_name, clean_email, now_iso))
+        except Exception:
+            pass
+
+    # Sinkronkan juga nama & email ke user_profiles jika sudah ada record profilnya
+    c.execute("SELECT user_id FROM user_profiles WHERE user_id = ?", (clean_id,))
+    if c.fetchone():
+        c.execute("UPDATE user_profiles SET nama = ?, email = ? WHERE user_id = ?", (clean_name, clean_email, clean_id))
+
     conn.commit()
 
     c.execute("SELECT * FROM users WHERE id = ?", (clean_id,))
-    res = dict(c.fetchone())
+    row_user = c.fetchone()
+    res = dict(row_user) if row_user else {"id": clean_id, "nama": clean_name, "email": clean_email}
     conn.close()
     return res
 
@@ -356,16 +374,23 @@ def local_save_profile(profile_dict: Dict[str, Any]) -> Dict[str, Any]:
     u_id = profile_dict.get("user_id")
     now_iso = datetime.now(WIB).isoformat()
 
-    c.execute("SELECT focus_whitelist, focus_blacklist FROM user_profiles WHERE user_id = ?", (u_id,))
+    c.execute("SELECT * FROM user_profiles WHERE user_id = ?", (u_id,))
     existing_row = c.fetchone()
+    existing = dict(existing_row) if existing_row else {}
 
+    c.execute("SELECT * FROM users WHERE id = ?", (u_id,))
+    u_row = c.fetchone()
+    existing_user = dict(u_row) if u_row else {}
+
+    # Whitelist & Blacklist (jaga agar tidak terhapus jika tidak dikirim)
     wl = profile_dict.get("focus_whitelist")
     bl = profile_dict.get("focus_blacklist")
 
     if wl is not None:
         wl_str = json.dumps(wl) if isinstance(wl, (list, dict)) else "[]"
-    elif existing_row and existing_row[0] and existing_row[0] != "{}":
-        wl_str = existing_row[0]
+    elif existing.get("focus_whitelist"):
+        fw = existing["focus_whitelist"]
+        wl_str = json.dumps(fw) if isinstance(fw, (list, dict)) else str(fw)
     else:
         wl_str = json.dumps([
             "elearning.ugm.ac.id", "docs.google.com", "notion.so",
@@ -375,32 +400,104 @@ def local_save_profile(profile_dict: Dict[str, Any]) -> Dict[str, Any]:
 
     if bl is not None:
         bl_str = json.dumps(bl) if isinstance(bl, (list, dict)) else "[]"
-    elif existing_row and existing_row[1] and existing_row[1] != "{}":
-        bl_str = existing_row[1]
+    elif existing.get("focus_blacklist"):
+        fb = existing["focus_blacklist"]
+        bl_str = json.dumps(fb) if isinstance(fb, (list, dict)) else str(fb)
     else:
         bl_str = json.dumps(["Discord", "YouTube", "Instagram", "TikTok", "Steam"])
+
+    # Avatar URL: hanya timpa jika dikirim secara eksplisit (non-None)
+    if "avatar_url" in profile_dict and profile_dict["avatar_url"] is not None:
+        avatar_url = profile_dict["avatar_url"]
+    else:
+        avatar_url = existing.get("avatar_url") or existing_user.get("avatar_url") or ""
+
+    # Nama & Email
+    if "nama" in profile_dict and profile_dict["nama"] is not None and str(profile_dict["nama"]).strip():
+        nama = str(profile_dict["nama"]).strip()
+    else:
+        nama = existing.get("nama") or existing_user.get("nama") or "Mahasiswa"
+
+    if "email" in profile_dict and profile_dict["email"] is not None and str(profile_dict["email"]).strip():
+        email = str(profile_dict["email"]).strip()
+    else:
+        email = existing.get("email") or existing_user.get("email") or ""
+
+    # Panggilan
+    if "panggilan" in profile_dict and profile_dict["panggilan"] is not None and str(profile_dict["panggilan"]).strip():
+        panggilan = str(profile_dict["panggilan"]).strip()
+    elif existing.get("panggilan"):
+        panggilan = existing["panggilan"]
+    elif nama:
+        panggilan = nama.split()[0]
+    else:
+        panggilan = "Mahasiswa"
+
+    # Kampus, Jurusan, Semester
+    if "kampus" in profile_dict and profile_dict["kampus"] is not None and str(profile_dict["kampus"]).strip():
+        kampus = str(profile_dict["kampus"]).strip()
+    else:
+        kampus = existing.get("kampus") or "Universitas Gadjah Mada"
+
+    if "jurusan" in profile_dict and profile_dict["jurusan"] is not None and str(profile_dict["jurusan"]).strip():
+        jurusan = str(profile_dict["jurusan"]).strip()
+    else:
+        jurusan = existing.get("jurusan") or "Teknik Informatika"
+
+    if "semester" in profile_dict and profile_dict["semester"] is not None:
+        semester = int(profile_dict["semester"])
+    else:
+        semester = existing.get("semester") or 1
+
+    # Ritme & Fokus
+    jam_tidur = profile_dict.get("jam_tidur") or existing.get("jam_tidur") or "23:00"
+    jam_bangun = profile_dict.get("jam_bangun") or existing.get("jam_bangun") or "06:00"
+    kronotipe = profile_dict.get("kronotipe") or existing.get("kronotipe") or "pagi"
+    target_fokus_jam = profile_dict.get("target_fokus_jam") or existing.get("target_fokus_jam") or 4.0
+    agent_action = profile_dict.get("agent_action") or existing.get("agent_action") or "warn_then_close"
+
+    if "onboarded" in profile_dict and profile_dict["onboarded"] is not None:
+        onboarded = 1 if profile_dict["onboarded"] else 0
+    else:
+        onboarded = existing.get("onboarded", 1)
+
+    # Sinkronkan juga ke tabel users lokal
+    if existing_user:
+        try:
+            c.execute("UPDATE users SET nama = ?, email = ?, avatar_url = ? WHERE id = ?", (nama, email, avatar_url, u_id))
+        except Exception:
+            try:
+                c.execute("UPDATE users SET nama = ?, email = ? WHERE id = ?", (nama, email, u_id))
+            except Exception:
+                pass
+    else:
+        try:
+            c.execute("""
+                INSERT INTO users (id, nama, email, avatar_url, consent_camera, consent_window, baseline_blink_rate, created_at)
+                VALUES (?, ?, ?, ?, 1, 1, 15.0, ?)
+            """, (u_id, nama, email or f"{u_id[:8]}@napas.local", avatar_url, now_iso))
+        except Exception:
+            try:
+                c.execute("""
+                    INSERT INTO users (id, nama, email, consent_camera, consent_window, baseline_blink_rate, created_at)
+                    VALUES (?, ?, ?, 1, 1, 15.0, ?)
+                """, (u_id, nama, email or f"{u_id[:8]}@napas.local", now_iso))
+            except Exception:
+                pass
 
     if existing_row:
         c.execute("""
             UPDATE user_profiles SET
-                panggilan = ?, kampus = ?, jurusan = ?, semester = ?,
+                nama = ?, email = ?, panggilan = ?, kampus = ?, jurusan = ?, semester = ?,
                 jam_tidur = ?, jam_bangun = ?, kronotipe = ?,
                 target_fokus_jam = ?, focus_whitelist = ?, focus_blacklist = ?,
                 agent_action = ?, avatar_url = ?, onboarded = ?
             WHERE user_id = ?
         """, (
-            profile_dict.get("panggilan", "Mahasiswa"),
-            profile_dict.get("kampus", "Universitas Gadjah Mada"),
-            profile_dict.get("jurusan", "Teknik Informatika"),
-            profile_dict.get("semester", 4),
-            profile_dict.get("jam_tidur", "23:00"),
-            profile_dict.get("jam_bangun", "06:00"),
-            profile_dict.get("kronotipe", "pagi"),
-            profile_dict.get("target_fokus_jam", 4.0),
-            wl_str, bl_str,
-            profile_dict.get("agent_action", "warn_then_close"),
-            profile_dict.get("avatar_url", ""),
-            1 if profile_dict.get("onboarded", True) else 0,
+            nama, email, panggilan, kampus, jurusan, semester,
+            jam_tidur, jam_bangun, kronotipe,
+            target_fokus_jam, wl_str, bl_str,
+            agent_action, avatar_url, onboarded,
             u_id
         ))
     else:
@@ -411,22 +508,9 @@ def local_save_profile(profile_dict: Dict[str, Any]) -> Dict[str, Any]:
                 focus_whitelist, focus_blacklist, agent_action, avatar_url, onboarded, created_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            u_id,
-            profile_dict.get("nama", "Mahasiswa"),
-            profile_dict.get("email", ""),
-            profile_dict.get("panggilan", "Mahasiswa"),
-            profile_dict.get("kampus", "Universitas Gadjah Mada"),
-            profile_dict.get("jurusan", "Teknik Informatika"),
-            profile_dict.get("semester", 4),
-            profile_dict.get("jam_tidur", "23:00"),
-            profile_dict.get("jam_bangun", "06:00"),
-            profile_dict.get("kronotipe", "pagi"),
-            profile_dict.get("target_fokus_jam", 4.0),
-            wl_str, bl_str,
-            profile_dict.get("agent_action", "warn_then_close"),
-            profile_dict.get("avatar_url", ""),
-            1 if profile_dict.get("onboarded", True) else 0,
-            now_iso
+            u_id, nama, email, panggilan, kampus, jurusan, semester,
+            jam_tidur, jam_bangun, kronotipe, target_fokus_jam,
+            wl_str, bl_str, agent_action, avatar_url, onboarded, now_iso
         ))
     conn.commit()
 
@@ -450,10 +534,47 @@ def local_get_profile(user_id: str) -> Optional[Dict[str, Any]]:
     c = conn.cursor()
     c.execute("SELECT * FROM user_profiles WHERE user_id = ?", (user_id,))
     row = c.fetchone()
+    c.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    u_row = c.fetchone()
     conn.close()
+
     if not row:
+        if u_row:
+            u_dict = dict(u_row)
+            return {
+                "user_id": user_id,
+                "nama": u_dict.get("nama", "Mahasiswa"),
+                "email": u_dict.get("email", ""),
+                "panggilan": u_dict.get("nama", "Mahasiswa").split()[0],
+                "avatar_url": u_dict.get("avatar_url", ""),
+                "kampus": "Universitas Gadjah Mada",
+                "jurusan": "Teknik Informatika",
+                "semester": 1,
+                "jam_tidur": "23:00",
+                "jam_bangun": "06:00",
+                "kronotipe": "pagi",
+                "target_fokus_jam": 4.0,
+                "focus_whitelist": [
+                    "elearning.ugm.ac.id", "docs.google.com", "notion.so",
+                    "github.com", "journal.ugm.ac.id", "wikipedia.org",
+                    "chatgpt.com", "canva.com"
+                ],
+                "focus_blacklist": ["Discord", "YouTube", "Instagram", "TikTok", "Steam"],
+                "agent_action": "warn_then_close",
+                "onboarded": True
+            }
         return None
+
     d = dict(row)
+    if u_row:
+        u_dict = dict(u_row)
+        if not d.get("nama") and u_dict.get("nama"):
+            d["nama"] = u_dict["nama"]
+        if not d.get("email") and u_dict.get("email"):
+            d["email"] = u_dict["email"]
+        if not d.get("avatar_url") and u_dict.get("avatar_url"):
+            d["avatar_url"] = u_dict["avatar_url"]
+
     try:
         d["focus_whitelist"] = json.loads(d.get("focus_whitelist") or "[]")
     except Exception:

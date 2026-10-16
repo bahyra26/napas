@@ -175,9 +175,7 @@ def update_user(user_id: str, payload: UserUpdate):
     """
     Memperbarui profil user atau toggle consent kamera/window.
     """
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Database belum terhubung. Pastikan file .env sudah diisi.")
-
+    u_uuid = deterministic_uuid(user_id)
     update_data = {}
     if payload.nama is not None:
         update_data["nama"] = payload.nama
@@ -189,15 +187,31 @@ def update_user(user_id: str, payload: UserUpdate):
         update_data["consent_window"] = payload.consent_window
     if payload.baseline_blink_rate is not None:
         update_data["baseline_blink_rate"] = payload.baseline_blink_rate
+    if payload.avatar_url is not None:
+        update_data["avatar_url"] = payload.avatar_url
+    if payload.onboarded is not None:
+        update_data["onboarded"] = payload.onboarded
 
-    if not update_data:
-        res = supabase.table("users").select("*").eq("id", user_id).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="User tidak ditemukan")
-        return res.data[0]
+    # 1. Update SQLite lokal selalu agar data user tidak hilang saat offline
+    local_u = get_user_by_id(u_uuid) or get_user_by_id(user_id)
+    if update_data:
+        nama = update_data.get("nama") or (local_u.get("nama") if local_u else "Mahasiswa")
+        email = update_data.get("email") or (local_u.get("email") if local_u else f"{u_uuid[:8]}@napas.local")
+        local_u = save_or_update_user(u_uuid, nama, email)
+        if "avatar_url" in update_data:
+            from local_db import local_save_profile
+            local_save_profile({"user_id": u_uuid, "avatar_url": update_data["avatar_url"]})
 
-    update_res = supabase.table("users").update(update_data).eq("id", user_id).execute()
-    if not update_res.data:
-        raise HTTPException(status_code=404, detail="User tidak ditemukan atau gagal diperbarui")
+    # 2. Update Supabase jika ada
+    if supabase and update_data:
+        try:
+            update_res = supabase.table("users").update(update_data).in_("id", [user_id, u_uuid]).execute()
+            if update_res.data:
+                return update_res.data[0]
+        except Exception as e:
+            print(f"[Supabase updateUser error]: {e}")
 
-    return update_res.data[0]
+    if local_u:
+        return local_u
+
+    raise HTTPException(status_code=404, detail="User tidak ditemukan")

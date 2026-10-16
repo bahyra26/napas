@@ -89,10 +89,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       });
     }
 
+    // Pastikan avatar_url yang sudah ada tidak hilang saat update identitas
+    const currentAvatar = profile?.avatar_url || '';
+    const payload: Partial<StudentProfile> = {
+      ...updated,
+      avatar_url: currentAvatar || undefined,
+    };
+
     // Update in profile table
-    const res = await api.updateProfile(userId, updated);
+    const res = await api.updateProfile(userId, payload);
     if (res) {
-      const merged = { ...(profile || {}), ...updated, ...res } as StudentProfile;
+      const merged = {
+        ...(profile || {}),
+        ...updated,
+        ...res,
+        avatar_url: currentAvatar || res.avatar_url || '',
+      } as StudentProfile;
       setProfile(merged);
       if (updated.nama) {
         setUserName(updated.nama);
@@ -112,7 +124,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     const res = await api.updateProfile(userId, updated);
     if (res) {
-      setProfile((prev) => (prev ? { ...prev, ...updated } : (updated as StudentProfile)));
+      setProfile((prev) => (prev ? { ...prev, ...updated, ...(res || {}) } : (updated as StudentProfile)));
       return true;
     }
     return false;
@@ -171,16 +183,35 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const userId = getStoredUserId();
     if (!userId) return;
 
-    const res = await api.updateProfile(userId, { avatar_url: avatarUrl });
-    if (res) {
-      setProfile(res);
-      onProfileUpdated?.(res);
-    } else {
-      setProfile((prev) => (prev ? { ...prev, avatar_url: avatarUrl } : null));
-      if (profile) {
-        onProfileUpdated?.({ ...profile, avatar_url: avatarUrl });
-      }
-    }
+    // Sertakan identitas akademik saat ini agar tidak terhapus atau ter-reset
+    const currentName = profile?.nama || userName;
+    const currentEmail = profile?.email || userEmail;
+    const currentPanggilan = profile?.panggilan || (currentName ? currentName.split(' ')[0] : 'Mahasiswa');
+
+    const res = await api.updateProfile(userId, {
+      avatar_url: avatarUrl,
+      nama: currentName,
+      panggilan: currentPanggilan,
+      email: currentEmail,
+      kampus: profile?.kampus,
+      jurusan: profile?.jurusan,
+      semester: profile?.semester,
+    });
+
+    const merged = {
+      ...(profile || {}),
+      ...(res || {}),
+      avatar_url: avatarUrl,
+      nama: currentName,
+      email: currentEmail,
+      panggilan: currentPanggilan,
+      kampus: profile?.kampus || res?.kampus || 'Universitas Gadjah Mada',
+      jurusan: profile?.jurusan || res?.jurusan || 'Teknik Informatika',
+      semester: profile?.semester || res?.semester || 1,
+    } as StudentProfile;
+
+    setProfile(merged);
+    onProfileUpdated?.(merged);
   };
 
   return (

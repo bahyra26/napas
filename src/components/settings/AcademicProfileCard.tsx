@@ -22,12 +22,12 @@ export const AcademicProfileCard: React.FC<AcademicProfileCardProps> = ({
 
   useEffect(() => {
     if (initialProfile) {
-      setNama(initialProfile.nama || '');
-      setPanggilan(initialProfile.panggilan || '');
-      setEmail(initialProfile.email || '');
-      setKampus(initialProfile.kampus || '');
-      setJurusan(initialProfile.jurusan || '');
-      setSemester(initialProfile.semester || 1);
+      setNama((prev) => initialProfile.nama || prev || '');
+      setPanggilan((prev) => initialProfile.panggilan || prev || '');
+      setEmail((prev) => initialProfile.email || prev || '');
+      setKampus((prev) => initialProfile.kampus || prev || '');
+      setJurusan((prev) => initialProfile.jurusan || prev || '');
+      setSemester((prev) => initialProfile.semester || prev || 1);
     }
   }, [initialProfile]);
 

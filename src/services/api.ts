@@ -1324,7 +1324,15 @@ const rawApi = {
       const cached = localStorage.getItem(`napas_user_profile_${userId}`);
       if (cached) existingProfile = JSON.parse(cached);
     } catch {}
-    const mergedProfile = { ...existingProfile, ...partial, user_id: userId };
+
+    const targetAvatar = partial.avatar_url !== undefined ? partial.avatar_url : (existingProfile.avatar_url || '');
+
+    const mergedProfile = {
+      ...existingProfile,
+      ...partial,
+      avatar_url: targetAvatar,
+      user_id: userId,
+    };
     try {
       localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(mergedProfile));
       if (partial.panggilan) {
@@ -1344,11 +1352,19 @@ const rawApi = {
       });
       if (res.ok) {
         const saved = await res.json();
-        localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(saved));
-        if (saved.onboarded) {
+        const mergedSaved = {
+          ...existingProfile,
+          ...partial,
+          ...saved,
+          avatar_url: partial.avatar_url !== undefined ? partial.avatar_url : (saved.avatar_url || existingProfile.avatar_url || ''),
+          nama: partial.nama || saved.nama || existingProfile.nama,
+          email: partial.email || saved.email || existingProfile.email,
+        };
+        localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(mergedSaved));
+        if (mergedSaved.onboarded) {
           localStorage.setItem(`napas_user_onboarded_${userId}`, 'true');
         }
-        return saved;
+        return mergedSaved;
       }
     } catch (err) {
       console.warn('updateProfile backend offline, saving to Supabase directly:', err);
@@ -1357,20 +1373,14 @@ const rawApi = {
     // 3. Fallback simpan langsung ke Supabase Cloud (Sanitasi skema agar bebas dari error PGRST204)
     if (supabase) {
       try {
-        // A. Perbarui flag onboarded di tabel users
-        if (partial.onboarded !== undefined) {
-          await supabase
-            .from('users')
-            .update({ onboarded: partial.onboarded })
-            .eq('id', userId);
-        }
-
-        // B. Perbarui avatar_url di tabel users
-        if (partial.avatar_url !== undefined) {
-          await supabase
-            .from('users')
-            .update({ avatar_url: partial.avatar_url })
-            .eq('id', userId);
+        // A. Perbarui flag onboarded, avatar_url, nama, email di tabel users jika relevan
+        const userUpdates: any = {};
+        if (partial.onboarded !== undefined) userUpdates.onboarded = partial.onboarded;
+        if (partial.avatar_url !== undefined) userUpdates.avatar_url = partial.avatar_url;
+        if (partial.nama) userUpdates.nama = partial.nama;
+        if (partial.email) userUpdates.email = partial.email;
+        if (Object.keys(userUpdates).length > 0) {
+          await supabase.from('users').update(userUpdates).eq('id', userId);
         }
 
         // B. Filter field yang aman untuk tabel user_profiles Supabase
@@ -1403,7 +1413,15 @@ const rawApi = {
           .maybeSingle();
 
         if (data) {
-          const finalProfile = { ...data, onboarded: partial.onboarded ?? true };
+          const finalProfile = {
+            ...existingProfile,
+            ...partial,
+            ...data,
+            avatar_url: targetAvatar,
+            nama: partial.nama || existingProfile.nama,
+            email: partial.email || existingProfile.email,
+            onboarded: partial.onboarded ?? (existingProfile.onboarded ?? true),
+          };
           localStorage.setItem(`napas_user_profile_${userId}`, JSON.stringify(finalProfile));
           if (finalProfile.onboarded) {
             localStorage.setItem(`napas_user_onboarded_${userId}`, 'true');

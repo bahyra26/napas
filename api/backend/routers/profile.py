@@ -78,20 +78,32 @@ def get_user_profile(user_id: str):
 
     is_user_onboarded = user.get("onboarded") if user.get("onboarded") is not None else profile.get("onboarded", False)
 
+    resolved_avatar = profile.get("avatar_url") or user.get("avatar_url") or ""
+    resolved_name = profile.get("nama") or user.get("nama") or profile.get("panggilan") or "Mahasiswa"
+    resolved_email = profile.get("email") or user.get("email") or ""
+
     return {
         **profile,
-        "nama": user.get("nama", profile.get("panggilan", "Mahasiswa")),
-        "email": user.get("email", ""),
-        "avatar_url": user.get("avatar_url", ""),
+        "nama": resolved_name,
+        "email": resolved_email,
+        "avatar_url": resolved_avatar,
         "onboarded": bool(is_user_onboarded)
     }
 
 @router.put("/profile/{user_id}")
 def upsert_user_profile(user_id: str, payload: ProfileUpsert):
+    u_uuid = deterministic_uuid(user_id)
+    
+    # Ambil data user & profile lama agar merge parsial selalu aman
+    existing_profile = local_get_profile(u_uuid) or local_get_profile(user_id) or {}
+    existing_user = get_user_by_id(u_uuid) or get_user_by_id(user_id) or {}
+
     data = {
-        "user_id": user_id,
+        "user_id": u_uuid,
         "updated_at": now_wib().isoformat()
     }
+    if payload.nama is not None: data["nama"] = payload.nama
+    if payload.email is not None: data["email"] = payload.email
     if payload.panggilan is not None: data["panggilan"] = payload.panggilan
     if payload.kampus is not None: data["kampus"] = payload.kampus
     if payload.jurusan is not None: data["jurusan"] = payload.jurusan
@@ -106,17 +118,18 @@ def upsert_user_profile(user_id: str, payload: ProfileUpsert):
     if payload.avatar_url is not None: data["avatar_url"] = payload.avatar_url
     if payload.onboarded is not None: data["onboarded"] = payload.onboarded
 
-    u_uuid = deterministic_uuid(user_id)
-    data["user_id"] = u_uuid
-
-    # 1. Simpan permanen ke SQLite Lokal
+    # 1. Simpan permanen ke SQLite Lokal (local_save_profile otomatis merge data lama)
     saved = local_save_profile(data)
 
     # 2. Coba upsert ke Supabase jika tabel ada
     if supabase:
         try:
             from db import ensure_user_in_supabase
-            ensure_user_in_supabase(u_uuid, nama=payload.panggilan or "Mahasiswa")
+            ensure_user_in_supabase(
+                u_uuid,
+                nama=payload.nama or payload.panggilan or existing_user.get("nama") or "Mahasiswa",
+                email=payload.email or existing_user.get("email")
+            )
 
             # Filter hanya field yang valid ada di tabel user_profiles Supabase
             ALLOWED_PROFILE_FIELDS = (
@@ -129,31 +142,41 @@ def upsert_user_profile(user_id: str, payload: ProfileUpsert):
                 "updated_at": data.get("updated_at")
             }
             for col in ALLOWED_PROFILE_FIELDS:
-                if col in data:
-                    sb_profile_data[col] = data[col]
+                if col in saved:
+                    sb_profile_data[col] = saved[col]
 
             res = supabase.table("user_profiles").upsert(sb_profile_data, on_conflict="user_id").execute()
             if res.data:
-                saved = res.data[0]
+                saved.update({k: v for k, v in res.data[0].items() if k not in ("avatar_url", "nama", "email")})
         except Exception as e:
             print(f"[Supabase Profile Upsert Error]: {e}")
 
-        # Update avatar_url di tabel users Supabase agar konsisten
+        # Update avatar_url & identitas di tabel users Supabase agar konsisten
+        user_updates = {}
         if payload.avatar_url is not None:
-            try:
-                supabase.table("users").update({"avatar_url": payload.avatar_url}).in_("id", [user_id, u_uuid]).execute()
-            except Exception as e:
-                print(f"[Supabase Users Avatar Error]: {e}")
-
+            user_updates["avatar_url"] = payload.avatar_url
+        if payload.nama is not None:
+            user_updates["nama"] = payload.nama
+        if payload.email is not None:
+            user_updates["email"] = payload.email
         if payload.onboarded is not None:
+            user_updates["onboarded"] = payload.onboarded
+
+        if user_updates:
             try:
-                supabase.table("users").update({"onboarded": payload.onboarded}).in_("id", [user_id, u_uuid]).execute()
+                supabase.table("users").update(user_updates).in_("id", [user_id, u_uuid]).execute()
             except Exception as e:
-                print(f"[Supabase Users Onboarded Error]: {e}")
+                print(f"[Supabase Users Update Error]: {e}")
+
+    final_nama = saved.get("nama") or data.get("nama") or existing_user.get("nama") or existing_profile.get("nama") or "Mahasiswa"
+    final_email = saved.get("email") or data.get("email") or existing_user.get("email") or existing_profile.get("email") or ""
+    final_avatar = saved.get("avatar_url") if "avatar_url" in saved else (data.get("avatar_url") or existing_profile.get("avatar_url") or existing_user.get("avatar_url") or "")
 
     return {
         **saved,
-        "avatar_url": data.get("avatar_url") or saved.get("avatar_url", ""),
+        "nama": final_nama,
+        "email": final_email,
+        "avatar_url": final_avatar,
         "onboarded": payload.onboarded if payload.onboarded is not None else saved.get("onboarded", True)
     }
 

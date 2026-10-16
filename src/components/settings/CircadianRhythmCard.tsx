@@ -20,10 +20,10 @@ export const CircadianRhythmCard: React.FC<CircadianRhythmCardProps> = ({
 
   useEffect(() => {
     if (initialProfile) {
-      setJamTidur(initialProfile.jam_tidur || '23:00');
-      setJamBangun(initialProfile.jam_bangun || '06:00');
-      setKronotipe(initialProfile.kronotipe || 'pagi');
-      setTargetFokusJam(initialProfile.target_fokus_jam || 4.0);
+      setJamTidur((prev) => initialProfile.jam_tidur || prev || '23:00');
+      setJamBangun((prev) => initialProfile.jam_bangun || prev || '06:00');
+      setKronotipe((prev) => (initialProfile.kronotipe as any) || prev || 'pagi');
+      setTargetFokusJam((prev) => initialProfile.target_fokus_jam || prev || 4.0);
     }
   }, [initialProfile]);
 
