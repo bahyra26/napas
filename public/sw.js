@@ -1,17 +1,16 @@
 /**
- * NAPAS Service Worker (PWA Core)
+ * NAPAS Service Worker (PWA Core - v2)
  * 
  * Fitur:
- * 1. App Shell Pre-caching untuk loading instan
- * 2. Offline-First Resilience (Aplikasi tetap terbuka & responsif saat internet mati)
- * 3. Stale-While-Revalidate untuk static assets (CSS, JS, Fonts, Images)
- * 4. Background Sync & Cache Purging
+ * 1. App Shell Pre-caching untuk aset statis inti
+ * 2. Auto-Upgrade & Cache Purging (Menghindari stale cache saat ada update baru)
+ * 3. Network-First untuk Navigasi HTML (Memastikan aplikasi selalu memuat versi terbaru)
+ * 4. Stale-While-Revalidate untuk static assets (CSS, JS, Fonts, Images)
+ * 5. Offline-First Resilience (Aplikasi tetap berfungsi saat internet mati)
  */
 
-const CACHE_NAME = 'napas-pwa-v1';
+const CACHE_NAME = 'napas-pwa-v2';
 const STATIC_ASSETS = [
-  './',
-  './index.html',
   './manifest.webmanifest',
   './assets/napas_icon.svg',
   './icon-192.png',
@@ -23,29 +22,30 @@ const STATIC_ASSETS = [
   './assets/google.png'
 ];
 
-// 1. INSTALL EVENT: Pre-cache static assets
+// 1. INSTALL EVENT: Pre-cache static assets & skip waiting
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Pre-cache core shell, ignore individual asset failure if any
       return Promise.allSettled(
         STATIC_ASSETS.map((url) =>
           cache.add(url).catch((err) => {
-            console.warn(`[SW] Pre-cache skip for ${url}:`, err);
+            console.warn(`[SW v2] Pre-cache skip for ${url}:`, err);
           })
         )
       );
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
-// 2. ACTIVATE EVENT: Bersihkan cache versi lama & klaim client
+// 2. ACTIVATE EVENT: Bersihkan cache versi lama & klaim semua tab aktif
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log(`[SW v2] Menghapus cache usang: ${key}`);
             return caches.delete(key);
           }
         })
@@ -54,7 +54,14 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. FETCH EVENT: Strategi Caching Pintar
+// 3. MESSAGE EVENT: Listener manual untuk pembaruan instan
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// 4. FETCH EVENT: Strategi Caching Pintar
 self.addEventListener('fetch', (event) => {
   const request = event.request;
 
@@ -67,7 +74,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // A. NAVIGASI HALAMAN HTML (App Shell Strategy: Network First -> Cache Fallback)
+  // A. NAVIGASI HALAMAN HTML (Network First -> Cache Fallback -> Offline Page)
+  // Menjamin user selalu mendapatkan index.html terbaru dengan hash JS/CSS terkini
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -122,6 +130,7 @@ self.addEventListener('fetch', (event) => {
           })
           .catch(() => cachedResponse);
 
+        // Jika URL memiliki hash bundle (seperti /assets/index-*.js), safe to use cache
         return cachedResponse || fetchPromise;
       })
     );

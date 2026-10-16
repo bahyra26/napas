@@ -80,14 +80,21 @@ class PwaManager {
       navigator.serviceWorker
         .register('./sw.js', { scope: './' })
         .then((registration) => {
+          // Trigger pembaruan aktif
+          registration.update().catch(() => {});
+
           // Pantau pembaruan service worker
           registration.onupdatefound = () => {
             const installingWorker = registration.installing;
             if (installingWorker) {
               installingWorker.onstatechange = () => {
-                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  this.updateAvailableState = true;
-                  this.notifyUpdate(true);
+                if (installingWorker.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    console.log('[PWA] Update baru terdeteksi. Mengaktifkan...');
+                    installingWorker.postMessage({ type: 'SKIP_WAITING' });
+                    this.updateAvailableState = true;
+                    this.notifyUpdate(true);
+                  }
                 }
               };
             }
@@ -96,6 +103,16 @@ class PwaManager {
         .catch((err) => {
           console.warn('[PWA] Service Worker registration failed:', err);
         });
+
+      // Otomatis reload halaman begitu controller baru mengklaim halaman
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          console.log('[PWA] Versi baru aktif. Memuat ulang halaman...');
+          window.location.reload();
+        }
+      });
     });
   }
 
