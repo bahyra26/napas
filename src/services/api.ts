@@ -1268,7 +1268,7 @@ const rawApi = {
       try {
         const [profRes, userRes] = await Promise.all([
           supabase.from('user_profiles').select('*').eq('user_id', userId).maybeSingle(),
-          supabase.from('users').select('id, nama, email, onboarded').eq('id', userId).maybeSingle(),
+          supabase.from('users').select('id, nama, email, avatar_url, onboarded').eq('id', userId).maybeSingle(),
         ]);
 
         const profRow = profRes.data;
@@ -1290,6 +1290,7 @@ const rawApi = {
             focus_whitelist: Array.isArray(profRow?.focus_whitelist) ? profRow.focus_whitelist : [],
             focus_blacklist: Array.isArray(profRow?.focus_blacklist) ? profRow.focus_blacklist : [],
             agent_action: profRow?.agent_action || 'warn_then_close',
+            avatar_url: userRow?.avatar_url || profRow?.avatar_url || '',
             onboarded: isOnboarded,
           };
           try {
@@ -1361,6 +1362,14 @@ const rawApi = {
           await supabase
             .from('users')
             .update({ onboarded: partial.onboarded })
+            .eq('id', userId);
+        }
+
+        // B. Perbarui avatar_url di tabel users
+        if (partial.avatar_url !== undefined) {
+          await supabase
+            .from('users')
+            .update({ avatar_url: partial.avatar_url })
             .eq('id', userId);
         }
 

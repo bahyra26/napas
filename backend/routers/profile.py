@@ -103,6 +103,7 @@ def upsert_user_profile(user_id: str, payload: ProfileUpsert):
     if payload.focus_whitelist is not None: data["focus_whitelist"] = payload.focus_whitelist
     if payload.focus_blacklist is not None: data["focus_blacklist"] = payload.focus_blacklist
     if payload.agent_action is not None: data["agent_action"] = payload.agent_action
+    if payload.avatar_url is not None: data["avatar_url"] = payload.avatar_url
     if payload.onboarded is not None: data["onboarded"] = payload.onboarded
 
     u_uuid = deterministic_uuid(user_id)
@@ -137,6 +138,13 @@ def upsert_user_profile(user_id: str, payload: ProfileUpsert):
         except Exception as e:
             print(f"[Supabase Profile Upsert Error]: {e}")
 
+        # Update avatar_url di tabel users Supabase agar konsisten
+        if payload.avatar_url is not None:
+            try:
+                supabase.table("users").update({"avatar_url": payload.avatar_url}).in_("id", [user_id, u_uuid]).execute()
+            except Exception as e:
+                print(f"[Supabase Users Avatar Error]: {e}")
+
         if payload.onboarded is not None:
             try:
                 supabase.table("users").update({"onboarded": payload.onboarded}).in_("id", [user_id, u_uuid]).execute()
@@ -145,6 +153,7 @@ def upsert_user_profile(user_id: str, payload: ProfileUpsert):
 
     return {
         **saved,
+        "avatar_url": data.get("avatar_url") or saved.get("avatar_url", ""),
         "onboarded": payload.onboarded if payload.onboarded is not None else saved.get("onboarded", True)
     }
 

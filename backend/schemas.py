@@ -246,6 +246,7 @@ class ProfileUpsert(BaseModel):
     focus_whitelist: Optional[List[str]] = None
     focus_blacklist: Optional[List[str]] = None
     agent_action: Optional[str] = Field(default=None, pattern="^(warn_only|minimize|warn_then_close|close)$")
+    avatar_url: Optional[str] = None
     onboarded: Optional[bool] = None
 
 

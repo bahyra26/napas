@@ -4992,6 +4992,13 @@ body[data-tab="settings"] .dashboard-container {
   gap: 20px;
 }
 
+.hero-avatar-wrapper {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+}
+
 .hero-avatar {
   width: 68px;
   height: 68px;
@@ -5004,6 +5011,57 @@ body[data-tab="settings"] .dashboard-container {
   flex-shrink: 0;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
   overflow: hidden;
+  position: relative;
+}
+
+.hero-avatar-clickable {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+}
+
+.hero-avatar-clickable:hover {
+  transform: scale(1.04);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+.hero-avatar-camera-btn {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #065440;
+  border: 2px solid #0a6b52;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.18s, background-color 0.18s;
+  padding: 0;
+  z-index: 2;
+}
+
+.hero-avatar-camera-btn:hover {
+  transform: scale(1.15);
+  background: #e6f7f2;
+}
+
+.hero-avatar-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 84, 64, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  z-index: 3;
+}
+
+.hero-spinner {
+  animation: spin 1s linear infinite;
 }
 
 .hero-avatar-initials {
@@ -5017,6 +5075,24 @@ body[data-tab="settings"] .dashboard-container {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.hero-remove-avatar-btn {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fecaca;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hero-remove-avatar-btn:hover {
+  background: rgba(239, 68, 68, 0.35);
+  color: #ffffff;
+  border-color: rgba(239, 68, 68, 0.6);
 }
 
 .hero-identity {

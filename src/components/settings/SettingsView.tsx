@@ -167,6 +167,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onNotify('Preferensi ritme dan notifikasi berhasil di-reset ke bawaan.', '🔄');
   };
 
+  const handleUpdateAvatar = async (avatarUrl: string) => {
+    const userId = getStoredUserId();
+    if (!userId) return;
+
+    const res = await api.updateProfile(userId, { avatar_url: avatarUrl });
+    if (res) {
+      setProfile(res);
+      onProfileUpdated?.(res);
+    } else {
+      setProfile((prev) => (prev ? { ...prev, avatar_url: avatarUrl } : null));
+      if (profile) {
+        onProfileUpdated?.({ ...profile, avatar_url: avatarUrl });
+      }
+    }
+  };
+
   return (
     <div className="settings-container">
       {/* Intro Subtitle */}
@@ -185,6 +201,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             userEmail={userEmail}
             isCalendarConnected={isCalendarConnected}
             onOpenCalendarModal={() => setIsCalendarModalOpen(true)}
+            onUpdateAvatar={handleUpdateAvatar}
+            onNotify={onNotify}
           />
 
           {/* 2. Main 2-Column Balanced Grid */}
