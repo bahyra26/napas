@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MoodType } from '../../types';
 
 interface MoodCheckinProps {
@@ -8,9 +8,13 @@ interface MoodCheckinProps {
 
 export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect, currentScore }) => {
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(() => {
-    if (currentScore === 5) return 'Bahagia / Senang';
+    if (currentScore === 5 || currentScore === 4) return 'Bahagia / Senang';
     if (currentScore === 3) return 'Netral';
     if (currentScore && currentScore <= 2) return 'Sedih';
+    try {
+      const stored = localStorage.getItem('napas_checkin_mood');
+      if (stored === 'Bahagia / Senang' || stored === 'Netral' || stored === 'Sedih') return stored;
+    } catch {}
     return null;
   });
 
@@ -18,8 +22,24 @@ export const MoodCheckin: React.FC<MoodCheckinProps> = ({ onMoodSelect, currentS
   const [energi, setEnergi] = useState<number>(3);
   const [showDetails, setShowDetails] = useState<boolean>(false);
 
+  useEffect(() => {
+    if (currentScore === 5 || currentScore === 4) {
+      setSelectedMood('Bahagia / Senang');
+      try { localStorage.setItem('napas_checkin_mood', 'Bahagia / Senang'); } catch {}
+    } else if (currentScore === 3) {
+      setSelectedMood('Netral');
+      try { localStorage.setItem('napas_checkin_mood', 'Netral'); } catch {}
+    } else if (currentScore && currentScore <= 2) {
+      setSelectedMood('Sedih');
+      try { localStorage.setItem('napas_checkin_mood', 'Sedih'); } catch {}
+    }
+  }, [currentScore]);
+
   const handleSelect = (mood: MoodType, icon: string, score: number) => {
     setSelectedMood(mood);
+    try {
+      localStorage.setItem('napas_checkin_mood', mood);
+    } catch {}
     onMoodSelect(mood, icon, score, jamTidur, energi);
   };
 

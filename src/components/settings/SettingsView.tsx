@@ -12,9 +12,10 @@ import { ManageDataModal } from '../modals/ManageDataModal';
 
 interface SettingsViewProps {
   onNotify: (message: string, icon?: string) => void;
+  onProfileUpdated?: (prof: StudentProfile) => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify, onProfileUpdated }) => {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [userName, setUserName] = useState<string>('Mahasiswa');
   const [userEmail, setUserEmail] = useState<string>('');
@@ -72,9 +73,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNotify }) => {
     // Update in profile table
     const res = await api.updateProfile(userId, updated);
     if (res) {
-      setProfile((prev) => (prev ? { ...prev, ...updated } : (updated as StudentProfile)));
-      if (updated.nama) setUserName(updated.nama);
+      const merged = { ...(profile || {}), ...updated, ...res } as StudentProfile;
+      setProfile(merged);
+      if (updated.nama) {
+        setUserName(updated.nama);
+        localStorage.setItem('napas_user_name', updated.panggilan || updated.nama);
+      }
       if (updated.email) setUserEmail(updated.email);
+      onProfileUpdated?.(merged);
       return true;
     }
     return false;

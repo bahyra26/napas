@@ -30,10 +30,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
 
   // Step 1: Profil
-  const [panggilan, setPanggilan] = useState(initialName.split(' ')[0] || 'Dinda');
-  const [kampus, setKampus] = useState('Universitas Gadjah Mada');
-  const [jurusan, setJurusan] = useState('Ilmu Komputer');
-  const [semester, setSemester] = useState(6);
+  const [panggilan, setPanggilan] = useState(() => {
+    return initialName !== 'Mahasiswa' ? initialName.split(' ')[0] : '';
+  });
+  const [kampus, setKampus] = useState('');
+  const [jurusan, setJurusan] = useState('');
+  const [semester, setSemester] = useState(2);
 
   // Step 2: Ritme
   const [jamTidur, setJamTidur] = useState('23:00');
@@ -105,9 +107,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       onboarded: true,
     };
 
+    try {
+      localStorage.setItem(`napas_user_onboarded_${userId}`, 'true');
+    } catch {}
+
     const savedProfile = await api.updateProfile(userId, profilePayload);
 
-    // Simpan jadwal kuliah ke backend
+    // Simpan jadwal kuliah ke database (Supabase / Backend)
     if (schedules.length > 0) {
       await api.bulkSetClassSchedule(
         userId,
@@ -125,9 +131,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     setSubmitting(false);
     onNotify(`Selamat datang, ${panggilan}! Radar burnout-mu siap digunakan.`, '🌿');
     if (savedProfile) {
-      onComplete(savedProfile);
+      onComplete({ ...savedProfile, onboarded: true });
     } else {
-      onComplete({ ...profilePayload, user_id: userId } as StudentProfile);
+      onComplete({ ...profilePayload, user_id: userId, onboarded: true } as StudentProfile);
     }
   };
 

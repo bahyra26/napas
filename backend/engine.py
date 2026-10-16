@@ -96,9 +96,13 @@ def calculate_stress_score(metrics_list: List[Dict[str, Any]]) -> Tuple[Optional
     if not metrics_list:
         return None, ["sensor visual tidak aktif hari ini"]
 
-    valid_samples = [m for m in metrics_list if m.get("face_visible") is not False]
+    valid_samples = [
+        m for m in metrics_list
+        if m.get("face_visible") is not False
+        and (m.get("blink_rate") is not None or m.get("brow_tension") is not None or m.get("gaze_minutes") is not None)
+    ]
     if not valid_samples:
-        return None, ["wajah tidak terdeteksi di depan laptop"]
+        return None, ["sensor visual tidak aktif hari ini"]
 
     ref_blink = 15.0
     avg_blink = sum(float(m.get("blink_rate") or ref_blink) for m in valid_samples) / len(valid_samples)
@@ -165,7 +169,20 @@ def calculate_checkin_score(latest_checkin: Optional[Dict[str, Any]]) -> Tuple[O
         return None, ["belum ada check-in hari ini"]
 
     skor = int(latest_checkin.get("skor") or 3)
-    mood_comp = (5 - skor) * 25.0
+    # Skala klinis burnout realistis:
+    # Skor 5 (Bahagia / Senang) -> baseline burnout prima 16% (Zona Hijau)
+    # Skor 4 (Segar / Baik) -> baseline burnout stabil 22% (Zona Hijau)
+    # Skor 3 (Netral / Biasa saja) -> burnout sedang 45% (Zona Kuning)
+    # Skor 2 (Cukup lelah) -> burnout beban tinggi 70% (Zona Oranye)
+    # Skor 1 (Sedih / Sangat lelah) -> beban tinggi 85% (Zona Merah / Oranye)
+    mood_map = {
+        5: 16.0,
+        4: 22.0,
+        3: 45.0,
+        2: 70.0,
+        1: 85.0
+    }
+    mood_comp = mood_map.get(skor, (5 - skor) * 18.0 + 16.0)
 
     jam_tidur = latest_checkin.get("jam_tidur")
     energi = latest_checkin.get("energi")
@@ -176,9 +193,9 @@ def calculate_checkin_score(latest_checkin: Optional[Dict[str, Any]]) -> Tuple[O
     if jam_tidur is not None:
         jt = float(jam_tidur)
         if jt < 7.0:
-            sleep_stress = min(100.0, max(0.0, ((7.0 - jt) / 3.0) * 100.0))
+            sleep_stress = min(100.0, max(0.0, ((7.0 - jt) / 3.0) * 80.0 + 20.0))
         else:
-            sleep_stress = 0.0
+            sleep_stress = 16.0
         components.append(sleep_stress)
         weights.append(0.8)
 
@@ -189,7 +206,14 @@ def calculate_checkin_score(latest_checkin: Optional[Dict[str, Any]]) -> Tuple[O
 
     if energi is not None:
         eng = int(energi)
-        energy_stress = (5 - eng) * 25.0
+        energy_map = {
+            5: 16.0,
+            4: 25.0,
+            3: 48.0,
+            2: 72.0,
+            1: 88.0
+        }
+        energy_stress = energy_map.get(eng, (5 - eng) * 18.0 + 16.0)
         components.append(energy_stress)
         weights.append(0.6)
         if eng <= 2:
@@ -309,6 +333,10 @@ def compute_index(
     # Modifikator tren 3-hari
     if is_trend_up:
         index = min(100.0, index + 10.0)
+
+    # Batas bawah psikometrik: skor burnout mahasiswa yang prima berada di ambang sehat 16-20%, bukan 0%
+    if index < 15.0 and len(parts) < 3:
+        index = 16.0
 
     index = round(max(0.0, min(100.0, index)), 1)
 

@@ -39,11 +39,54 @@ export const App: React.FC = () => {
   const [isAutoPlanning, setIsAutoPlanning] = useState(false);
 
   // Burnout Engine state
-  const [burnoutScore, setBurnoutScore] = useState<number>(20);
-  const [zonaLabel, setZonaLabel] = useState<string>('Hijau (Prima)');
+  const [burnoutScore, setBurnoutScore] = useState<number>(() => {
+    try {
+      const storedUid = typeof window !== 'undefined' ? localStorage.getItem('napas_user_id') : null;
+      if (storedUid) {
+        const cached = localStorage.getItem(`napas_checkin_score_${storedUid}`);
+        if (cached === '3') return 45;
+        if (cached === '1' || cached === '2') return 79;
+        if (cached === '5' || cached === '4') return 16;
+      }
+      const mood = typeof window !== 'undefined' ? localStorage.getItem('napas_checkin_mood') : null;
+      if (mood === 'Netral') return 45;
+      if (mood === 'Sedih') return 79;
+      if (mood === 'Bahagia / Senang') return 16;
+    } catch {}
+    return 16;
+  });
+  const [zonaLabel, setZonaLabel] = useState<string>(() => {
+    try {
+      const storedUid = typeof window !== 'undefined' ? localStorage.getItem('napas_user_id') : null;
+      if (storedUid) {
+        const cached = localStorage.getItem(`napas_checkin_score_${storedUid}`);
+        if (cached === '3') return 'Kuning (Waspada)';
+        if (cached === '1' || cached === '2') return 'Oranye (Beban Tinggi)';
+        if (cached === '5' || cached === '4') return 'Hijau (Prima)';
+      }
+      const mood = typeof window !== 'undefined' ? localStorage.getItem('napas_checkin_mood') : null;
+      if (mood === 'Netral') return 'Kuning (Waspada)';
+      if (mood === 'Sedih') return 'Oranye (Beban Tinggi)';
+      if (mood === 'Bahagia / Senang') return 'Hijau (Prima)';
+    } catch {}
+    return 'Hijau (Prima)';
+  });
   const [trendText, setTrendText] = useState<string>('Kondisi stabil');
   const [alasanChips, setAlasanChips] = useState<string[]>([]);
-  const [todayCheckinScore, setTodayCheckinScore] = useState<number | undefined>(undefined);
+  const [todayCheckinScore, setTodayCheckinScore] = useState<number | undefined>(() => {
+    try {
+      const storedUid = typeof window !== 'undefined' ? localStorage.getItem('napas_user_id') : null;
+      if (storedUid) {
+        const cached = localStorage.getItem(`napas_checkin_score_${storedUid}`);
+        if (cached) return Number(cached);
+      }
+      const mood = typeof window !== 'undefined' ? localStorage.getItem('napas_checkin_mood') : null;
+      if (mood === 'Bahagia / Senang') return 5;
+      if (mood === 'Netral') return 3;
+      if (mood === 'Sedih') return 1;
+    } catch {}
+    return undefined;
+  });
 
   // Task & Schedule data states
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
@@ -76,7 +119,11 @@ export const App: React.FC = () => {
     }, 3000);
   };
 
-  const studentName = studentProfile?.panggilan || studentProfile?.nama || 'Raka';
+  const studentName =
+    studentProfile?.panggilan ||
+    studentProfile?.nama ||
+    (typeof window !== 'undefined' ? localStorage.getItem('napas_user_name') : null) ||
+    'Mahasiswa';
 
   useEffect(() => {
     document.body.setAttribute('data-tab', activeTab);
@@ -187,10 +234,22 @@ export const App: React.FC = () => {
       api.getClassSchedule(uid),
     ]);
 
+    const isAlreadyOnboarded =
+      prof?.onboarded === true ||
+      localStorage.getItem(`napas_user_onboarded_${uid}`) === 'true';
+
     if (prof) {
-      setStudentProfile(prof);
-      if (prof.onboarded === false) {
+      setStudentProfile({ ...prof, onboarded: isAlreadyOnboarded });
+      if (!isAlreadyOnboarded) {
         setIsOnboardingOpen(true);
+      } else {
+        setIsOnboardingOpen(false);
+      }
+    } else {
+      if (!isAlreadyOnboarded) {
+        setIsOnboardingOpen(true);
+      } else {
+        setIsOnboardingOpen(false);
       }
     }
 
@@ -218,6 +277,16 @@ export const App: React.FC = () => {
   // Auth State Listener & Mount
   useEffect(() => {
     async function checkAuthAndInit() {
+      // 0. Ambil provider_token langsung dari URL hash jika user baru saja dialihkan dari Google OAuth
+      let hashProviderToken: string | null = null;
+      if (typeof window !== 'undefined' && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        hashProviderToken = hashParams.get('provider_token');
+        if (hashProviderToken) {
+          authService.setStoredProviderToken(hashProviderToken);
+        }
+      }
+
       // 1. Eksekusi instan jika userId lokal sudah tersimpan agar UI langsung ter-render tanpa delay
       const storedUid = getStoredUserId();
       if (storedUid) {
@@ -228,8 +297,9 @@ export const App: React.FC = () => {
       try {
         const session = await authService.getSession();
         if (session?.user) {
-          if (session.provider_token) {
-            authService.setStoredProviderToken(session.provider_token);
+          const pt = session.provider_token || hashProviderToken || authService.getStoredProviderToken();
+          if (pt) {
+            authService.setStoredProviderToken(pt);
           }
           const synced = await api.syncAuth({
             access_token: session.access_token,
@@ -243,7 +313,7 @@ export const App: React.FC = () => {
             if (synced.id !== storedUid) {
               await initUserSession(synced.id);
             }
-            if (session.provider_token) {
+            if (pt) {
               googleCalendarService.fetchAndSyncEvents(synced.id).then((res) => {
                 if (res.success) {
                   loadRadar(synced.id);
@@ -251,6 +321,10 @@ export const App: React.FC = () => {
                   showToast('Google Calendar asli berhasil disinkronkan!', '📅');
                 }
               });
+            }
+            // Bersihkan hash dari URL agar rapi
+            if (window.location.hash && window.history.replaceState) {
+              window.history.replaceState(null, '', window.location.pathname + window.location.search);
             }
             return;
           }
@@ -265,14 +339,29 @@ export const App: React.FC = () => {
     // Listener jika session berubah
     const unsub = authService.onAuthStateChange(async (session) => {
       if (session?.user) {
+        if (session.provider_token) {
+          authService.setStoredProviderToken(session.provider_token);
+        }
         const synced = await api.syncAuth({
           access_token: session.access_token,
           auth_id: session.user.id,
           email: session.user.email,
+          nama: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
         });
         if (synced) {
           setStoredUserId(synced.id, synced.nama || synced.email || 'Mahasiswa');
           await initUserSession(synced.id);
+          const pt = session.provider_token || authService.getStoredProviderToken();
+          if (pt) {
+            googleCalendarService.fetchAndSyncEvents(synced.id).then((res) => {
+              if (res.success) {
+                loadRadar(synced.id);
+                loadWorkloads(synced.id);
+                showToast('Google Calendar asli berhasil disinkronkan!', '📅');
+              }
+            });
+          }
         }
       }
     });
@@ -287,23 +376,6 @@ export const App: React.FC = () => {
       loadWorkloads(userId);
     }
   }, [activeTab, userId, loadRadar, loadWorkloads]);
-
-  const handleDemoLogin = async () => {
-    const demoUser = await api.initDemoUser();
-    if (demoUser) {
-      setStoredUserId(demoUser.id, demoUser.nama);
-      localStorage.setItem('napas_demo_mode', 'true');
-      await initUserSession(demoUser.id);
-      showToast('Masuk sebagai Raka Pratama (Mode Demo).', '⚡');
-    } else {
-      // Offline fallback
-      const fallbackId = '951459f9-e92f-4193-b470-ea87a899e18d';
-      setStoredUserId(fallbackId, 'Raka Pratama');
-      localStorage.setItem('napas_demo_mode', 'true');
-      setUserId(fallbackId);
-      showToast('Masuk Mode Demo Raka.', '⚡');
-    }
-  };
 
   const handleCustomLogin = async (
     identifier: string,
@@ -334,17 +406,44 @@ export const App: React.FC = () => {
     setStoredUserId(uid, name);
     localStorage.removeItem('napas_demo_mode');
 
-    // Buat profil di backend
-    await api.updateProfile(uid, {
-      panggilan: name.split(' ')[0],
-      kampus: campus,
-      jurusan: major,
-      semester: 4,
-      onboarded: true,
-    });
+    // Cek profil yang ada
+    const existing = await api.getProfile(uid);
+    const isAlreadyOnboarded =
+      existing?.onboarded === true ||
+      localStorage.getItem(`napas_user_onboarded_${uid}`) === 'true';
+
+    if (!isAlreadyOnboarded) {
+      const baseProf: Partial<StudentProfile> = {
+        panggilan: name.split(' ')[0],
+        onboarded: false,
+      };
+      if (campus) baseProf.kampus = campus;
+      if (major) baseProf.jurusan = major;
+      const created = await api.updateProfile(uid, baseProf);
+      setStudentProfile(created || {
+        user_id: uid,
+        nama: name,
+        panggilan: name.split(' ')[0],
+        kampus: campus || '',
+        jurusan: major || '',
+        semester: 1,
+        jam_tidur: '23:00',
+        jam_bangun: '06:00',
+        kronotipe: 'pagi',
+        target_fokus_jam: 4.0,
+        focus_whitelist: [],
+        focus_blacklist: [],
+        agent_action: 'warn_then_close',
+        onboarded: false,
+      });
+      setIsOnboardingOpen(true);
+    } else {
+      setStudentProfile(existing);
+      setIsOnboardingOpen(false);
+    }
 
     await initUserSession(uid);
-    showToast(`Selamat datang kembali, ${name}! Profil berhasil disinkronkan.`, '🎓');
+    showToast(`Selamat datang, ${name}!`, '🎓');
   };
 
   const handleLogout = async () => {
@@ -353,9 +452,11 @@ export const App: React.FC = () => {
     localStorage.removeItem('napas_user_name');
     localStorage.removeItem('napas_demo_mode');
     localStorage.removeItem('napas_active_focus_session');
+    localStorage.removeItem('napas_checkin_mood');
     focusStore.resetForUser();
     setUserId(null);
     setStudentProfile(null);
+    setTodayCheckinScore(undefined);
     showToast('Berhasil keluar.', '👋');
   };
 
@@ -407,6 +508,18 @@ export const App: React.FC = () => {
   ) => {
     showToast(`Mood dicatat: ${mood}`, icon);
     setTodayCheckinScore(score);
+
+    // Optimistically update score & zona immediately for instant reactive feedback
+    if (score === 5 || score === 4) {
+      setBurnoutScore(16);
+      setZonaLabel('Hijau (Prima)');
+    } else if (score === 3) {
+      setBurnoutScore(45);
+      setZonaLabel('Kuning (Waspada)');
+    } else if (score <= 2) {
+      setBurnoutScore(72);
+      setZonaLabel('Oranye (Beban Tinggi)');
+    }
 
     if (userId) {
       await api.postCheckIn(userId, score, `Mood: ${mood}`, jamTidur, energi);
@@ -504,7 +617,6 @@ export const App: React.FC = () => {
     return (
       <div className="app-viewport">
         <LoginView
-          onDemoLogin={handleDemoLogin}
           onCustomLogin={handleCustomLogin}
           onNotify={showToast}
         />
@@ -621,7 +733,16 @@ export const App: React.FC = () => {
           {/* Tab 6: Settings */}
           {activeTab === 'settings' && (
             <section id="view-settings" className="page-view active">
-              <SettingsView onNotify={showToast} />
+              <SettingsView
+                onNotify={showToast}
+                onProfileUpdated={(prof) => {
+                  setStudentProfile(prof);
+                  const nameVal = prof.panggilan || prof.nama;
+                  if (nameVal) {
+                    localStorage.setItem('napas_user_name', nameVal);
+                  }
+                }}
+              />
             </section>
           )}
         </div>
@@ -659,10 +780,20 @@ export const App: React.FC = () => {
           isOpen={isOnboardingOpen}
           userId={userId}
           initialName={studentName}
-          onComplete={(prof) => {
+          onComplete={async (prof) => {
             setStudentProfile(prof);
             setIsOnboardingOpen(false);
-            initUserSession(userId);
+            if (prof.panggilan) {
+              localStorage.setItem('napas_user_name', prof.panggilan);
+            }
+            if (userId) {
+              await Promise.all([
+                loadIndexToday(userId),
+                loadWorkloads(userId),
+                loadRadar(userId),
+                focusStore.loadUserWhitelist(userId),
+              ]);
+            }
           }}
           onNotify={showToast}
         />

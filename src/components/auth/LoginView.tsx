@@ -3,13 +3,11 @@ import { authService } from '../../services/supabase';
 import { setStoredUserId } from '../../services/api';
 
 interface LoginViewProps {
-  onDemoLogin: () => void;
   onCustomLogin?: (identifier: string, name: string, campus: string, major: string) => void | Promise<void>;
   onNotify: (message: string, icon?: string) => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({
-  onDemoLogin,
   onCustomLogin,
   onNotify,
 }) => {
@@ -44,10 +42,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
     const res = await authService.signInWithGoogle();
     if (res.error) {
       setLoading(false);
-      onNotify(
-        `${res.error} (Tips: Anda dapat langsung mengisi form atau klik 'Mode Demo Cepat')`,
-        'ℹ️'
-      );
+      onNotify(res.error, 'ℹ️');
     }
   };
 
@@ -84,7 +79,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
     const formattedName = resolvedName.charAt(0).toUpperCase() + resolvedName.slice(1);
 
     if (onCustomLogin) {
-      await onCustomLogin(loginEmailOrUser.trim(), formattedName, 'Universitas Gadjah Mada', 'Teknik Informatika');
+      await onCustomLogin(loginEmailOrUser.trim(), formattedName, '', '');
     }
     onNotify(`Selamat datang kembali, ${formattedName}!`, '🌱');
   };
@@ -139,7 +134,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
     const cleanName = regFullName.trim();
     const ident = regEmail.trim() || regUsername.trim() || cleanName;
     if (onCustomLogin) {
-      await onCustomLogin(ident, cleanName, 'Universitas Gadjah Mada', 'Mahasiswa');
+      await onCustomLogin(ident, cleanName, '', '');
     }
     onNotify(`Akun berhasil dibuat! Selamat datang di NAPAS, ${cleanName}!`, '🎉');
   };
@@ -397,16 +392,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
                     }}
                   />
                   <span>Login dengan Google</span>
-                </button>
-
-                {/* Quick Demo Button */}
-                <button
-                  type="button"
-                  className="auth-demo-pill"
-                  onClick={onDemoLogin}
-                  title="Masuk instan dengan profil demo tanpa kredensial"
-                >
-                  ⚡ Masuk Cepat (Mode Demo Raka)
                 </button>
               </form>
 
@@ -708,15 +693,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
                     }}
                   />
                   <span>Daftar dengan Google</span>
-                </button>
-
-                {/* Subtle Quick Demo */}
-                <button
-                  type="button"
-                  className="auth-demo-pill"
-                  onClick={onDemoLogin}
-                >
-                  ⚡ Coba Mode Demo Tanpa Daftar
                 </button>
               </form>
 
