@@ -5,7 +5,7 @@ import urllib.error
 from fastapi import APIRouter, HTTPException, Query
 from datetime import timedelta
 from typing import List, Optional
-from db import supabase, now_wib
+from db import supabase, now_wib, ensure_uuid, get_valid_user_uuids
 from schemas import (
     WeeklyInsightResponse,
     WellnessPlaybookItem,
@@ -108,8 +108,9 @@ def get_weekly_insight(user_id: str):
 
     # Ambil nama user untuk personalisasi prompt
     user_name = "Mahasiswa"
+    valid_uids = get_valid_user_uuids(user_id)
     try:
-        u_res = supabase.table("users").select("nama").eq("id", user_id).execute()
+        u_res = supabase.table("users").select("nama").in_("id", valid_uids).execute()
         if u_res.data and len(u_res.data) > 0:
             user_name = u_res.data[0].get("nama") or "Mahasiswa"
     except Exception:
@@ -121,7 +122,7 @@ def get_weekly_insight(user_id: str):
         try:
             idx_res = supabase.table("daily_index") \
                 .select("tanggal, index, zona") \
-                .eq("user_id", user_id) \
+                .in_("user_id", valid_uids) \
                 .gte("tanggal", start_date) \
                 .order("tanggal", desc=False) \
                 .execute()
@@ -143,7 +144,7 @@ def get_weekly_insight(user_id: str):
         try:
             inter_res = supabase.table("interventions") \
                 .select("*") \
-                .eq("user_id", user_id) \
+                .in_("user_id", valid_uids) \
                 .gte("ts", start_ts) \
                 .execute()
             if inter_res.data:

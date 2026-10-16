@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any
-from db import supabase, now_wib, start_of_day_wib, iso_start_today, ensure_uuid
+from db import supabase, now_wib, start_of_day_wib, iso_start_today, ensure_uuid, ensure_user_in_supabase, get_valid_user_uuids
 from schemas import BurnoutIndexResponse
 from engine import (
     calculate_load_score,
@@ -23,7 +23,9 @@ def get_or_compute_today_index(user_id: str):
     if not supabase:
         raise HTTPException(status_code=500, detail="Database belum terhubung. Pastikan file .env sudah diisi.")
 
-    user_id = ensure_uuid(user_id)
+    u_id = ensure_uuid(user_id)
+    ensure_user_in_supabase(u_id)
+    valid_uids = get_valid_user_uuids(user_id)
 
     current_wib = now_wib()
     today_wib_str = current_wib.date().isoformat()
@@ -33,7 +35,7 @@ def get_or_compute_today_index(user_id: str):
     # 1. Query Workload items (status 'belum')
     wl_res = supabase.table("workload_items") \
         .select("*") \
-        .eq("user_id", user_id) \
+        .in_("user_id", valid_uids) \
         .execute()
     workload_items = wl_res.data or []
     load_score, load_alasan = calculate_load_score(workload_items, now=current_wib)
@@ -41,7 +43,7 @@ def get_or_compute_today_index(user_id: str):
     # 2. Query Sensor Metrics 24 jam terakhir (untuk StressScore) dan hari ini (untuk DistractionScore)
     sm_res = supabase.table("sensor_metrics") \
         .select("*") \
-        .eq("user_id", user_id) \
+        .in_("user_id", valid_uids) \
         .gte("ts", twenty_four_hours_ago) \
         .execute()
     metrics_24h = sm_res.data or []
@@ -55,7 +57,7 @@ def get_or_compute_today_index(user_id: str):
     # 3. Query Check-in terbaru hari ini (WIB)
     ci_res = supabase.table("check_ins") \
         .select("*") \
-        .eq("user_id", user_id) \
+        .in_("user_id", valid_uids) \
         .gte("ts", today_start_iso) \
         .order("ts", desc=True) \
         .limit(1) \
@@ -67,7 +69,7 @@ def get_or_compute_today_index(user_id: str):
     hist_start = (current_wib.date() - timedelta(days=8)).isoformat()
     history_res = supabase.table("daily_index") \
         .select("tanggal, index") \
-        .eq("user_id", user_id) \
+        .in_("user_id", valid_uids) \
         .gte("tanggal", hist_start) \
         .lt("tanggal", today_wib_str) \
         .order("tanggal", desc=False) \
@@ -96,7 +98,7 @@ def get_or_compute_today_index(user_id: str):
 
     # 7. Upsert ke tabel daily_index
     daily_record = {
-        "user_id": user_id,
+        "user_id": u_id,
         "tanggal": today_wib_str,
         "index": final_index,
         "zona": zona,
@@ -107,7 +109,10 @@ def get_or_compute_today_index(user_id: str):
         "alasan_json": final_alasan,
         "trend_flag": is_trend_up
     }
-    supabase.table("daily_index").upsert(daily_record, on_conflict="user_id,tanggal").execute()
+    try:
+        supabase.table("daily_index").upsert(daily_record, on_conflict="user_id,tanggal").execute()
+    except Exception as e:
+        print(f"[Daily Index Upsert Warning]: {e}")
 
     return BurnoutIndexResponse(
         user_id=user_id,
@@ -130,13 +135,15 @@ def get_index_history(user_id: str, days: int = Query(default=30, ge=1, le=90)):
     if not supabase:
         raise HTTPException(status_code=500, detail="Database belum terhubung.")
 
+    valid_uids = get_valid_user_uuids(user_id)
     start_date = (now_wib().date() - timedelta(days=days)).isoformat()
 
     res = supabase.table("daily_index") \
         .select("*") \
-        .eq("user_id", user_id) \
+        .in_("user_id", valid_uids) \
         .gte("tanggal", start_date) \
         .order("tanggal", desc=False) \
         .execute()
 
     return res.data or []
+

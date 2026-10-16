@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from db import supabase, ensure_uuid, ensure_user_in_supabase
+from db import supabase, ensure_uuid, ensure_user_in_supabase, get_valid_user_uuids
 from local_db import (
     local_save_workload_item,
     local_list_workload_items,
@@ -11,6 +11,7 @@ from local_db import (
 from schemas import WorkloadCreate, WorkloadUpdateStatus, WorkloadResponse
 
 router = APIRouter(prefix="/workload", tags=["Workload"])
+
 
 @router.post("", response_model=WorkloadResponse)
 def create_workload_item(payload: WorkloadCreate):
@@ -72,14 +73,14 @@ def update_workload_item(item_id: str, payload: dict):
 @router.get("/{user_id}", response_model=List[WorkloadResponse])
 def get_user_workloads(user_id: str):
     u_uuid = deterministic_uuid(user_id)
-    u_id = ensure_uuid(user_id)
+    valid_uids = get_valid_user_uuids(user_id)
     items = []
 
     if supabase:
         try:
             res = supabase.table("workload_items") \
                 .select("*") \
-                .in_("user_id", [user_id, u_id, u_uuid]) \
+                .in_("user_id", valid_uids) \
                 .order("deadline", desc=False) \
                 .execute()
             if res.data:

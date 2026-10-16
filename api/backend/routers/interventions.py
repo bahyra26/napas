@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any
 from datetime import timedelta
-from db import supabase, now_wib, ensure_uuid, ensure_user_in_supabase
+from db import supabase, now_wib, ensure_uuid, ensure_user_in_supabase, get_valid_user_uuids
 from schemas import InterventionCreate, InterventionResponse
 
 router = APIRouter(prefix="/interventions", tags=["Interventions"])
@@ -53,7 +53,7 @@ def get_interventions(user_id: str, days: int = Query(default=7, ge=1, le=90)):
             start_time = (now_wib() - timedelta(days=days)).isoformat()
             res = supabase.table("interventions") \
                 .select("*") \
-                .eq("user_id", user_id) \
+                .in_("user_id", get_valid_user_uuids(user_id)) \
                 .gte("ts", start_time) \
                 .order("ts", desc=True) \
                 .execute()

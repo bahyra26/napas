@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
-from db import supabase, now_wib, start_of_day_wib, WIB
+from db import supabase, now_wib, start_of_day_wib, WIB, ensure_uuid, get_valid_user_uuids
 from schemas import (
+
     MetricBatch,
     HeatmapResponse,
     HeatmapRow,
@@ -61,12 +62,13 @@ def get_stress_heatmap(user_id: str, days: int = Query(default=7, ge=1, le=30)):
     if not supabase:
         raise HTTPException(status_code=500, detail="Database belum terhubung.")
 
+    valid_uids = get_valid_user_uuids(user_id)
     current_wib = now_wib()
     start_time = (current_wib - timedelta(days=days)).isoformat()
 
     res = supabase.table("sensor_metrics") \
         .select("*") \
-        .eq("user_id", user_id) \
+        .in_("user_id", valid_uids) \
         .gte("ts", start_time) \
         .order("ts", desc=False) \
         .execute()
@@ -236,7 +238,7 @@ def get_focus_summary(
         try:
             fs_res = supabase.table("focus_sessions") \
                 .select("*") \
-                .in_("user_id", [user_id, u_uuid]) \
+                .in_("user_id", get_valid_user_uuids(user_id)) \
                 .gte("mulai", hist_start) \
                 .order("mulai", desc=False) \
                 .execute()

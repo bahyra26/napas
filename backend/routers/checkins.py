@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
-from db import supabase, iso_start_today, now_wib, ensure_user_in_supabase, ensure_uuid
+from db import supabase, iso_start_today, now_wib, ensure_user_in_supabase, ensure_uuid, get_valid_user_uuids
 from schemas import CheckInCreate, CheckInResponse
 
 router = APIRouter(prefix="/check-ins", tags=["Check-ins"])
@@ -34,7 +34,7 @@ def submit_check_in(payload: CheckInCreate):
     except Exception as e:
         # Fallback jika kolom baru (jam_tidur / energi) belum ditambahkan ke tabel Supabase
         basic_row = {
-            "user_id": payload.user_id,
+            "user_id": u_id,
             "skor": payload.skor,
             "catatan": payload.catatan
         }
@@ -58,10 +58,11 @@ def get_today_check_in(user_id: str):
     if not supabase:
         raise HTTPException(status_code=500, detail="Database belum terhubung. Pastikan file .env sudah diisi.")
 
+    valid_uids = get_valid_user_uuids(user_id)
     start_iso = iso_start_today()
     res = supabase.table("check_ins") \
         .select("*") \
-        .eq("user_id", user_id) \
+        .in_("user_id", valid_uids) \
         .gte("ts", start_iso) \
         .order("ts", desc=True) \
         .limit(1) \
@@ -77,11 +78,12 @@ def list_check_ins(user_id: str, days: int = Query(default=7, ge=1, le=90)):
     if not supabase:
         raise HTTPException(status_code=500, detail="Database belum terhubung.")
 
+    valid_uids = get_valid_user_uuids(user_id)
     from datetime import timedelta
     start_time = (now_wib() - timedelta(days=days)).isoformat()
     res = supabase.table("check_ins") \
         .select("*") \
-        .eq("user_id", user_id) \
+        .in_("user_id", valid_uids) \
         .gte("ts", start_time) \
         .order("ts", desc=True) \
         .execute()

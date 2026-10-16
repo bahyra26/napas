@@ -77,3 +77,23 @@ def ensure_user_in_supabase(user_id: str, nama: str = "Mahasiswa", email: str = 
         print(f"[DB] Gagal memastikan user di Supabase ({u_uuid}): {e}")
         return False
 
+def get_valid_user_uuids(user_id: str) -> list[str]:
+    """Mengembalikan daftar UUID valid dan unik yang aman untuk dikueri ke kolom bertipe UUID di Supabase."""
+    if not user_id:
+        return []
+    res = set()
+    if UUID_REGEX.match(user_id):
+        res.add(user_id)
+    u_ensured = ensure_uuid(user_id)
+    if UUID_REGEX.match(u_ensured):
+        res.add(u_ensured)
+    try:
+        from local_db import deterministic_uuid
+        d_uuid = deterministic_uuid(user_id)
+        if UUID_REGEX.match(d_uuid):
+            res.add(d_uuid)
+    except Exception:
+        pass
+    return list(res)
+
+

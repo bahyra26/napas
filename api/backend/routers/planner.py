@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime, timedelta, date
 from typing import List, Dict, Any, Optional
-from db import supabase, now_wib, WIB
+from db import supabase, now_wib, WIB, ensure_uuid, get_valid_user_uuids
 from schemas import AutoPlanRequest, StudySessionUpdate
 
 router = APIRouter(prefix="/planner", tags=["Planner & Radar"])
@@ -24,16 +24,15 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
 
     # 1. Ambil workload aktif (Supabase diutamakan, SQLite Lokal sebagai fallback)
     from local_db import deterministic_uuid
-    from db import ensure_uuid
     u_uuid = deterministic_uuid(user_id)
-    u_id = ensure_uuid(user_id)
+    valid_uids = get_valid_user_uuids(user_id)
     workloads = []
 
     if supabase:
         try:
             wl_res = supabase.table("workload_items") \
                 .select("*") \
-                .in_("user_id", [user_id, u_uuid, u_id]) \
+                .in_("user_id", valid_uids) \
                 .eq("status", "belum") \
                 .execute()
             if wl_res.data:
@@ -75,7 +74,7 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
         try:
             cs_res = supabase.table("class_schedule") \
                 .select("*") \
-                .eq("user_id", user_id) \
+                .in_("user_id", valid_uids) \
                 .execute()
             class_schedules = cs_res.data or []
         except Exception:
@@ -91,7 +90,7 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
         try:
             ss_res = supabase.table("study_sessions") \
                 .select("*") \
-                .eq("user_id", user_id) \
+                .in_("user_id", valid_uids) \
                 .eq("status", "rencana") \
                 .execute()
             study_sessions = ss_res.data or []
@@ -99,6 +98,7 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
             study_sessions = [s for s in _MEM_STUDY_SESSIONS.get(user_id, []) if s.get("status") == "rencana"]
     else:
         study_sessions = [s for s in _MEM_STUDY_SESSIONS.get(user_id, []) if s.get("status") == "rencana"]
+
 
     # Petakan workload berdasarkan tanggal (YYYY-MM-DD)
     workload_by_date: Dict[str, List[Dict[str, Any]]] = {}
@@ -272,13 +272,15 @@ def auto_plan_study_sessions(payload: AutoPlanRequest):
         raise HTTPException(status_code=500, detail="Database belum terhubung.")
 
     user_id = payload.user_id
+    valid_uids = get_valid_user_uuids(user_id)
+    u_id = ensure_uuid(user_id)
     current_wib = now_wib()
 
     # Ambil profil user untuk jam tidur & produktif
     profile = {}
     if supabase:
         try:
-            p_res = supabase.table("user_profiles").select("*").eq("user_id", user_id).execute()
+            p_res = supabase.table("user_profiles").select("*").in_("user_id", valid_uids).execute()
             if p_res.data:
                 profile = p_res.data[0]
         except Exception:
@@ -307,7 +309,7 @@ def auto_plan_study_sessions(payload: AutoPlanRequest):
         try:
             wl_res = supabase.table("workload_items") \
                 .select("*") \
-                .eq("user_id", user_id) \
+                .in_("user_id", valid_uids) \
                 .eq("status", "belum") \
                 .lte("deadline", end_date_iso) \
                 .order("deadline") \
@@ -319,7 +321,7 @@ def auto_plan_study_sessions(payload: AutoPlanRequest):
     if payload.replace_existing:
         if supabase:
             try:
-                supabase.table("study_sessions").delete().eq("user_id", user_id).eq("status", "rencana").execute()
+                supabase.table("study_sessions").delete().in_("user_id", valid_uids).eq("status", "rencana").execute()
             except Exception:
                 pass
         _MEM_STUDY_SESSIONS[user_id] = [s for s in _MEM_STUDY_SESSIONS.get(user_id, []) if s.get("status") != "rencana"]
@@ -393,11 +395,12 @@ def auto_plan_study_sessions(payload: AutoPlanRequest):
 
 @router.get("/sessions/{user_id}")
 def get_user_study_sessions(user_id: str):
+    valid_uids = get_valid_user_uuids(user_id)
     if supabase:
         try:
             res = supabase.table("study_sessions") \
                 .select("*") \
-                .eq("user_id", user_id) \
+                .in_("user_id", valid_uids) \
                 .order("mulai") \
                 .execute()
             if res.data:

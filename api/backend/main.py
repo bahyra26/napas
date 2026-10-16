@@ -18,6 +18,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Middleware untuk menormalisasi prefix /api saat dideploy di Vercel Serverless
+@app.middleware("http")
+async def normalize_api_prefix(request, call_next):
+    path = request.scope.get("path", "")
+    if path.startswith("/api/"):
+        request.scope["path"] = path[4:]  # Normalisasi /api/users -> /users
+    return await call_next(request)
+
 # Registrasi Router
 app.include_router(users.router)
 app.include_router(profile.router)

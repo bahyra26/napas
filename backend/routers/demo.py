@@ -1,7 +1,7 @@
 import os
 from fastapi import APIRouter, HTTPException
 from datetime import timedelta
-from db import supabase, now_wib
+from db import supabase, now_wib, ensure_uuid, ensure_user_in_supabase, get_valid_user_uuids
 from schemas import SimulateRequest
 
 router = APIRouter(prefix="/demo", tags=["Demo Simulation"])
@@ -16,16 +16,20 @@ def simulate_demo_state(payload: SimulateRequest):
     if not supabase:
         raise HTTPException(status_code=500, detail="Database belum terhubung.")
 
-    user_id = payload.user_id
+    raw_user_id = payload.user_id
+    u_id = ensure_uuid(raw_user_id)
+    ensure_user_in_supabase(u_id)
+    valid_uids = get_valid_user_uuids(raw_user_id)
+
     mode = payload.mode
     current_time = now_wib()
     today_date = current_time.date()
 
     if mode == "reset":
         # Hapus sensor hari ini dan reset ke kondisi normal
-        supabase.table("sensor_metrics").delete().eq("user_id", user_id).gte("ts", current_time.replace(hour=0, minute=0, second=0).isoformat()).execute()
-        supabase.table("check_ins").delete().eq("user_id", user_id).gte("ts", current_time.replace(hour=0, minute=0, second=0).isoformat()).execute()
-        return {"status": "ok", "message": f"Kondisi user {user_id} di-reset ke baseline normal."}
+        supabase.table("sensor_metrics").delete().in_("user_id", valid_uids).gte("ts", current_time.replace(hour=0, minute=0, second=0).isoformat()).execute()
+        supabase.table("check_ins").delete().in_("user_id", valid_uids).gte("ts", current_time.replace(hour=0, minute=0, second=0).isoformat()).execute()
+        return {"status": "ok", "message": f"Kondisi user {raw_user_id} di-reset ke baseline normal."}
 
     # 1. Suntikkan 3 Hari Riwayat Index Naik Beruntun (memicu trend_up_3days)
     prev_indices = [
@@ -36,7 +40,7 @@ def simulate_demo_state(payload: SimulateRequest):
     for p in prev_indices:
         tgl = (today_date - timedelta(days=p["days_ago"])).isoformat()
         supabase.table("daily_index").upsert({
-            "user_id": user_id,
+            "user_id": u_id,
             "tanggal": tgl,
             "index": p["idx"],
             "zona": p["zona"],
@@ -51,14 +55,14 @@ def simulate_demo_state(payload: SimulateRequest):
     # 2. Suntikkan Workload Deadline Mendesak
     if mode in ["oranye", "merah"]:
         workloads = [
-            {"user_id": user_id, "judul": "Skripsi Bab 4 & 5 (Analisis)", "jenis": "tugas", "deadline": (current_time + timedelta(hours=10)).isoformat(), "est_jam": 8, "effort": 5, "status": "belum"},
-            {"user_id": user_id, "judul": "Tugas Besar Pemrograman Web", "jenis": "tugas", "deadline": (current_time + timedelta(days=2)).isoformat(), "est_jam": 6, "effort": 4, "status": "belum"},
-            {"user_id": user_id, "judul": "Laporan Praktikum Machine Learning", "jenis": "tugas", "deadline": (current_time + timedelta(days=3)).isoformat(), "est_jam": 5, "effort": 4, "status": "belum"},
-            {"user_id": user_id, "judul": "Kuis Teori Komputasi", "jenis": "ujian", "deadline": (current_time + timedelta(days=4)).isoformat(), "est_jam": 3, "effort": 5, "status": "belum"}
+            {"user_id": u_id, "judul": "Skripsi Bab 4 & 5 (Analisis)", "jenis": "tugas", "deadline": (current_time + timedelta(hours=10)).isoformat(), "est_jam": 8, "effort": 5, "status": "belum"},
+            {"user_id": u_id, "judul": "Tugas Besar Pemrograman Web", "jenis": "tugas", "deadline": (current_time + timedelta(days=2)).isoformat(), "est_jam": 6, "effort": 4, "status": "belum"},
+            {"user_id": u_id, "judul": "Laporan Praktikum Machine Learning", "jenis": "tugas", "deadline": (current_time + timedelta(days=3)).isoformat(), "est_jam": 5, "effort": 4, "status": "belum"},
+            {"user_id": u_id, "judul": "Kuis Teori Komputasi", "jenis": "ujian", "deadline": (current_time + timedelta(days=4)).isoformat(), "est_jam": 3, "effort": 5, "status": "belum"}
         ]
         if mode == "merah":
-            workloads.append({"user_id": user_id, "judul": "Revisi Makalah Jurnal Larut Malam", "jenis": "tugas", "deadline": (current_time + timedelta(hours=14)).replace(hour=23, minute=0).isoformat(), "est_jam": 6, "effort": 5, "status": "belum"})
-            workloads.append({"user_id": user_id, "judul": "Buku Panduan Akhir Skripsi", "jenis": "tugas", "deadline": (current_time + timedelta(hours=20)).isoformat(), "est_jam": 4, "effort": 4, "status": "belum"})
+            workloads.append({"user_id": u_id, "judul": "Revisi Makalah Jurnal Larut Malam", "jenis": "tugas", "deadline": (current_time + timedelta(hours=14)).replace(hour=23, minute=0).isoformat(), "est_jam": 6, "effort": 5, "status": "belum"})
+            workloads.append({"user_id": u_id, "judul": "Buku Panduan Akhir Skripsi", "jenis": "tugas", "deadline": (current_time + timedelta(hours=20)).isoformat(), "est_jam": 4, "effort": 4, "status": "belum"})
 
         for w in workloads:
             supabase.table("workload_items").insert(w).execute()
@@ -72,7 +76,7 @@ def simulate_demo_state(payload: SimulateRequest):
     metrics = []
     for i in range(10):
         metrics.append({
-            "user_id": user_id,
+            "user_id": u_id,
             "ts": (current_time - timedelta(minutes=i*5)).isoformat(),
             "blink_rate": blink_val,
             "brow_tension": brow_val,
@@ -89,7 +93,7 @@ def simulate_demo_state(payload: SimulateRequest):
     checkin_val = 1 if mode == "merah" else 2
     catatan_val = "Kelelahan parah, mata pedih dan sulit tidur." if mode == "merah" else "Beban tugas menumpuk dan pusing."
     supabase.table("check_ins").insert({
-        "user_id": user_id,
+        "user_id": u_id,
         "skor": checkin_val,
         "catatan": catatan_val
     }).execute()

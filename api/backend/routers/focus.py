@@ -7,7 +7,7 @@ import os
 import subprocess
 import socket
 
-from db import supabase, now_wib, ensure_uuid, ensure_user_in_supabase
+from db import supabase, now_wib, ensure_uuid, ensure_user_in_supabase, get_valid_user_uuids
 from schemas import FocusSessionStart, FocusSessionFinish
 from local_db import (
     deterministic_uuid,
@@ -204,7 +204,7 @@ def get_active_session(user_id: str):
         try:
             res = supabase.table("focus_sessions") \
                 .select("*") \
-                .in_("user_id", [user_id, u_uuid]) \
+                .in_("user_id", get_valid_user_uuids(user_id)) \
                 .eq("completed", False) \
                 .order("mulai", desc=True) \
                 .limit(1) \
@@ -232,7 +232,7 @@ def list_focus_sessions(user_id: str, limit: int = Query(default=10, ge=1, le=50
         try:
             res = supabase.table("focus_sessions") \
                 .select("*") \
-                .in_("user_id", [user_id, u_uuid]) \
+                .in_("user_id", get_valid_user_uuids(user_id)) \
                 .order("mulai", desc=True) \
                 .limit(limit) \
                 .execute()
