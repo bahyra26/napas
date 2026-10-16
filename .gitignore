@@ -36,3 +36,10 @@ yarn-error.log*
 Thumbs.db
 scratch/
 .vercel/
+
+# Old Development & Planning Docs
+panduan-backend-napas-v2.md
+panduan-deploy-vercel.md
+plan-hackathon-JOINTS.md
+rencana-penyelesaian-napas-v2.md
+**/panduan-backend-napas-v2-revised.md
