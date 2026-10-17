@@ -18,6 +18,7 @@ export interface CalendarTaskItem {
   is_google?: boolean;
   source?: string;
   jenis?: string;
+  status?: string;
 }
 
 export interface CalendarDay {

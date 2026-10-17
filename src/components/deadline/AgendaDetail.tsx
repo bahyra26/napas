@@ -8,6 +8,7 @@ interface AgendaDetailProps {
   onOpenReschedule: () => void;
   onAutoPlan?: () => void;
   isAutoPlanning?: boolean;
+  onToggleCompleteTask?: (taskId: string, currentStatus?: string, isStudy?: boolean) => void;
 }
 
 export const AgendaDetail: React.FC<AgendaDetailProps> = ({
@@ -16,6 +17,7 @@ export const AgendaDetail: React.FC<AgendaDetailProps> = ({
   onOpenReschedule,
   onAutoPlan,
   isAutoPlanning = false,
+  onToggleCompleteTask,
 }) => {
   const getBadgeClass = (status: string) => {
     if (status === 'Berat') return 'badge-berat';
@@ -74,9 +76,45 @@ export const AgendaDetail: React.FC<AgendaDetailProps> = ({
               const isGoogle = Boolean(task.is_google || task.source === 'google' || task.title.includes('📅'));
               const isClass = Boolean(task.jenis === 'kuliah' || task.title.toLowerCase().startsWith('kuliah:'));
               const isExam = Boolean(task.jenis === 'ujian' || /uts|uas|kuis|ujian/i.test(task.title));
+              const isStudy = Boolean(task.jenis === 'sesi_belajar' || task.title.toLowerCase().startsWith('sesi:'));
+              const isCompleted = task.status === 'selesai';
+              const canComplete = Boolean(task.id && !isClass);
 
               return (
-                <div className={`agenda-task-item ${isGoogle ? 'item-google-cal' : ''}`} key={idx}>
+                <div
+                  className={`agenda-task-item ${isGoogle ? 'item-google-cal' : ''} ${isCompleted ? 'is-completed' : ''}`}
+                  key={task.id || idx}
+                >
+                  {/* Tombol Checklist Selesai */}
+                  {canComplete && onToggleCompleteTask && (
+                    <button
+                      type="button"
+                      className={`agenda-check-btn ${isCompleted ? 'checked' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleCompleteTask(task.id!, task.status, isStudy);
+                      }}
+                      title={isCompleted ? 'Tandai belum selesai (batal)' : 'Tandai tugas ini sudah selesai!'}
+                      aria-label={isCompleted ? 'Tandai belum selesai' : 'Tandai tugas selesai'}
+                    >
+                      {isCompleted ? (
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="agenda-check-icon"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : (
+                        <span className="agenda-check-circle-inner" />
+                      )}
+                    </button>
+                  )}
+
                   <div className="agenda-task-info">
                     <div className="agenda-task-top-meta">
                       {isGoogle && (
@@ -94,14 +132,26 @@ export const AgendaDetail: React.FC<AgendaDetailProps> = ({
                           🎯 Ujian
                         </span>
                       )}
-                      {!isGoogle && !isClass && !isExam && (
+                      {isStudy && (
+                        <span className="agenda-task-badge badge-sesi-belajar" title="Sesi Belajar Auto-Plan">
+                          ⚡ Sesi Belajar
+                        </span>
+                      )}
+                      {!isGoogle && !isClass && !isExam && !isStudy && (
                         <span className="agenda-task-badge badge-manual-task" title="Deadline Tugas Mahasiswa">
                           📝 Tugas
                         </span>
                       )}
+                      {isCompleted && (
+                        <span className="agenda-task-badge badge-completed-tag" title="Tugas sudah selesai">
+                          ✓ Selesai
+                        </span>
+                      )}
                       <span className="agenda-task-time">{task.time}</span>
                     </div>
-                    <span className="agenda-task-name">{task.title.replace(/^📅\s*/, '')}</span>
+                    <span className={`agenda-task-name ${isCompleted ? 'completed-text' : ''}`}>
+                      {task.title.replace(/^📅\s*/, '')}
+                    </span>
                   </div>
                 </div>
               );

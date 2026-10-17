@@ -4,7 +4,7 @@ import { loadingTracker, useIsFetching, useActiveFetchCount } from './loadingTra
 
 export { loadingTracker, useIsFetching, useActiveFetchCount };
 
-const API_BASE_URL =
+export const API_BASE_URL =
   typeof window !== 'undefined' &&
   window.location.hostname !== 'localhost' &&
   window.location.hostname !== '127.0.0.1'
@@ -682,6 +682,21 @@ const rawApi = {
       return await res.json();
     } catch (err) {
       console.error('updateWorkloadStatus failed:', err);
+      return null;
+    }
+  },
+
+  async updateStudySessionStatus(sessionId: string, status: 'rencana' | 'selesai'): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/planner/sessions/${encodeURIComponent(sessionId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('updateStudySessionStatus failed:', err);
       return null;
     }
   },

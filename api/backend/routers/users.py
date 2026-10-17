@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+﻿from fastapi import APIRouter, HTTPException
 from db import supabase, ensure_uuid, ensure_user_in_supabase
 from schemas import UserCreate, UserUpdate, UserResponse
 from local_db import save_or_update_user, get_user_by_id, deterministic_uuid
@@ -215,3 +215,66 @@ def update_user(user_id: str, payload: UserUpdate):
         return local_u
 
     raise HTTPException(status_code=404, detail="User tidak ditemukan")
+
+
+@router.post("/auto-confirm")
+def auto_confirm_user(payload: dict):
+    """
+    Auto-confirm email pengguna via Supabase Admin API dari sisi backend
+    (Menggunakan kunci service_role yang aman di server tanpa membocorkannya ke client).
+    """
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Database belum terhubung.")
+    
+    email = payload.get("email", "").strip()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email wajib diisi.")
+        
+    try:
+        users_res = supabase.auth.admin.list_users()
+        users_list = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
+        target = next((u for u in users_list if getattr(u, 'email', '').lower() == email.lower()), None)
+        if target:
+            supabase.auth.admin.update_user_by_id(target.id, {"email_confirm": True})
+            return {"status": "success", "message": f"User {email} berhasil dikonfirmasi"}
+        return {"status": "not_found", "message": "User tidak ditemukan"}
+    except Exception as e:
+        print(f"[AUTH-ADMIN] Gagal auto-confirm: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/register-direct")
+def register_direct(payload: dict):
+    """
+    Mendaftarkan pengguna baru dengan email terkonfirmasi langsung via Supabase Admin API.
+    Aman karena service_role hanya dieksekusi di backend server.
+    """
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Database belum terhubung.")
+        
+    email = payload.get("email", "").strip()
+    password = payload.get("password", "")
+    full_name = payload.get("full_name", "") or email.split("@")[0]
+    username = payload.get("username", "") or email.split("@")[0]
+    
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email dan password wajib diisi.")
+        
+    try:
+        created = supabase.auth.admin.create_user({
+            "email": email,
+            "password": password,
+            "email_confirm": True,
+            "user_metadata": {
+                "full_name": full_name,
+                "username": username
+            }
+        })
+        user_obj = getattr(created, 'user', created)
+        u_id = user_obj.id if hasattr(user_obj, 'id') else user_obj.get('id')
+        ensure_user_in_supabase(u_id, full_name, email)
+        return {"status": "success", "user": {"id": u_id, "email": email, "nama": full_name}}
+    except Exception as e:
+        print(f"[AUTH-ADMIN] Gagal register-direct: {e}")
+        return {"status": "error", "message": str(e)}
+

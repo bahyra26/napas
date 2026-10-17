@@ -1,12 +1,13 @@
 import { createClient, SupabaseClient, Session } from '@supabase/supabase-js';
+import { API_BASE_URL } from './api';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://enzizvrvfogjjgctpmli.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVueml6dnJ2Zm9nampnY3RwbWxpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTM2MTY2NywiZXhwIjoyMTA0OTM3NjY3fQ.WRZlF1Mn8rv-yX--mv6go5YQXYS-xix2vMPrF8VzG9o';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 let supabaseClient: SupabaseClient | null = null;
 
 try {
-  if (SUPABASE_URL) {
+  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
     supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         persistSession: true,
@@ -75,39 +76,23 @@ export const authService = {
         password,
       });
 
-      // Jika error terkait email belum dikonfirmasi, auto-confirm via Admin API lalu coba login ulang
+      // Jika error terkait email belum dikonfirmasi, minta backend (yang memegang service_role) untuk auto-confirm secara aman
       if (error && error.message.toLowerCase().includes('not confirmed')) {
         try {
-          const listRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
-            headers: {
-              'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            },
+          const confirmRes = await fetch(`${API_BASE_URL}/users/auto-confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
           });
-          if (listRes.ok) {
-            const listData = await listRes.json();
-            const target = listData.users?.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
-            if (target?.id) {
-              await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${target.id}`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'apikey': SUPABASE_ANON_KEY,
-                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                },
-                body: JSON.stringify({ email_confirm: true }),
-              });
-
-              // Retry sign in setelah konfirmasi
-              const retryRes = await supabaseClient.auth.signInWithPassword({ email, password });
-              if (!retryRes.error && retryRes.data.user) {
-                data = retryRes.data;
-                error = null;
-              }
+          if (confirmRes.ok) {
+            const retryRes = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (!retryRes.error && retryRes.data.user) {
+              data = retryRes.data;
+              error = null;
             }
           }
         } catch (confirmErr) {
-          console.warn('Auto-confirm attempt failed:', confirmErr);
+          console.warn('Backend auto-confirm attempt failed:', confirmErr);
         }
       }
 
@@ -154,49 +139,35 @@ export const authService = {
     const cleanName = params.fullName.trim();
     const cleanUser = params.username.trim();
 
-    // 1. Coba daftarkan langsung via Admin API dengan email_confirm: true agar tidak terblokir verifikasi email
+    // 1. Coba daftarkan via backend API (menggunakan service_role di server agar email langsung terkonfirmasi)
     try {
-      const adminRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+      const regRes = await fetch(`${API_BASE_URL}/users/register-direct`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: cleanEmail,
           password: params.password,
-          email_confirm: true,
-          user_metadata: {
-            full_name: cleanName,
-            username: cleanUser,
-          },
+          full_name: cleanName,
+          username: cleanUser,
         }),
       });
 
-      if (adminRes.ok) {
-        const createdUser = await adminRes.json();
-        // Pastikan row terdaftar di public.users
-        try {
-          await supabaseClient.from('users').upsert({
-            id: createdUser.id,
-            nama: cleanName,
-            email: cleanEmail,
-            consent_camera: true,
-            consent_window: true,
-            baseline_blink_rate: 15.0,
-          });
-        } catch {}
-
-        // Otomatis login akun baru
-        await this.signInWithPassword(cleanEmail, params.password);
-        return { user: createdUser };
+      if (regRes.ok) {
+        const regData = await regRes.json();
+        if (regData.status === 'success' && regData.user) {
+          // Otomatis login akun baru
+          const loginRes = await this.signInWithPassword(cleanEmail, params.password);
+          if (loginRes.user) {
+            return { user: loginRes.user };
+          }
+          return { user: regData.user };
+        }
       }
-    } catch (adminErr) {
-      console.warn('Admin API signup fallback to client auth:', adminErr);
+    } catch (backendErr) {
+      console.warn('Backend direct signup failed, fallback to client auth:', backendErr);
     }
 
-    // 2. Fallback ke standard client signup jika Admin API gagal
+    // 2. Fallback ke standard client signup jika backend offline
     try {
       const { data, error } = await supabaseClient.auth.signUp({
         email: cleanEmail,

@@ -39,25 +39,31 @@
 html, body, #root {
   width: 100%;
   height: 100%;
+  max-width: 100vw;
   background-color: var(--color-main-bg);
   font-family: 'Inter', 'Poppins', sans-serif;
   font-weight: 500;
   color: var(--color-text-dark);
-  overflow: hidden;
+  overflow-x: hidden !important;
+  overflow-y: hidden;
 }
 
 #root {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important;
 }
 
 body {
-  zoom: 1.25;
+  zoom: 1;
 }
 
-@media (max-width: 720px) {
+@media (min-width: 2200px) {
   body {
-    zoom: 1;
+    zoom: 1.15;
   }
 }
 
@@ -66,12 +72,14 @@ body {
    ========================================================================== */
 .app-viewport {
   width: 100%;
+  max-width: 100vw;
   height: 100%;
   flex: 1;
   display: flex;
   background-color: var(--color-main-bg);
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden !important;
+  overflow-y: hidden;
   align-items: stretch;
 }
 
@@ -189,9 +197,12 @@ body {
   flex-direction: column;
   background-color: var(--color-main-bg);
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
   height: 100%;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden !important;
+  overflow-y: hidden;
 }
 
 /* Top Header */
@@ -352,7 +363,9 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: hidden !important;
   scrollbar-width: none;
 }
 
@@ -367,6 +380,8 @@ body[data-tab="fokus"] .dashboard-container,
 body[data-tab="laporan"] .dashboard-container,
 body[data-tab="settings"] .dashboard-container {
   max-width: 1140px;
+  min-width: 0;
+  overflow-x: hidden !important;
   padding: 20px clamp(16px, 2.5vw, 32px) 28px;
 }
 
@@ -378,12 +393,17 @@ body[data-tab="settings"] .dashboard-container {
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 0.3s var(--transition-smooth), transform 0.3s var(--transition-smooth);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .page-view.active {
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin-top: 0;
   margin-bottom: 0;
   opacity: 1;
@@ -416,6 +436,7 @@ body[data-tab="settings"] .dashboard-container {
   max-width: 960px;
   margin: 0 auto;
   width: 100%;
+  padding-top: 12px;
 }
 
 /* Smooth Entrance Animations for Columns */
@@ -456,6 +477,8 @@ body[data-tab="settings"] .dashboard-container {
   flex-direction: column;
   align-items: center;
   width: 100%;
+  padding-top: 14px;
+  padding-bottom: 6px;
 }
 
 .gauge-circle {
@@ -1662,7 +1685,9 @@ body[data-tab="settings"] .dashboard-container {
   .main-wrapper {
     height: auto;
     overflow: visible;
+    overflow-x: hidden !important;
     width: 100%;
+    max-width: 100vw;
     min-width: 0;
   }
 
@@ -1700,6 +1725,9 @@ body[data-tab="settings"] .dashboard-container {
   .dashboard-container {
     height: auto;
     overflow: visible;
+    overflow-x: hidden !important;
+    width: 100%;
+    max-width: 100vw;
     justify-content: flex-start;
     padding: 16px 14px calc(88px + env(safe-area-inset-bottom, 0px)); /* Space for bottom navigation */
   }
@@ -1748,15 +1776,20 @@ body[data-tab="settings"] .dashboard-container {
 .tren-container {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   margin: 0 auto;
+  overflow-x: hidden !important;
 }
 
 .tren-grid {
   display: grid;
-  grid-template-columns: 1fr 310px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 310px);
   grid-template-rows: auto auto;
   gap: 20px;
   align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Generic Tren Card */
@@ -1769,6 +1802,8 @@ body[data-tab="settings"] .dashboard-container {
   display: flex;
   flex-direction: column;
   position: relative;
+  min-width: 0;
+  max-width: 100%;
   transition: transform 0.25s var(--transition-smooth), box-shadow 0.25s ease;
 }
 
@@ -2180,8 +2215,8 @@ body[data-tab="settings"] .dashboard-container {
   margin: 0 auto;
 }
 
-/* Responsive Adaptations for Tren Page under 125% Zoom */
-@media (max-width: 1240px) {
+/* Responsive Adaptations for Tren Page */
+@media (max-width: 1120px) {
   .tren-grid {
     grid-template-columns: 1fr;
     gap: 20px;
@@ -2241,35 +2276,46 @@ body[data-tab="settings"] .dashboard-container {
 .deadline-container {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   margin: 0 auto;
+  overflow-x: hidden !important;
 }
 
 .deadline-grid {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  gap: clamp(16px, 2vw, 28px);
   align-items: start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .deadline-col-left {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
+  width: 100%;
 }
 
 .deadline-col-right {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  min-width: 0;
+  width: 100%;
 }
 
 .deadline-card {
   background-color: #ffffff;
   border-radius: 20px;
   border: 1px solid rgba(0, 0, 0, 0.06);
-  padding: 24px 28px;
+  padding: 20px clamp(16px, 2vw, 28px);
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
   position: relative;
+  min-width: 0;
+  max-width: 100%;
   transition: transform 0.25s var(--transition-smooth), box-shadow 0.25s ease;
 }
 
@@ -2300,6 +2346,9 @@ body[data-tab="settings"] .dashboard-container {
   box-shadow: 0 8px 24px rgba(13, 56, 44, 0.16);
   position: relative;
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .google-calendar-banner-card::before {
@@ -2922,15 +2971,18 @@ body[data-tab="settings"] .dashboard-container {
 
 .calendar-tiles-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: clamp(6px, 1vw, 12px);
+  width: 100%;
+  min-width: 0;
 }
 
 .day-tile {
   background: #f8faf8;
-  border-radius: 18px;
-  padding: 16px 10px 14px;
-  min-height: 112px;
+  border-radius: 16px;
+  padding: 14px 4px 12px;
+  min-height: 106px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2939,6 +2991,7 @@ body[data-tab="settings"] .dashboard-container {
   border: 1.5px solid rgba(0, 0, 0, 0.05);
   transition: transform 0.2s var(--transition-bounce), box-shadow 0.2s ease, border-color 0.2s ease;
   user-select: none;
+  overflow: hidden;
 }
 
 .day-tile:hover {
@@ -2948,28 +3001,32 @@ body[data-tab="settings"] .dashboard-container {
 }
 
 .tile-day {
-  font-size: 12.5px;
+  font-size: clamp(11px, 0.95vw, 12.5px);
   font-weight: 600;
   color: #666666;
   margin-bottom: 2px;
+  white-space: nowrap;
 }
 
 .tile-date {
-  font-size: 28px;
+  font-size: clamp(20px, 2vw, 28px);
   font-weight: 800;
   color: #111111;
   line-height: 1;
-  margin: 2px 0 8px;
+  margin: 2px 0 6px;
 }
 
 .tile-pill {
-  font-size: 11px;
+  font-size: clamp(9px, 0.8vw, 11px);
   font-weight: 700;
   border-radius: 9999px;
-  padding: 4px 11px;
+  padding: 3px clamp(5px, 0.7vw, 10px);
   line-height: 1.2;
   text-align: center;
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Tile color variants */
@@ -3013,21 +3070,27 @@ body[data-tab="settings"] .dashboard-container {
    2. Ringkasan Beban Card
    -------------------------------------------------------------------------- */
 .card-ringkasan-beban {
-  padding: 24px 28px;
+  padding: 20px clamp(14px, 2vw, 28px);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .ringkasan-beban-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0;
   margin-top: 14px;
+  width: 100%;
+  min-width: 0;
 }
 
 .beban-stat-col {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 0 20px;
+  padding: 0 clamp(8px, 1.2vw, 20px);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .beban-stat-col:first-child {
@@ -3101,14 +3164,114 @@ body[data-tab="settings"] .dashboard-container {
 .agenda-task-item {
   background: #ffffff;
   border-radius: 14px;
-  padding: 15px 18px;
+  padding: 13px 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  position: relative;
+  border: 1.5px solid transparent;
 }
 
 .agenda-task-item:hover {
   transform: translateX(2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.agenda-task-item.is-completed {
+  background: #f4faf6;
+  border-color: rgba(11, 118, 86, 0.25);
+  opacity: 0.82;
+}
+
+.agenda-task-item.is-completed:hover {
+  opacity: 1;
+}
+
+/* Checklist Button */
+.agenda-check-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+  padding: 0;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  outline: none;
+}
+
+.agenda-check-btn:hover {
+  border-color: #0b7656;
+  background: rgba(11, 118, 86, 0.08);
+  transform: scale(1.15);
+}
+
+.agenda-check-btn.checked {
+  background: #0b7656;
+  border-color: #0b7656;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(11, 118, 86, 0.35);
+  transform: scale(1.05);
+}
+
+.agenda-check-btn.checked:hover {
+  background: #095c43;
+  border-color: #095c43;
+  transform: scale(1.18);
+}
+
+.agenda-check-icon {
+  width: 14px;
+  height: 14px;
+  stroke: #ffffff;
+  animation: checkmarkPop 0.25s ease-out;
+}
+
+.agenda-check-circle-inner {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.agenda-check-btn:hover .agenda-check-circle-inner {
+  background: #0b7656;
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.agenda-task-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.agenda-task-top-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
 }
 
 .agenda-task-name {
@@ -3116,14 +3279,42 @@ body[data-tab="settings"] .dashboard-container {
   font-weight: 700;
   color: #111111;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  line-height: 1.4;
+  word-break: break-word;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.agenda-task-name.completed-text {
+  text-decoration: line-through;
+  color: #888888;
 }
 
 .agenda-task-time {
-  font-size: 12px;
-  color: #666666;
-  font-weight: 500;
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 600;
   display: block;
+}
+
+.agenda-task-badge.badge-completed-tag {
+  background: #e6f4ea;
+  color: #137333;
+  border: 1px solid #ceead6;
+  font-weight: 700;
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 6px;
+}
+
+.agenda-task-badge.badge-sesi-belajar {
+  background: #f3e8ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+  font-weight: 700;
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 6px;
 }
 
 .agenda-empty-state {
@@ -3274,46 +3465,53 @@ body[data-tab="settings"] .dashboard-container {
 }
 
 /* --------------------------------------------------------------------------
-   Responsive Breakpoints for Deadline Radar under 125% Zoom
+   Responsive Breakpoints for Deadline Radar
    -------------------------------------------------------------------------- */
-@media (max-width: 1240px) {
+@media (max-width: 1120px) {
   .deadline-grid {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 20px;
   }
 
   .calendar-tiles-grid {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
   .ringkasan-beban-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     row-gap: 14px;
   }
 }
 
-@media (max-width: 960px) {
+@media (max-width: 860px) {
   .calendar-tiles-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .ringkasan-beban-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 12px;
+  }
+
+  .beban-stat-col:nth-child(2) {
+    border-right: none;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   .deadline-container {
     padding: 0 2px;
   }
 
   .calendar-tiles-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
   }
 
   .day-tile {
     padding: 10px 4px 8px;
+    min-height: 88px;
   }
 
   .tile-date {
@@ -3322,7 +3520,13 @@ body[data-tab="settings"] .dashboard-container {
 
   .tile-pill {
     font-size: 8.5px;
-    padding: 2px 5px;
+    padding: 2px 4px;
+  }
+}
+
+@media (max-width: 380px) {
+  .calendar-tiles-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -9496,8 +9700,39 @@ body.dark-mode .agenda-task-item {
   border: 1px solid rgba(52, 211, 153, 0.12) !important;
 }
 
-body.dark-mode .agenda-task-item .task-name {
+body.dark-mode .agenda-task-item .task-name,
+body.dark-mode .agenda-task-item .agenda-task-name {
   color: #f8fafc !important;
+}
+
+body.dark-mode .agenda-task-item.is-completed {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(52, 211, 153, 0.25) !important;
+}
+
+body.dark-mode .agenda-task-item.is-completed .agenda-task-name {
+  color: #64748b !important;
+}
+
+body.dark-mode .agenda-check-btn {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+}
+
+body.dark-mode .agenda-check-btn:hover {
+  border-color: #34d399 !important;
+  background: rgba(52, 211, 153, 0.15) !important;
+}
+
+body.dark-mode .agenda-check-btn.checked {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+}
+
+body.dark-mode .agenda-task-badge.badge-completed-tag {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  border-color: rgba(52, 211, 153, 0.3) !important;
 }
 
 body.dark-mode .summary-box {
@@ -10043,7 +10278,3 @@ body.dark-mode .btn-settings-logout:hover {
   background: #ef4444;
   color: #ffffff;
 }
-
-
-
-

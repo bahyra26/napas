@@ -735,6 +735,53 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleToggleCompleteTask = async (
+    taskId: string,
+    currentStatus?: string,
+    isStudy?: boolean
+  ) => {
+    if (!userId || !taskId) return;
+    const nextStatus = currentStatus === 'selesai' ? (isStudy ? 'rencana' : 'belum') : 'selesai';
+
+    // 1. Optimistic UI update in calendarDays:
+    setCalendarDays((prev) =>
+      prev.map((day) => ({
+        ...day,
+        tasks: day.tasks.map((t) =>
+          t.id === taskId ? { ...t, status: nextStatus } : t
+        ),
+      }))
+    );
+
+    showToast(
+      nextStatus === 'selesai'
+        ? 'Tugas ditandai selesai! 🎉 Beban radar diperbarui.'
+        : 'Tugas dikembalikan ke belum selesai.',
+      nextStatus === 'selesai' ? '✅' : '↩️'
+    );
+
+    // 2. Kirim update ke backend:
+    try {
+      if (isStudy) {
+        await api.updateStudySessionStatus(taskId, nextStatus as any);
+      } else {
+        await api.updateWorkloadStatus(taskId, nextStatus as any);
+      }
+    } catch (err) {
+      console.error('Failed to update task status:', err);
+    }
+
+    // 3. Sinkronkan Radar, Workloads, dan Burnout Index:
+    await Promise.all([
+      loadRadar(userId),
+      loadWorkloads(userId),
+      loadIndexToday(userId),
+    ]);
+    realtimeSync.broadcast('TASK_CHANGED');
+    realtimeSync.broadcast('SCHEDULE_CHANGED');
+    realtimeSync.broadcast('INDEX_CHANGED');
+  };
+
   const selectedDay =
     calendarDays.find((d) => d.date === selectedDate) || calendarDays[0];
 
@@ -788,7 +835,6 @@ export const App: React.FC = () => {
         onSelectTab={setActiveTab}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        onLogout={() => setIsLogoutConfirmOpen(true)}
       />
 
       <div className="main-wrapper">
@@ -881,6 +927,7 @@ export const App: React.FC = () => {
                     onOpenReschedule={() => setIsRescheduleOpen(true)}
                     onAutoPlan={handleAutoPlan}
                     isAutoPlanning={isAutoPlanning}
+                    onToggleCompleteTask={handleToggleCompleteTask}
                   />
                 </div>
               </div>

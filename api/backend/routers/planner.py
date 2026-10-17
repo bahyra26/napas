@@ -33,7 +33,6 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
             wl_res = supabase.table("workload_items") \
                 .select("*") \
                 .in_("user_id", valid_uids) \
-                .eq("status", "belum") \
                 .execute()
             if wl_res.data:
                 workloads = list(wl_res.data)
@@ -42,9 +41,9 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
 
     if not workloads:
         from local_db import local_list_workload_items
-        workloads = local_list_workload_items(u_uuid, status="belum")
+        workloads = local_list_workload_items(u_uuid)
         if not workloads and user_id != u_uuid:
-            workloads = local_list_workload_items(user_id, status="belum")
+            workloads = local_list_workload_items(user_id)
 
     # DEDUPLIKASI KETAT: jangan biarkan agenda Google atau tugas dengan judul dan tanggal sama muncul berulang!
     deduped_workloads = []
@@ -114,14 +113,15 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
             time_str = f"Deadline {dl_dt.strftime('%H.%M')}" if dl_dt.hour != 0 or dl_dt.minute != 0 else "Deadline 23.59"
             is_google = (w.get("source") == "google" or bool(w.get("google_event_id")))
             workload_by_date[d_str].append({
-                "id": w["id"],
+                "id": w.get("id"),
                 "title": w["judul"],
                 "time": time_str,
                 "effort": w.get("effort", 3),
                 "est_jam": float(w.get("est_jam") or 2.0),
                 "source": w.get("source", "local"),
                 "is_google": is_google,
-                "jenis": w.get("jenis", "tugas")
+                "jenis": w.get("jenis", "tugas"),
+                "status": w.get("status", "belum")
             })
         except Exception:
             continue
@@ -138,8 +138,11 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
             if d_str not in study_by_date:
                 study_by_date[d_str] = []
             study_by_date[d_str].append({
+                "id": s.get("id"),
                 "title": f"Sesi: {s['judul']}",
-                "time": m_dt.strftime("%H.%M")
+                "time": m_dt.strftime("%H.%M"),
+                "jenis": "sesi_belajar",
+                "status": s.get("status", "rencana")
             })
         except Exception:
             continue
@@ -189,7 +192,9 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
             ruang = f" ({c['ruang']})" if c.get("ruang") else ""
             day_tasks.append({
                 "title": f"Kuliah: {c['mata_kuliah']}{ruang}",
-                "time": f"{jam_m} - {jam_s}"
+                "time": f"{jam_m} - {jam_s}",
+                "jenis": "kuliah",
+                "status": "belum"
             })
             total_effort_points += 2
             total_est_hours += 2.0
@@ -198,33 +203,40 @@ def get_deadline_radar(user_id: str, days: int = Query(default=14, ge=1, le=30))
         if d_str in workload_by_date:
             for w in workload_by_date[d_str]:
                 day_tasks.append({
+                    "id": w.get("id"),
                     "title": w["title"],
                     "time": w["time"],
                     "source": w.get("source", "local"),
                     "is_google": w.get("is_google", False),
-                    "jenis": w.get("jenis", "tugas")
+                    "jenis": w.get("jenis", "tugas"),
+                    "status": w.get("status", "belum")
                 })
-                total_effort_points += int(w["effort"]) * 2
-                total_est_hours += w["est_jam"]
+                # HANYA tugas yang belum selesai yang dihitung dalam Load Score!
+                if w.get("status") != "selesai":
+                    total_effort_points += int(w["effort"]) * 2
+                    total_est_hours += w["est_jam"]
 
         # Tambahkan study sessions
         if d_str in study_by_date:
             for s in study_by_date[d_str]:
                 day_tasks.append(s)
+                if s.get("status") != "selesai":
+                    total_effort_points += 1
+                    total_est_hours += 0.8
 
-        # Hitung skor beban harian (0 - 100)
-        task_count = len(day_tasks)
-        load_score = min(100, int((task_count * 15) + (total_est_hours * 8) + (total_effort_points * 2)))
+        # Hitung skor beban harian (0 - 100) hanya dari agenda yang BELUM selesai
+        active_task_count = sum(1 for t in day_tasks if t.get("status") != "selesai")
+        load_score = min(100, int((active_task_count * 15) + (total_est_hours * 8) + (total_effort_points * 2)))
 
         if load_score >= 65:
             status = "Berat"
-            pill_text = f"{task_count} agenda"
+            pill_text = f"{active_task_count} agenda"
         elif load_score >= 35:
             status = "Sedang"
-            pill_text = f"{task_count} agenda" if task_count > 0 else "Sedang"
+            pill_text = f"{active_task_count} agenda" if active_task_count > 0 else "Sedang"
         else:
             status = "Ringan"
-            pill_text = "Bebas" if task_count == 0 else f"{task_count} agenda"
+            pill_text = "Bebas" if active_task_count == 0 else f"{active_task_count} agenda"
 
         day_full = DAY_LONG_ID[weekday_idx]
         month_full = MONTH_LONG_ID[cur_date.month - 1]
