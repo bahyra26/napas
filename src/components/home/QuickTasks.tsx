@@ -6,6 +6,7 @@ interface QuickTasksProps {
   tasks: TaskItem[];
   onDeleteTask: (id: string) => void;
   onOpenAddModal: () => void;
+  onToggleCompleteTask?: (id: string, currentStatus?: string) => void;
   isLoading?: boolean;
 }
 
@@ -13,6 +14,7 @@ export const QuickTasks: React.FC<QuickTasksProps> = ({
   tasks,
   onDeleteTask,
   onOpenAddModal,
+  onToggleCompleteTask,
   isLoading = false,
 }) => {
   return (
@@ -54,15 +56,30 @@ export const QuickTasks: React.FC<QuickTasksProps> = ({
                 <span className="task-title">{task.title}</span>
                 <span className={`task-meta meta-${task.priority}`}>{task.meta}</span>
               </div>
-              <button
-                type="button"
-                className="task-delete-btn"
-                title="Hapus tugas"
-                aria-label="Hapus"
-                onClick={() => onDeleteTask(task.id)}
-              >
-                &times;
-              </button>
+              <div className="task-actions-stack">
+                {onToggleCompleteTask && (
+                  <button
+                    type="button"
+                    className="task-complete-btn"
+                    title="Nyatakan tugas ini selesai"
+                    aria-label="Selesai"
+                    onClick={() => onToggleCompleteTask(task.id, 'belum')}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="task-delete-btn"
+                  title="Hapus tugas"
+                  aria-label="Hapus"
+                  onClick={() => onDeleteTask(task.id)}
+                >
+                  &times;
+                </button>
+              </div>
             </div>
           ))
         )}

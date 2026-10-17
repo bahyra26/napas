@@ -153,6 +153,35 @@ export const AgendaDetail: React.FC<AgendaDetailProps> = ({
                       {task.title.replace(/^📅\s*/, '')}
                     </span>
                   </div>
+
+                  {/* Tombol Nyatakan Selesai di Deadline */}
+                  {canComplete && onToggleCompleteTask && (
+                    <button
+                      type="button"
+                      className={`btn-task-mark-done ${isCompleted ? 'is-done' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleCompleteTask(task.id!, task.status, isStudy);
+                      }}
+                      title={isCompleted ? 'Batalkan status selesai' : 'Nyatakan tugas ini selesai'}
+                    >
+                      {isCompleted ? (
+                        <>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <span>Selesai</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <span>Nyatakan Selesai</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               );
             })

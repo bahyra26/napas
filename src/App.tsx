@@ -884,6 +884,7 @@ export const App: React.FC = () => {
                     isLoading={isLoadingTasks}
                     onDeleteTask={handleRequestDeleteTask}
                     onOpenAddModal={() => setIsAddTaskOpen(true)}
+                    onToggleCompleteTask={handleToggleCompleteTask}
                   />
                 </section>
               </main>
